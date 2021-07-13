@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.0
 description=This plugin generates SWMM Input files
-version=0.1
+version=0.2
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,7 +20,7 @@ repository=http://repo
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-# changelog=
+# changelog=0.2 : weirs included
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow
