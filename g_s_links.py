@@ -73,3 +73,25 @@ def get_pumps_from_shapefile(pumps_raw):
     return pumps_df
 
 
+
+def get_weirs_from_shapefile(weirs_raw):
+    weirs_df = weirs_raw
+    weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
+    weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('')
+    weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('')
+    weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('')
+    weirs_df['Coeff_Cur'] = weirs_df['Coeff_Cur'].fillna('')
+    weirs_df=weirs_df[['Name',
+                       'FromNode',
+                       'ToNode',
+                       'Type',
+                       'CrestHeigh',
+                       'Qcoeff',
+                       'FlapGate',
+                       'EndContrac',
+                       'EndCoeff',
+                       'Surcharge',
+                       'RoadWidth',
+                       'RoadSurf',
+                       'Coeff_Cur']]
+    return weirs_df

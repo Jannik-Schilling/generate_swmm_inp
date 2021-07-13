@@ -103,7 +103,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_conduits = 'SWMM_conduits.shp'
         file_junctions = 'SWMM_junctions.shp'
         file_pumps = 'SWMM_pumps.shp'
-        file_weirs = None#'SWMM_weirs.shp'
+        file_weirs = 'SWMM_weirs.shp'
         raw_data_dict = read_shapefiles(swmm_data_dir,
                                            file_outfalls,
                                            file_storages,
@@ -181,7 +181,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'weirs_raw' in raw_data_dict.keys():
             from .g_s_links import get_weirs_from_shapefile
             weirs_df = get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
-            inp_dict['regulators_df'] = weirs_df
+            inp_dict['weirs_df'] = weirs_df
             
         """
         to do:

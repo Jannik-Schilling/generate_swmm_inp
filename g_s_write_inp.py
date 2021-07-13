@@ -212,26 +212,13 @@ def write_inp(inp_file_name,
         print('done')
         
     
-    if 'regulators_df' in inp_dict.keys():
-        # weirs, orifices, outlets
+    if 'weirs_df' in inp_dict.keys():
+        # to_do: orifices, outlets
         print('writing [WEIRS]...')
         weirs_df = inp_dict['weirs_df']
         file1.write('[WEIRS]\n')
-        for i in range(len(weirs_df)):
-            wrs = weirs_df.loc[i,:]
-            file1.write(str(wrs['Name'])+'   '+
-                        str(wrs['FromNode'])+'    '+
-                        str(wrs['ToNode'])+'    '+
-                        str(wrs['Type'])+'    '+
-                        str(wrs['CrestHeigh'])+'    '+
-                        str(wrs['Qcoeff'])+'    '+
-                        str(wrs['FlapGate'])+'    '+
-                        str(wrs['EndContrac'])+'    '+
-                        str(wrs['EndCoeff'])+'    '+
-                        str(wrs['Surcharge'])+'    '+
-                        str(wrs['RoadWidth'])+'    '+
-                        str(wrs['RoadSurfac']))
-            file1.write('\n')
+        file1.write(weirs_df.to_string(header = False, index = False))
+        file1.write('\n')
         file1.write('\n')
         print('done')
     
