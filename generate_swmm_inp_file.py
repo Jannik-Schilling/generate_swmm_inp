@@ -164,7 +164,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             from .g_s_various_functions import get_coords_from_geometry
             from .g_s_links import get_conduits_from_shapefile
             conduits_df, xsections_df, losses_df =  get_conduits_from_shapefile(raw_data_dict['conduits_raw'].copy())
-            #inp_dict['vertices_dict'].update(get_coords_from_geometry(raw_data_dict['conduits_raw'].copy()[raw_data_dict['conduits_raw']['typ']=='Druckentwaesserung']))
+            #inp_dict['vertices_dict'].update(get_coords_from_geometry(raw_data_dict['conduits_raw'].copy()
             inp_dict['conduits_df'] = conduits_df
             inp_dict['xsections_df'] = xsections_df
             inp_dict['losses_df'] = losses_df
@@ -180,7 +180,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """weirs"""
         if 'weirs_raw' in raw_data_dict.keys():
             from .g_s_links import get_weirs_from_shapefile
-            weirs_df = get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
+            weirs_df, xsections_df= get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
+            inp_dict['xsections_df'] = inp_dict['xsections_df'].append(xsections_df)
+            inp_dict['xsections_df'] = inp_dict['xsections_df'].reset_index(drop=True)
             inp_dict['weirs_df'] = weirs_df
             
         """
@@ -254,6 +256,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             else: 
                 inp_dict['quality_dict'] = get_quality_params_from_table(raw_data_dict['quality'])
 
+
+        """writing inp"""
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,

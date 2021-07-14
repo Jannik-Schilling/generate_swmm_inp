@@ -377,11 +377,7 @@ def write_inp(inp_file_name,
     
     
     
-    ## map dimensions
-    file1.write('[MAP]\n')
-    file1.write('DIMENSIONS 300509.000 6013562.000 332134.000 5983953.000\n')
-    file1.write('Units      None\n')
-    file1.write('\n')
+    ## map dimensions?
 
     
     ## point coordinates

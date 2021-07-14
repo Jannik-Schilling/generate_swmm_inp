@@ -43,16 +43,8 @@ def get_conduits_from_shapefile(conduits_raw):
                               'Averge',
                               'FlapGate',
                               'Seepage']].copy()
+    losses_df['Seepage'] = losses_df['Seepage'].fillna('')
     return conduits_df, xsections_df, losses_df
-
-
-
-def get_weirs_from_shapefile(weirs_raw):
-    """prepares weirs data for writing an input file"""
-    weirs_df = weirs_raw
-    return weirs_df
-
-
 
 
 pumps_columns = pd.DataFrame([['Name',True,''],
@@ -75,7 +67,11 @@ def get_pumps_from_shapefile(pumps_raw):
 
 
 def get_weirs_from_shapefile(weirs_raw):
-    weirs_df = weirs_raw
+    """prepares weirs data for writing an input file"""
+    weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
+                                         'Length':'Geom2',
+                                         'SideSlope':'Geom3'})
+    weirs_df = weirs_raw.copy()
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
     weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('')
     weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('')
@@ -94,4 +90,22 @@ def get_weirs_from_shapefile(weirs_raw):
                        'RoadWidth',
                        'RoadSurf',
                        'Coeff_Cur']]
-    return weirs_df
+    shape_dict = {'TRANSVERSE':'RECT_OPEN',
+     'SIDEFLOW':'RECT_OPEN',
+     'V-NOTCH':'TRIANGULAR',
+     'TRAPEZOIDAL':'TRAPEZOIDAL',
+     'ROADWAY':'RECT_OPEN'}
+    weirs_raw['Shape'] = [shape_dict[x] for x in weirs_raw['Type']]
+    weirs_raw['Geom4'] = weirs_raw['Geom3']
+    xsections_df = weirs_raw[['Name',
+                                'Shape',
+                                'Geom1',
+                                'Geom2',
+                                'Geom3',
+                                'Geom4']].copy()
+    xsections_df = xsections_df.fillna('')
+    xsections_df['Barrels'] = ''
+    xsections_df['Culvert'] = ''
+    xsections_df['Curve'] = ''
+    xsections_df['Tsect'] = ''
+    return weirs_df, xsections_df
