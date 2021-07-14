@@ -78,7 +78,7 @@ C_5    J_5    St_1    198.48049966122002    0.015    *    *    0    0
 P_1   St_1    J_3    PC_1    OFF    1.5    0.9
 
 [WEIRS]
- W_1  St_1  Out_2  TRANSVERSE  1.4  3.0  YES  0.0  0.0  YES      
+ W_1  St_1  Out_2  TRANSVERSE  1.0  3.0  NO  0.0  0.0  YES      
 
 [XSECTIONS]
 C_3   CIRCULAR    0.2    0.0    0    0    1    
@@ -86,13 +86,14 @@ C_2   CIRCULAR    0.5    0.0    0    0    1
 C_1   CIRCULAR    0.5    0.0    0    0    1    
 C_4   CIRCULAR    0.3    0.0    0    0    1    
 C_5   CIRCULAR    0.3    0.0    0    0    1    
+W_1   RECT_OPEN    0.9    1.0                
 
 [LOSSES]
-C_3   0   0   0   NO   nan
-C_2   0   0   0   NO   nan
-C_1   0   0   0   NO   nan
-C_4   0   0   0   NO   nan
-C_5   0   0   0   NO   nan
+C_3   0   0   0   NO   
+C_2   0   0   0   NO   
+C_1   0   0   0   NO   
+C_4   0   0   0   NO   
+C_5   0   0   0   NO   
 
 [POLLUTANTS]
      BOD  MG/L  0  0  0  0  NO  *  0  0  0
@@ -187,10 +188,6 @@ NODES ALL
 LINKS ALL
 
 [TAGS]
-
-[MAP]
-DIMENSIONS 300509.000 6013562.000 332134.000 5983953.000
-Units      None
 
 [COORDINATES]
 J_1    310028.83542036    5998723.179801358
