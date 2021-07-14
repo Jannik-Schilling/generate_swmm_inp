@@ -43,7 +43,7 @@ def get_conduits_from_shapefile(conduits_raw):
                               'Averge',
                               'FlapGate',
                               'Seepage']].copy()
-    losses_df['Seepage'] = losses_df['Seepage'].fillna('')
+    losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
 
@@ -96,6 +96,7 @@ def get_weirs_from_shapefile(weirs_raw):
      'TRAPEZOIDAL':'TRAPEZOIDAL',
      'ROADWAY':'RECT_OPEN'}
     weirs_raw['Shape'] = [shape_dict[x] for x in weirs_raw['Type']]
+    weirs_raw['Geom3'] = weirs_raw['Geom3'].fillna('0')
     weirs_raw['Geom4'] = weirs_raw['Geom3']
     xsections_df = weirs_raw[['Name',
                                 'Shape',
@@ -103,7 +104,6 @@ def get_weirs_from_shapefile(weirs_raw):
                                 'Geom2',
                                 'Geom3',
                                 'Geom4']].copy()
-    xsections_df = xsections_df.fillna('')
     xsections_df['Barrels'] = ''
     xsections_df['Culvert'] = ''
     xsections_df['Curve'] = ''

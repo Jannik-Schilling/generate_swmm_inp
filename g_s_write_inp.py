@@ -376,10 +376,6 @@ def write_inp(inp_file_name,
     file1.write('\n')
     
     
-    
-    ## map dimensions?
-
-    
     ## point coordinates
     file1.write('[COORDINATES]\n')
     print('writing [COORDINATES]...')
