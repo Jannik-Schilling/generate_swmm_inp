@@ -61,7 +61,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     SWMM_FOLDER = 'SWMM_FOLDER'
-    #PROJ_FILE = 'PROJ_FILE'
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
     
     
@@ -77,7 +76,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFileDestination(
                 self.QGIS_OUT_INP_FILE,
                 self.tr('Where should the inp file be saved?'),
-                'INP files (*.inp)', #defaultValue=['date.inp']
+                'INP files (*.inp)', #defaultValue=['date.inp'] 
             )
         )
 

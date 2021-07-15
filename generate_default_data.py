@@ -63,7 +63,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    #PROJ_FILE = 'PROJ_FILE'
+
     SWMM_FOLDER = 'SWMM_FOLDER'
 
     
@@ -86,11 +86,6 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         
 
     def processAlgorithm(self, parameters, context, feedback):
-        # output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        #project_file_name = self.parameterAsString(parameters, self.PROJ_FILE, context)
-        #project_dir = os.path.dirname(project_file_name)
-        #project_dir = QgsProject.instance().homePath()
-        #data_save_folder = os.path.join(project_dir,'swmm_data')
         data_save_folder = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
         if not os.path.exists(data_save_folder):
             os.makedirs(data_save_folder)
