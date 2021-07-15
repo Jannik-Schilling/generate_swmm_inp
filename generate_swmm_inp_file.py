@@ -34,6 +34,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProject,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination)
 from datetime import datetime, date
 import pandas as pd
@@ -59,6 +60,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
+    PROJ_FILE = 'PROJ_FILE'
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
     
     
@@ -67,6 +69,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
+        self.addParameter(
+            QgsProcessingParameterFile(
+            self.PROJ_FILE,
+            self.tr('actual QGIS project file'),
+            extension = 'qgz'
+            )
+        )
 
         # We add the input vector features source. It can have any kind of
         # geometry.
@@ -83,8 +92,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         today = date.today()
         now = datetime.now()
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
+        project_file_name = self.parameterAsString(parameters, self.PROJ_FILE, context)
+        project_dir = os.path.dirname(project_file_name)
         inp_file_name = os.path.basename(inp_file_path)
-        project_dir = QgsProject.instance().homePath()
+        #project_dir = QgsProject.instance().homePath()
         swmm_data_dir = os.path.join(project_dir,'swmm_data')
         
         
