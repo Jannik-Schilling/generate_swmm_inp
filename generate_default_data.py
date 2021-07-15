@@ -36,9 +36,8 @@ from qgis.core import (QgsProject,
                        QgsProcessingAlgorithm,
                        QgsProcessingContext,
                        QgsProcessingException,
-                       QgsProcessingParameterFeatureSink,
                        QgsProcessingParameterFile,
-                       QgsProcessingParameterVectorLayer,
+                       QgsProcessingParameterFolderDestination,
                        QgsVectorLayer)
 import processing
 import os
@@ -64,8 +63,9 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    PROJ_FILE = 'PROJ_FILE'
-    OUTPUT = 'OUTPUT'
+    #PROJ_FILE = 'PROJ_FILE'
+    SWMM_FOLDER = 'SWMM_FOLDER'
+
     
     def initAlgorithm(self, config):
         """
@@ -76,27 +76,22 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         #We add the input vector features source. It can have any kind of
         #geometry.
         self.addParameter(
-            QgsProcessingParameterFile(
-            self.PROJ_FILE,
-            self.tr('actual QGIS project file'),
-            extension = 'qgz'
+            QgsProcessingParameterFolderDestination(
+            self.SWMM_FOLDER,
+            self.tr('Where should the inp file be saved?')
             )
         )
         
-        # self.addParameter(
-            # QgsProcessingParameterVectorLayer(
-            # self.OUTPUT,
-            # self.tr('erg')
-            # )
-        # )
+
         
 
     def processAlgorithm(self, parameters, context, feedback):
         # output = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        project_file_name = self.parameterAsString(parameters, self.PROJ_FILE, context)
-        project_dir = os.path.dirname(project_file_name)
+        #project_file_name = self.parameterAsString(parameters, self.PROJ_FILE, context)
+        #project_dir = os.path.dirname(project_file_name)
         #project_dir = QgsProject.instance().homePath()
-        data_save_folder = os.path.join(project_dir,'swmm_data')
+        #data_save_folder = os.path.join(project_dir,'swmm_data')
+        data_save_folder = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
         if not os.path.exists(data_save_folder):
             os.makedirs(data_save_folder)
 
@@ -158,6 +153,11 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
 
     def name(self):
         return 'GenerateDefaultFolder'
+        
+    def shortHelpString(self):
+        return self.tr(""" The tool creates a subfolder called "swmm_data" in the folder of the QGIS project.\n
+        The default data is stored in this subfolder and added to the project
+        """)
 
     def displayName(self):
         return self.tr(self.name())
