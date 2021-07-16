@@ -102,6 +102,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['vertices_dict'] = {}
 
         # reading Data
+        feedback.setProgressText(self.tr('reading shapfiles'))
+        feedback.setProgress(5)
         from .g_s_read_data import read_shapefiles
         file_outfalls = 'SWMM_outfalls.shp'
         file_storages = 'SWMM_storages.shp'
@@ -118,8 +120,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                            file_junctions,
                                            file_pumps,
                                            file_weirs)
+        feedback.setProgressText(self.tr('done'))
+        feedback.setProgress(20)
 
-
+        feedback.setProgressText(self.tr('reading tables'))
         """data in tables (curves, patterns, inflows ...)"""
         file_curves = 'gisswmm_curves.xlsx'
         file_patterns = 'gisswmm_patterns.xlsx'
@@ -152,7 +156,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 raw_data_dict['quality'][quality_param] = read_data_from_table(swmm_data_dir,
                              file_quality,
                              sheet = quality_param)
+        feedback.setProgressText(self.tr('done'))
+        feedback.setProgress(25)
 
+        feedback.setProgressText(self.tr('preparing data for input file'))
         """options"""
         from .g_s_various_functions import get_options_from_table
         inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
@@ -196,7 +203,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             # orifices
             # outlets
         """
-
+        feedback.setProgress(40)
 
 
         from .g_s_various_functions import get_coords_from_geometry
@@ -223,7 +230,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # if 'dividers_rwa' in raw_data_dict.keys():
             # #dividers
             # pass
-
+        feedback.setProgress(50)
 
         """inflows"""
         from .g_s_various_functions import get_inflows_from_table
@@ -233,19 +240,20 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['inflow_dict'] = inflow_dict
         if len(dwf_dict) > 0:
             inp_dict['dwf_dict'] = dwf_dict
-
+        feedback.setProgress(55)
 
         """Curves"""
         from .g_s_various_functions import get_curves_from_table
         inp_dict['curves_dict'] = get_curves_from_table(raw_data_dict['curves'],
                                                              name_col='Name')
-
+        feedback.setProgress(60)
 
         """patterns"""
         from .g_s_various_functions import get_patterns_from_table
         inp_dict['patterns_dict'] = get_patterns_from_table(raw_data_dict['patterns'],
                                                              name_col='Name')
-
+        feedback.setProgress(65)
+        
         """time series"""
         if 'timeseries' in raw_data_dict.keys():
             from .g_s_various_functions import get_timeseries_from_table, get_raingages_from_timeseries
@@ -253,7 +261,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                                                  name_col='Name')
             """rain gages"""
             inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'])
-    
+        feedback.setProgress(70)
+   
         """quality"""
         if 'quality' in raw_data_dict.keys():
             from .g_s_quality import get_quality_params_from_table
@@ -261,25 +270,39 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 inp_dict['quality_dict'] = get_quality_params_from_table(raw_data_dict['quality'], inp_dict['subcatchments_df'].copy())
             else: 
                 inp_dict['quality_dict'] = get_quality_params_from_table(raw_data_dict['quality'])
+        feedback.setProgressText(self.tr('done'))
+        feedback.setProgress(80)
 
-
+        feedback.setProgressText(self.tr('writing inp'))
         """writing inp"""
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,
                   inp_dict)
-
+        feedback.setProgress(98)
+        
         err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
         err_file.write(err_text)
         err_file.close()
-
+        feedback.setProgressText(self.tr('done'))
         return {}
+        
+    def shortHelpString(self):
+        return self.tr(""" The tool combines all swmm data (shapefiles and xlsx-files) in a selected folder to write a swmm input file.\n
+        File names and column names have to be the same as in the default data set.
+        Proposed workflow:\n
+        1) load default data with the first tool.\n
+        2) copy all files to a new folder and change the data set.\n
+        3) select the new folder to create the input file (.inp)\n
+        4) run the input file in swmm
+        """)
+
 
     def name(self):
         return 'GenerateSwmmInpFile'
 
     def displayName(self):
-        return self.tr(self.name())
+        return self.tr('2_GenerateSwmmInpFile')
 
     def group(self):
         return self.tr(self.groupId())
