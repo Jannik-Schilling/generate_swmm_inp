@@ -73,10 +73,11 @@ def get_weirs_from_shapefile(weirs_raw):
                                          'SideSlope':'Geom3'})
     weirs_df = weirs_raw.copy()
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
-    weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('')
-    weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('')
-    weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('')
+    weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('*')
+    weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('*')
     weirs_df['Coeff_Cur'] = weirs_df['Coeff_Cur'].fillna('')
+    weirs_df['EndContrac'] = weirs_df['EndContrac'].fillna('0')
+    weirs_df['EndCoeff'] = weirs_df['EndCoeff'].fillna('0')
     weirs_df=weirs_df[['Name',
                        'FromNode',
                        'ToNode',
@@ -109,3 +110,22 @@ def get_weirs_from_shapefile(weirs_raw):
     xsections_df['Curve'] = ''
     xsections_df['Tsect'] = ''
     return weirs_df, xsections_df
+    
+def get_outlets_from_shapefile(outlets_raw):
+    """prepares outlets data for writing an input file"""
+    def get_outl_curve(outl_row):
+        """selects curve data according to rating curve type"""
+        if outl_row['Rate_Curve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
+            return outl_row['Qcoeff']
+        else:
+            return outl_row['CurveName']
+    outlets_raw['QCurve'] = [get_outl_curve(outlets_raw.loc[i]) for i in outlets_raw.index] 
+    outlets_df = outlets_raw[['Name', 
+                             'FromNode',
+                             'ToNode', 
+                             'InOffset', 
+                             'Rate_Curve', 
+                             'QCurve',
+                             'Qexpon', 
+                             'FlapGate']]
+    return outlets_df 
