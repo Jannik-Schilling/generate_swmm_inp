@@ -144,6 +144,12 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         weirs.loadNamedStyle(os.path.join(data_save_folder,'style_regulators.qml'))
         context.temporaryLayerStore().addMapLayer(weirs)
         context.addLayerToLoadOnCompletion(weirs.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+        
+        # outlets
+        outlets = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_outlets.shp'), 'SWMM_outlets', "ogr")
+        outlets.loadNamedStyle(os.path.join(data_save_folder,'style_regulators.qml'))
+        context.temporaryLayerStore().addMapLayer(outlets)
+        context.addLayerToLoadOnCompletion(outlets.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
         return {}
 
     def name(self):

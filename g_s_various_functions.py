@@ -55,15 +55,16 @@ def check_columns(x_df, col_df):
         return 'Error: obligatory columns missing'
     for check_col in cols_volunt['col_name']:
         if np.isin(check_col, x_df.columns):
-            pass # was passiert in SWMM, wenn  etwas nicht vollständig  angegeben ist?
+            pass 
         else:
             x_df[check_col] = cols_volunt.loc[cols_volunt['col_name']==check_col,'default'].values[0]
     return x_df
 
 
-#curves_raw = raw_data_dict['curves']
+
 def get_curves_from_table(curves_raw, name_col):
-    curve_types = ['STORAGE','Pump1','Pump2','Pump3','Pump4']
+    """generates curve data for the input file from tables (curve_raw)"""
+    curve_types = ['STORAGE','Pump1','Pump2','Pump3','Pump4','Rating','Weir']
     curve_dict = dict()
     for curve_type in curve_types:
         curve_df = curves_raw[curve_type]

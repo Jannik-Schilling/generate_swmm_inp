@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.0
 description=This plugin generates SWMM Input files
-version=0.4
+version=0.5
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,7 +20,10 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=0.4 2021-07-16
+changelog=0.5 2021-07-21
+	- outlets integrated
+	- weir curves integrated
+	0.4 2021-07-16
 	- updated help strings and tool names
 	- updated processing feedback
 	- updated default data
@@ -34,7 +37,7 @@ homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
 icon=icons/icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
@@ -42,10 +45,10 @@ deprecated=False
 # Since QGIS 3.8, a comma separated list of plugins to be installed
 # (or upgraded) can be specified.
 # Check the documentation for more information.
-# plugin_dependencies=
+# plugin_dependencies=pandas
 
-Category of the plugin: Raster, Vector, Database or Web
-# category=
+# Category of the plugin: Raster, Vector, Database or Web
+# category=Vector
 
 # If the plugin can run on QGIS Server.
 server=False

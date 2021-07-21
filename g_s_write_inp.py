@@ -211,13 +211,22 @@ def write_inp(inp_file_name,
         file1.write('\n')
         print('done')
         
-    
+    ## weirs orifices and outlets
     if 'weirs_df' in inp_dict.keys():
-        # to_do: orifices, outlets
+        # to_do: orifices
         print('writing [WEIRS]...')
         weirs_df = inp_dict['weirs_df']
         file1.write('[WEIRS]\n')
         file1.write(weirs_df.to_string(header = False, index = False))
+        file1.write('\n')
+        file1.write('\n')
+        print('done')
+        
+    if 'outlets_df' in inp_dict.keys():
+        print('writing [OUTLETS]...')
+        outlets_df = inp_dict['outlets_df']
+        file1.write('[OUTLETS]\n')
+        file1.write(outlets_df.to_string(header = False, index = False))
         file1.write('\n')
         file1.write('\n')
         print('done')

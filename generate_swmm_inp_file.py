@@ -112,6 +112,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_junctions = 'SWMM_junctions.shp'
         file_pumps = 'SWMM_pumps.shp'
         file_weirs = 'SWMM_weirs.shp'
+        file_outlets = 'SWMM_outlets.shp'
         raw_data_dict = read_shapefiles(swmm_data_dir,
                                            file_outfalls,
                                            file_storages,
@@ -119,7 +120,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                            file_conduits,
                                            file_junctions,
                                            file_pumps,
-                                           file_weirs)
+                                           file_weirs,
+                                           file_outlets)
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(20)
 
@@ -134,7 +136,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         from .g_s_read_data import read_data_from_table
         raw_data_dict['options_df'] = read_data_from_table(swmm_data_dir,file_options)
         raw_data_dict['curves'] = {}
-        for curve_type in ['STORAGE','Pump1','Pump2','Pump3','Pump4']:
+        for curve_type in ['STORAGE','Pump1','Pump2','Pump3','Pump4','Rating','Weir']:
             raw_data_dict['curves'][curve_type] = read_data_from_table(swmm_data_dir,
                          file_curves,
                          sheet = curve_type)
@@ -197,11 +199,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['xsections_df'] = inp_dict['xsections_df'].append(xsections_df)
             inp_dict['xsections_df'] = inp_dict['xsections_df'].reset_index(drop=True)
             inp_dict['weirs_df'] = weirs_df
-            
+
+        """outlets"""
+        if 'outlets_raw' in raw_data_dict.keys():
+            from g_s_links import get_outlets_from_shapefile
+            inp_dict['outlets_df'] = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
+
+           
         """
         to do:
             # orifices
-            # outlets
         """
         feedback.setProgress(40)
 
@@ -284,7 +291,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
         err_file.write(err_text)
         err_file.close()
-        feedback.setProgressText(self.tr('done'))
+        feedback.setProgressText(self.tr('input file saved in '+str(os.path.join(project_dir,inp_file_name))))
         return {}
         
     def shortHelpString(self):
