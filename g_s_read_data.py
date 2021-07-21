@@ -17,7 +17,8 @@ def read_shapefiles(data_dir,
                        file_conduits,
                        file_junctions,
                        file_pumps,
-                       file_weirs):
+                       file_weirs,
+                       file_outlets):
     """reads shapefiles from swmm model"""
     data_dict = dict()
     def del_none_bool(df):
@@ -68,7 +69,12 @@ def read_shapefiles(data_dir,
         pass 
     else:
         data_dict['pumps_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_pumps))
-        
+    
+    if file_outlets is None:
+        pass 
+    else:
+        data_dict['outlets_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_outlets))
+
         
     if file_weirs is None:
         pass 
