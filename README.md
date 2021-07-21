@@ -9,6 +9,7 @@ Default data can be loaded with the first tool. So far shapefiles are provided f
 - outfalls (SWMM_outfalls.shp)
 - pumps (SWMM_pumps.shp)
 - weirs (SWMM_weirs.shp)
+- outfalls (SWMM_outfalls.shp)
 
 Further data is provided in tables:
 - curves (gisswmm_curves.xlsx)
