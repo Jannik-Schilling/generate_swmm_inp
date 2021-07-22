@@ -39,10 +39,12 @@ If you start from scratch, a useful tool to create a network from a line layer i
 
 ## Further useful packages
 Python:
+- [SWMM5 for Python](https://pypi.org/project/SWMM5/)
 - [swmm_api](https://gitlab.com/markuspichler/swmm_api) 
 - [swmmio](https://github.com/aerispaha/swmmio)
 - [pyswmm](https://github.com/OpenWaterAnalytics/pyswmm)
 - [swmmtoolbox](https://pypi.org/project/swmmtoolbox/)
+
 
 R:
 - https://github.com/cran/swmmr
