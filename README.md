@@ -35,7 +35,7 @@ If you start from scratch, a useful tool to create a network from a line layer i
 ...with the second tool **(2_GenerateSwmmInpFile)**. The default files serve as a template for your own model, because file names and column names have to be matching in order to identify the correct information for the inp file.
 
 ### 4 Run the model
-...in SWMM or with the help of scripts (e.g. [swmm_api by Markus Pichler](https://gitlab.com/markuspichler/swmm_api)). There migth be several errors at first -> return to step 2.
+...in SWMM or with the help of scripts (e.g. [swmm_api by Markus Pichler](https://gitlab.com/markuspichler/swmm_api) or [pyswmm (McDonnell et al.)](https://github.com/OpenWaterAnalytics/pyswmm)). There migth be several errors at first -> return to step 2.
 
 
 
