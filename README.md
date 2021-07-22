@@ -25,11 +25,16 @@ Further data is provided in tables and can be edited there:
 - quality  (gisswmm_quality.xlsx)
 - timeseries (gisswmm_timeseries.xlsx)
 
-### 2 Write a swmm input file (.inp)
+### 2 Edit
+A first test run with the default data is recommended (steps 3 and 4).
+Then you can edit the shapefiles in QGIS and data in tables to create your own model. Sections which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later. A useful tool to create a network from a line layer is the QGIS plugin WaterNetAnalyzer (available in the [QGIS plugin repository](https://plugins.qgis.org/plugins/WaterNetAnalyzer-master/) or on [Github](https://github.com/Jannik-Schilling/WaterNetAnalyzer)).
+
+### 3 Write a swmm input file (.inp)
 ...with the second tool. The default files serve as a template for your own model, because file names and column names have to be matching in order to identify the correct information for the inp file.
 
-### 3 Run the model
-...in SWMM or with the help of scripts (e.g. [swmm_api by Markus Pichler](https://gitlab.com/markuspichler/swmm_api)). 
-After a first test run you can edit the data in QGIS (and data in Tables). Then use the second tool to generate a new inp file (**step 2**). Sections which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM.
+### 4 Run the model
+...in SWMM or with the help of scripts (e.g. [swmm_api by Markus Pichler](https://gitlab.com/markuspichler/swmm_api)). There migth be several errors at first -> return to step  
+
+
 
 
