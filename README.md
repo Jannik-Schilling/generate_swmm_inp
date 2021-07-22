@@ -27,14 +27,14 @@ Further data is provided in tables and can be edited there:
 
 ### 2 Edit
 A first test run with the default data is recommended (**steps 3 and 4**).
-Then you can edit the shapefiles in QGIS and data in tables to create your own model. If you start from scratch, a useful tool to create a network from a line layer is the QGIS plugin WaterNetAnalyzer (available in the [QGIS plugin repository](https://plugins.qgis.org/plugins/WaterNetAnalyzer-master/) or on [Github](https://github.com/Jannik-Schilling/WaterNetAnalyzer)).
+Then you can edit the shapefiles in QGIS and data in tables to create your own model. When filling the attribute tables, the [SWMM user manual](https://www.epa.gov/water-research/storm-water-management-model-swmm-version-51-users-manual) migth help you to find the right columns and suitable values. If you start from scratch, a useful tool to create a network from a line layer is the QGIS plugin WaterNetAnalyzer (available in the [QGIS plugin repository](https://plugins.qgis.org/plugins/WaterNetAnalyzer-master/) or on [Github](https://github.com/Jannik-Schilling/WaterNetAnalyzer)).
 Sections which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later.
 
 ### 3 Write a swmm input file (.inp)
 ...with the second tool **(2_GenerateSwmmInpFile)**. The default files serve as a template for your own model, because file names and column names have to be matching in order to identify the correct information for the inp file.
 
 ### 4 Run the model
-...in SWMM or with the help of scripts (e.g. [swmm_api by Markus Pichler](https://gitlab.com/markuspichler/swmm_api)). There migth be several errors at first -> return to step  
+...in SWMM or with the help of scripts (e.g. [swmm_api by Markus Pichler](https://gitlab.com/markuspichler/swmm_api)). There migth be several errors at first -> return to step 2.
 
 
 
