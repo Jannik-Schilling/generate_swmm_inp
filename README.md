@@ -1,4 +1,4 @@
-# generate_swmm_inp
+# ![icon](/icons/icon.png) generate_swmm_inp
 A QGIS plugin which generates an SWMM input file from existing shapefiles
 
 ## Recommended Workflow
