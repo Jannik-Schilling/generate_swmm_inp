@@ -15,7 +15,7 @@ A QGIS plugin which generates an SWMM input file from existing shapefiles
 - outfalls (SWMM_outfalls.shp)
 - pumps (SWMM_pumps.shp)
 - weirs (SWMM_weirs.shp)
-- outfalls (SWMM_outfalls.shp)
+- outlets (SWMM_outlets.shp)
 
 Further data is provided in tables and can be edited there:
 - curves (gisswmm_curves.xlsx)
