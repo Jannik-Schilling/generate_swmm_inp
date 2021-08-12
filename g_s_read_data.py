@@ -28,7 +28,13 @@ def read_shapefiles(data_dir,
         ...except of geometry column
         """
         df[df.columns[:-1]] =  df[df.columns[:-1]].fillna(value=np.nan)
-        df[df.columns[:-1]] =  df[df.columns[:-1]].replace(NULL,np.nan)
+        def del_null(atrr_value):
+            if atrr_value == NULL:
+                return np.nan
+            else:
+                return atrr_value
+        for col in df.columns[:-1]:
+            df[col] = [del_null(val) for val in df[col]]
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
         
