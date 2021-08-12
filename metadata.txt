@@ -4,13 +4,13 @@
 
 [general]
 name=Generate SWMM inp
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.10
 description=This plugin generates SWMM Input files
-version=0.6
+version=0.7
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
-about=Generates SWMM Input files from existing shapefiles, exemplary data with all fields are provided and can be added to a QGIS project with the first tool. This plugin needs the python 'pandas' library which can be added in a advanced QGIS installation or via pip.
+about=Generates SWMM Input files from existing shapefiles, exemplary data with all fields are provided and can be added to a QGIS project with the first tool. This plugin needs the python 'pandas' library. If it is not installed, it can be added in a advanced QGIS installation or via pip.
 
 tracker=https://github.com/Jannik-Schilling/generate_swmm_inp/issues
 repository=https://github.com/Jannik-Schilling/generate_swmm_inp
@@ -20,7 +20,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=0.6 2101-07-21
+changelog=0.7 2101-07-21
+	- possible fix for the replace NULL issue
+	0.6 2101-07-21
 	- hint for pandas dependency
 	0.5 2021-07-21
 	- outlets integrated
