@@ -20,7 +20,7 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=0.7 2101-07-21
+changelog=0.7 2101-08-12
 	- possible fix for the replace NULL issue
 	0.6 2101-07-21
 	- hint for pandas dependency
