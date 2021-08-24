@@ -9,11 +9,11 @@ import datetime
 import pandas as pd
 from qgis.core import QgsWkbTypes
 
-# df = load_shapefile_to_df('C:\Q_GIS_Projekte\Projekte\Testgebiet_SWMM\plugin_testprojekt\SWMM_subcatchments.shp')
+## geometry functions
 def get_coords_from_geometry(df):
     '''extracts coords from any gpd.geodataframe'''
-    #df = raw_data_dict['subcatchments_raw'].copy()
     def extract_xy_from_simple_line(line_simple):
+        '''extracts x and y coordinates from a LineString'''
         xy_arr = np.dstack((p.x(),p.y()) for p in line_simple)[0]
         xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
         return xy_df
@@ -43,8 +43,15 @@ def get_coords_from_geometry(df):
                 xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
                 return xy_df
         return {na:extract_xy_from_area(ge) for ge,na in zip(df.geometry,df.Name)}
-         
-                
+
+def get_point_from_x_y(sr):
+    '''converts x and y coordinates from a pd.Series (arg: sr) to a QgsPoint geometry'''
+    from qgis.core import QgsGeometry
+    x_coord = sr['X_Coord']
+    y_coord = sr['Y_Coord']
+    geom = QgsGeometry.fromWkt('POINT('+str(x_coord)+' '+str(y_coord)+')')
+    return [sr['Name'],geom]
+
 
 
 def check_columns(x_df, col_df):
@@ -61,7 +68,7 @@ def check_columns(x_df, col_df):
     return x_df
 
 
-
+## functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
     """generates curve data for the input file from tables (curve_raw)"""
     curve_types = ['STORAGE','Pump1','Pump2','Pump3','Pump4','Rating','Weir']
@@ -143,7 +150,6 @@ def get_raingages_from_timeseries(ts_dict):
     return (rg_dict)
                
     
-#inflows_raw= raw_data_dict['inflows'].copy()
 def get_inflows_from_table(inflows_raw,junctions_df):
     '''
     generates a dict for direct inflow and

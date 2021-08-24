@@ -33,6 +33,7 @@ __revision__ = '$Format:%H$'
 from qgis.core import QgsProcessingProvider
 from .generate_swmm_inp_file import GenerateSwmmInpFile
 from .generate_default_data import GenerateDefaultFolder
+from .generate_swmm_import_inp_file import ImportInpFile
 from qgis.PyQt.QtGui import QIcon
 import os
 pluginPath = os.path.dirname(__file__)
@@ -58,6 +59,7 @@ class GenerateSwmmProvider(QgsProcessingProvider):
         """
         self.addAlgorithm(GenerateSwmmInpFile())
         self.addAlgorithm(GenerateDefaultFolder())
+        self.addAlgorithm(ImportInpFile())
 
 
     def id(self):
