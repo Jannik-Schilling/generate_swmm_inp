@@ -47,43 +47,26 @@ pluginPath = os.path.dirname(__file__)
 
 class GenerateDefaultFolder(QgsProcessingAlgorithm):
     """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
-
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
-
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
+    generates default data
     """
 
-    # Constants used to refer to parameters and outputs. They will be
-    # used when calling the algorithm from another algorithm, or when
-    # calling from the QGIS console.
-
-
+    # Constants 
     SWMM_FOLDER = 'SWMM_FOLDER'
 
     
     def initAlgorithm(self, config):
         """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
+        inputs and output of the algorithm
         """
 
-        #We add the input vector features source. It can have any kind of
-        #geometry.
         self.addParameter(
             QgsProcessingParameterFolderDestination(
             self.SWMM_FOLDER,
-            self.tr('Where should the inp file be saved?')
+            self.tr('Where should the default data be saved? Select/Create a folder')
             )
         )
         
 
-        
 
     def processAlgorithm(self, parameters, context, feedback):
         data_save_folder = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
@@ -102,7 +85,6 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.tr('Could not add default files to chosen folder'))
         
 
-        
         # conduits
         conduits = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_conduits.shp'), 'SWMM_conduits', "ogr")
         conduits.loadNamedStyle(os.path.join(data_save_folder,'style_conduits.qml'))
