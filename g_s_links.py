@@ -46,6 +46,9 @@ def get_conduits_from_shapefile(conduits_raw):
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
+def del_first_last_vt(link):
+    '''deletes first and last vertex as it is already in nodes coordinates'''
+    return link[1:-1]
 
 pumps_columns = pd.DataFrame([['Name',True,''],
  ['FromNode',True,''],

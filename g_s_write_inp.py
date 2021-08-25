@@ -450,6 +450,6 @@ def write_inp(inp_file_name,
         raingages_dict = inp_dict['raingages_dict']
         file1.write('[SYMBOLS]\n')
         for gr_key in raingages_dict.keys():
-            file1.write(gr_key+'            315142.721       5998080.373     \n')
+            file1.write(gr_key+'    '+str(inp_dict['rg_pos'][0])+'    '+str(inp_dict['rg_pos'][1])+'     \n')
         
     file1.close() 

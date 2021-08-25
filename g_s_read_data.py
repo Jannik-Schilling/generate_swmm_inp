@@ -28,16 +28,14 @@ def read_shapefiles(data_dir,
         ...except of geometry column
         """
         df[df.columns[:-1]] =  df[df.columns[:-1]].fillna(value=np.nan)
-        def del_null(atrr_value):
+        def replace_null_nan(atrr_value):
             if atrr_value == NULL:
                 return np.nan
             else:
                 return atrr_value
-        for col in df.columns[:-1]:
-            df[col] = [del_null(val) for val in df[col]]
+        df = df.applymap(replace_null_nan)
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
-        
     def load_shapefile_to_df(data_file):
         """reads shapefile attributes and geometries"""
         vlayer = QgsVectorLayer(data_file,'temp','ogr')
@@ -45,7 +43,6 @@ def read_shapefiles(data_dir,
         datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
-        
     if file_outfalls is None:
         pass 
     else:
@@ -80,8 +77,7 @@ def read_shapefiles(data_dir,
         pass 
     else:
         data_dict['outlets_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_outlets))
-
-        
+    
     if file_weirs is None:
         pass 
     else:   

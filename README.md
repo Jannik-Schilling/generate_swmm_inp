@@ -5,7 +5,6 @@ A QGIS plugin which generates an SWMM input file from existing shapefiles
 ### 0 Install 
 - [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm)
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
-- (the "pandas" module if it is not part of your python version)
 
 ### 1 Load default the data 
 ...with the first tool (**1_GenerateDefaultData**). To date shapefiles are provided for the main infrastructures:

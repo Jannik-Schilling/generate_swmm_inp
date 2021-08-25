@@ -30,35 +30,24 @@ __copyright__ = '(C) 2021 by Jannik Schilling'
 
 __revision__ = '$Format:%H$'
 
+from datetime import datetime, date
+import numpy as np
+import os
+import pandas as pd
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProject,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination)
-from datetime import datetime, date
-import pandas as pd
-import numpy as np
-import os
+
+
 
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
-
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
-
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
+    generates a swmm input file from shapefiles and tables
     """
-
-    # Constants used to refer to parameters and outputs. They will be
-    # used when calling the algorithm from another algorithm, or when
-    # calling from the QGIS console.
 
     SWMM_FOLDER = 'SWMM_FOLDER'
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
@@ -66,12 +55,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     
     def initAlgorithm(self, config):
         """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
+        inputs and output of the algorithm
         """
 
-        # We add the input vector features source. It can have any kind of
-        # geometry.
+
         self.addParameter(
             QgsProcessingParameterFileDestination(
                 self.QGIS_OUT_INP_FILE,
@@ -168,42 +155,54 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
-            from .g_s_subcatchments import get_subcatchments_from_shapefile
+            from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
             from .g_s_various_functions import get_coords_from_geometry
             subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'])
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
             inp_dict['subcatchments_df'] = subcatchments_df
+            rg_x_mean, rg_y_mean = rg_position(inp_dict['polygons_dict']) # mean position of catchments for rain gage
+            inp_dict['rg_pos'] = [rg_x_mean, rg_y_mean]
 
         """conduits"""
         if 'conduits_raw' in raw_data_dict.keys():
             from .g_s_various_functions import get_coords_from_geometry
-            from .g_s_links import get_conduits_from_shapefile
+            from .g_s_links import get_conduits_from_shapefile, del_first_last_vt
             conduits_df, xsections_df, losses_df =  get_conduits_from_shapefile(raw_data_dict['conduits_raw'].copy())
-            #inp_dict['vertices_dict'].update(get_coords_from_geometry(raw_data_dict['conduits_raw'].copy()
+            conduits_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
+            conduits_verts = {k: del_first_last_vt(v) for k,v in conduits_verts.items() if len(v) > 2} #first and last vertices are in nodes coordinates anyway
+            inp_dict['vertices_dict'].update(conduits_verts)
             inp_dict['conduits_df'] = conduits_df
             inp_dict['xsections_df'] = xsections_df
             inp_dict['losses_df'] = losses_df
 
         """pumps"""
         if 'pumps_raw' in raw_data_dict.keys():
-            from .g_s_links import get_pumps_from_shapefile
+            from .g_s_links import get_pumps_from_shapefile, del_first_last_vt
             from .g_s_various_functions import get_coords_from_geometry
             pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'])
-            inp_dict['vertices_dict'].update(get_coords_from_geometry(pumps_df))
+            pumps_verts = get_coords_from_geometry(pumps_df)
+            pumps_verts = {k: del_first_last_vt(v) for k,v in pumps_verts.items() if len(v) > 2}
+            inp_dict['vertices_dict'].update(pumps_verts)
             inp_dict['pumps_df'] = pumps_df
 
         """weirs"""
         if 'weirs_raw' in raw_data_dict.keys():
-            from .g_s_links import get_weirs_from_shapefile
+            from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
             weirs_df, xsections_df= get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
+            weirs_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
+            weirs_verts = {k: del_first_last_vt(v) for k,v in weirs_verts.items() if len(v) > 2} #first and last vertices are in nodes coordinates anyway
+            inp_dict['vertices_dict'].update(weirs_verts)
             inp_dict['xsections_df'] = inp_dict['xsections_df'].append(xsections_df)
             inp_dict['xsections_df'] = inp_dict['xsections_df'].reset_index(drop=True)
             inp_dict['weirs_df'] = weirs_df
 
         """outlets"""
         if 'outlets_raw' in raw_data_dict.keys():
-            from g_s_links import get_outlets_from_shapefile
+            from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
             inp_dict['outlets_df'] = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
+            outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
+            outlets_verts = {k: del_first_last_vt(v) for k,v in outlets_verts.items() if len(v) > 2}
+            inp_dict['vertices_dict'].update(outlets_verts)
 
            
         """
@@ -268,6 +267,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                                                  name_col='Name')
             """rain gages"""
             inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'])
+            if 'rg_pos' in inp_dict.keys():
+                pass
+            else:
+                inp_dict['rg_pos'] = [1,2]
         feedback.setProgress(70)
    
         """quality"""
