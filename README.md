@@ -7,7 +7,7 @@ A QGIS plugin which generates an SWMM input file from existing shapefiles
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
 
 ### 1 Load default the data 
-...with the first tool (**1_GenerateDefaultData**). To date shapefiles are provided for the main infrastructures:
+...with the first tool (**1_GenerateDefaultData**). Alternatively you can load existing shapefiles into QGIS (**step 5**). To date shapefiles are provided for the main infrastructures:
 - junctions (SWMM_junctions.shp)
 - conduits (SWMM_conduits.shp)
 - subcatchments (SWMM_subcatchments.shp)
@@ -36,6 +36,9 @@ If you start from scratch, a useful tool to create a network from a line layer i
 
 ### 4 Run the model
 ...dirctly in SWMM or with the help of scripts in R or python (see below). There migth be several errors in th model at first -> return to step 2.
+
+### 5 Import existing inp files (for future edits)
+You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended.
 
 ## Further useful packages
 Python:
