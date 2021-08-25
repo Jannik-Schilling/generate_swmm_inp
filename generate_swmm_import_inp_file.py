@@ -71,7 +71,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFolderDestination(
             self.SAVE_FOLDER,
-            self.tr('Folder in which the imported data will be saved')
+            self.tr('Folder in which the imported data will be saved.')
             )
         )
         
@@ -108,15 +108,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
             
-        '''TEST
-        #os.chdir('/home/jannik/swmm_projekte/python_code') # working directory
-        os.chdir('C:\\Q_GIS_Projekte\\Projekte\\Testgebiet_SWMM')
-        #readfile = /home/jannik/qgis_projekte/swmm/testinput.inp' #input file  
-        readfile = 'C:\\Q_GIS_Projekte\\Projekte\\Testgebiet_SWMM\\default\\swmm_data\\TEST_inp.inp'
-        folder_save = 'C:\\Q_GIS_Projekte\\Projekte\\Testgebiet_SWMM\\default\\eingelesen' #folder to save shapefiles and tables
-        crs_result = 'epsg:25833'
-        '''
-
         folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
         readfile = self.parameterAsString(parameters, self.INP_FILE, context)
         crs_result = self.parameterAsCrs(parameters, self.DATA_CRS, context)
@@ -663,7 +654,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
         conduits_geoms = get_line_geometry(all_conduits)
         all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
-        all_conduits.to_csv(os.path.join(folder_save,'conduits.txt'))
         all_conduits_fields = sections_def_dict['CONDUITS'].copy()
         all_conduits_fields.update(sections_def_dict['XSECTIONS'])
         all_conduits_fields.update(sections_def_dict['LOSSES'])
