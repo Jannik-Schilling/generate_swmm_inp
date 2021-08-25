@@ -386,18 +386,30 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 if col_types[col.name] =='Date': 
                     return  [datetime.strptime(x, '%d/%m/%Y').date() for x in col]
                 if col_types[col.name] =='Time':
-                    return  [datetime.strptime(x, '%H:%M:%S').time() for x in col]
+                    try:
+                        return  [datetime.strptime(x, '%H:%M:%S').time() for x in col]
+                    except:
+                        return  [datetime.strptime(x, '%H:%M').time() for x in col]
             df = df.apply(col_conversion, axis = 0)
             return df
 
         # options    
-        df_options = build_df_for_section('OPTIONS',dict_all_raw_vals)
-        dict_to_excel({'OPTIONS':df_options},'gisswmm_options.xlsx')
-        main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
+        if 'OPTIONS' in dict_all_raw_vals.keys():
+            df_options = build_df_for_section('OPTIONS',dict_all_raw_vals)
+            dict_to_excel({'OPTIONS':df_options},'gisswmm_options.xlsx')
+            main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
+        else: 
+            main_infiltration_method = 'HORTON' #assumption for main infiltration method if not in options
         
         # inflows
-        df_inflows = build_df_for_section('INFLOWS', dict_all_raw_vals)
-        df_dry_weather = build_df_for_section('DWF', dict_all_raw_vals)  
+        if 'INFLOWS' in dict_all_raw_vals.keys():
+            df_inflows = build_df_for_section('INFLOWS', dict_all_raw_vals)
+        else:
+            df_inflows = build_df_from_vals_list([], sections_def_dict['INFLOWS'])
+        if 'DWF' in dict_all_raw_vals.keys():
+            df_dry_weather = build_df_for_section('DWF', dict_all_raw_vals)
+        else:
+            df_dry_weather = build_df_from_vals_list([], sections_def_dict['DWF'])
         dict_inflows = {'Direct':df_inflows,
                         'Dry_Weather':df_dry_weather}
         dict_to_excel(dict_inflows,'gisswmm_inflows.xlsx')
@@ -421,17 +433,21 @@ class ImportInpFile (QgsProcessingAlgorithm):
                       'DAILY':['Name','Day','Factor'],
                       'MONTHLY':['Name','Month','Factor'],
                       'WEEKEND':['Name','Time','Factor']}
-        all_patterns = build_df_for_section('PATTERNS',dict_all_raw_vals)
-        occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(['HOURLY','DAILY','MONTHLY','WEEKEND']),[0,1]].set_index(0)
-        occuring_patterns_types.columns = ["PatternType"]
-        all_patterns = all_patterns.fillna(np.nan)
-        all_patterns = all_patterns.replace({'HOURLY':np.nan,'DAILY':np.nan,'MONTHLY':np.nan,'WEEKEND':np.nan})
-        def adjust_patterns_df(pattern_row):
-            pattern_adjusted = [[pattern_row[0],i] for i in pattern_row[1:] if pd.notna(i)]
-            return (pd.DataFrame(pattern_adjusted, columns = ['Name','Factor']))
-        all_patterns = pd.concat([adjust_patterns_df(all_patterns.loc[i,:]) for i in all_patterns.index])
-        all_patterns = all_patterns.join(occuring_patterns_types, on = 'Name')
-        all_patterns = {k:v.iloc[:,:-1] for k, v in all_patterns.groupby("PatternType")}
+                      
+        if 'PATTERNS' in dict_all_raw_vals.keys():
+            all_patterns = build_df_for_section('PATTERNS',dict_all_raw_vals)
+            occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(['HOURLY','DAILY','MONTHLY','WEEKEND']),[0,1]].set_index(0)
+            occuring_patterns_types.columns = ["PatternType"]
+            all_patterns = all_patterns.fillna(np.nan)
+            all_patterns = all_patterns.replace({'HOURLY':np.nan,'DAILY':np.nan,'MONTHLY':np.nan,'WEEKEND':np.nan})
+            def adjust_patterns_df(pattern_row):
+                pattern_adjusted = [[pattern_row[0],i] for i in pattern_row[1:] if pd.notna(i)]
+                return (pd.DataFrame(pattern_adjusted, columns = ['Name','Factor']))
+            all_patterns = pd.concat([adjust_patterns_df(all_patterns.loc[i,:]) for i in all_patterns.index])
+            all_patterns = all_patterns.join(occuring_patterns_types, on = 'Name')
+            all_patterns = {k:v.iloc[:,:-1] for k, v in all_patterns.groupby("PatternType")}
+        else:
+            all_patterns = dict()
         def add_pattern_timesteps(pattern_type):
             count_patterns = int(len(all_patterns[pattern_type])/len(pattern_times[pattern_type]))
             new_col = pattern_times[pattern_type]*count_patterns
@@ -464,22 +480,32 @@ class ImportInpFile (QgsProcessingAlgorithm):
                            'Shape':['Name','Depth', 'Width'],
                            'Weir': ['Name','Head','Coefficient']
                            }
-        curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in curve_cols_dict.keys()}
-        all_curves = [del_kw_from_list(l, list(curve_cols_dict.keys()), 1) for l in dict_all_raw_vals['CURVES'].copy()]
-        all_curves = build_df_from_vals_list(all_curves, sections_def_dict['CURVES'])
-        all_curves['CurveType'] = [curve_type_dict[i] for i in all_curves['Name']]
-        all_curves['XVal'] = [float(x) for x in all_curves['XVal']]
-        all_curves['YVal'] = [float(x) for x in all_curves['YVal']]
-        all_curves = {k:v[['Name','XVal','YVal']] for k, v in all_curves.groupby('CurveType')}
-        for curve_type in all_curves.keys():
-            all_curves[curve_type].columns = curve_cols_dict[curve_type]
+        if 'PATTERNS' in dict_all_raw_vals.keys():
+            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in curve_cols_dict.keys()}
+            all_curves = [del_kw_from_list(l, list(curve_cols_dict.keys()), 1) for l in dict_all_raw_vals['CURVES'].copy()]
+            all_curves = build_df_from_vals_list(all_curves, sections_def_dict['CURVES'])
+            all_curves['CurveType'] = [curve_type_dict[i] for i in all_curves['Name']]
+            all_curves['XVal'] = [float(x) for x in all_curves['XVal']]
+            all_curves['YVal'] = [float(x) for x in all_curves['YVal']]
+            all_curves = {k:v[['Name','XVal','YVal']] for k, v in all_curves.groupby('CurveType')}
+        else:
+            all_curves = dict()
+        for curve_type in curve_cols_dict.keys():
+            if curve_type in all_curves.keys():
+                all_curves[curve_type].columns = curve_cols_dict[curve_type]
+            else:
+                all_curves[curve_type] = build_df_from_vals_list([], curve_cols_dict[curve_type])
             all_curves[curve_type]['Notes']=np.nan
         dict_to_excel(all_curves,'gisswmm_curves.xlsx')
 
 
         # quality
         quality_cols_dict = {k:sections_def_dict[k] for k in ['POLLUTANTS','LANDUSES','COVERAGES','LOADINGS','BUILDUP','WASHOFF']}
-        all_quality = {k:build_df_for_section(k,dict_all_raw_vals) for k in quality_cols_dict.keys()}
+        if 'POLLUTANTS' in dict_all_raw_vals.keys():
+            all_quality = {k:build_df_for_section(k,dict_all_raw_vals) for k in quality_cols_dict.keys()}
+        else:
+            all_quality = {k:build_df_from_vals_list([],list(sections_def_dict[k].keys())) for k in quality_cols_dict.keys()}
+            #test!!!!
         all_quality = {k:adjust_column_types(v,sections_def_dict[k]) for k,v in all_quality.items()}
         landuses = all_quality['BUILDUP'].copy().join(all_quality['LANDUSES'].copy().set_index('Name'), on = 'Name')
         col_names = all_quality['LANDUSES'].columns.tolist()
@@ -504,11 +530,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         'Value':'Double', 
                         'Format':'String',
                         'Description':'String'}  
-        all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
-        all_time_series = build_df_from_vals_list(all_time_series,sections_def_dict['TIMESERIES'])
-        all_time_series.insert(1,'Type',np.nan)
-        all_time_series['Format'] = np.nan
-        all_time_series['Description'] = np.nan
+        if 'RAINGAGES' in dict_all_raw_vals.keys():
+            all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
+            all_time_series = build_df_from_vals_list(all_time_series,sections_def_dict['TIMESERIES'])
+            all_time_series.insert(1,'Type',np.nan)
+            all_time_series['Format'] = np.nan
+            all_time_series['Description'] = np.nan
+        else:
+            all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
         if 'RAINGAGES' in dict_all_raw_vals.keys():
             rain_gage = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],sections_def_dict['RAINGAGES'])
             rain_gage = rain_gage.rename(columns={0:'Description',1:'Format',2:'Interval',3:'SCF', 4:'Source'})
@@ -596,26 +625,28 @@ class ImportInpFile (QgsProcessingAlgorithm):
         add_layer_on_completion(folder_save, 'SWMM_junctions', 'style_junctions.qml')
             
         #storages
-        all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
-        all_storages = all_storages.join(all_geoms, on = 'Name')
-        all_storages = all_storages.applymap(replace_nan_null)
-        storages_layer = create_layer_from_table(all_storages,'STORAGE','Point','SWMM_storages')
-        add_layer_on_completion(folder_save, 'SWMM_storages', 'style_storages.qml')
+        if 'STORAGE' in dict_all_raw_vals.keys():
+            all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
+            all_storages = all_storages.join(all_geoms, on = 'Name')
+            all_storages = all_storages.applymap(replace_nan_null)
+            storages_layer = create_layer_from_table(all_storages,'STORAGE','Point','SWMM_storages')
+            add_layer_on_completion(folder_save, 'SWMM_storages', 'style_storages.qml')
         
         #outfalls
-        dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',3) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-        all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
-        all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
-        all_outfalls = all_outfalls.applymap(replace_nan_null)
-        outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point','SWMM_outfalls')
-        add_layer_on_completion(folder_save, 'SWMM_outfalls', 'style_outfalls.qml')
+        if 'OUTFALLS' in dict_all_raw_vals.keys():
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',3) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
+            all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
+            all_outfalls = all_outfalls.applymap(replace_nan_null)
+            outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point','SWMM_outfalls')
+            add_layer_on_completion(folder_save, 'SWMM_outfalls', 'style_outfalls.qml')
 
 
         ##LINES
-        '''
-        Section = 'PUMPS'
-        '''
-        all_vertices = build_df_for_section('VERTICES',dict_all_raw_vals)
+        if 'VERTICES' in dict_all_raw_vals.keys():
+            all_vertices = build_df_for_section('VERTICES',dict_all_raw_vals)
+        else:
+            all_vertices = build_df_from_vals_list([],list(sections_def_dict['VERTICES']))
         def get_line_geometry(section_df):
             def get_line_from_points(line_name):
             # From vertices section
@@ -674,63 +705,68 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 return outl_list_i[:5]+[np.nan,np.nan]+[flap_gate, curve_name]
             else:
                 return outl_list_i+[np.nan]
-        dict_all_raw_vals['OUTLETS'] = [adjust_outlets_list(i) for i in dict_all_raw_vals['OUTLETS']]
-        all_outlets = build_df_for_section('OUTLETS', dict_all_raw_vals)
-        all_outlets = all_outlets.applymap(replace_nan_null)
-        outlets_geoms = get_line_geometry(all_outlets)
-        all_outlets = all_outlets.join(outlets_geoms, on = 'Name')
-        outlets_layer = create_layer_from_table(all_outlets,'OUTLETS','LineString','SWMM_outlets')
-        add_layer_on_completion(folder_save, 'SWMM_outlets', 'style_regulators.qml')
+        if 'OUTLETS' in dict_all_raw_vals.keys():
+            dict_all_raw_vals['OUTLETS'] = [adjust_outlets_list(i) for i in dict_all_raw_vals['OUTLETS']]
+            all_outlets = build_df_for_section('OUTLETS', dict_all_raw_vals)
+            all_outlets = all_outlets.applymap(replace_nan_null)
+            outlets_geoms = get_line_geometry(all_outlets)
+            all_outlets = all_outlets.join(outlets_geoms, on = 'Name')
+            outlets_layer = create_layer_from_table(all_outlets,'OUTLETS','LineString','SWMM_outlets')
+            add_layer_on_completion(folder_save, 'SWMM_outlets', 'style_regulators.qml')
 
         #pumps
-        all_pumps = build_df_for_section('PUMPS', dict_all_raw_vals)
-        all_pumps = all_pumps.applymap(replace_nan_null)
-        pumps_geoms = get_line_geometry(all_pumps)
-        all_pumps = all_pumps.join(pumps_geoms, on = 'Name')
-        pumps_layer = create_layer_from_table(all_pumps,'PUMPS','LineString','SWMM_pumps')
-        add_layer_on_completion(folder_save, 'SWMM_pumps','style_pumps.qml')
+        if 'PUMPS' in dict_all_raw_vals.keys():
+            all_pumps = build_df_for_section('PUMPS', dict_all_raw_vals)
+            all_pumps = all_pumps.applymap(replace_nan_null)
+            pumps_geoms = get_line_geometry(all_pumps)
+            all_pumps = all_pumps.join(pumps_geoms, on = 'Name')
+            pumps_layer = create_layer_from_table(all_pumps,'PUMPS','LineString','SWMM_pumps')
+            add_layer_on_completion(folder_save, 'SWMM_pumps','style_pumps.qml')
 
         #weirs
-        all_weirs= build_df_for_section('WEIRS', dict_all_raw_vals)
-        all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
-        all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert'])
-        all_weirs = all_weirs.rename(columns = {'Geom1':'Height','Geom2':'Length', 'Geom3':'SideSlope'})
-        all_weirs = all_weirs.applymap(replace_nan_null) 
-        weirs_geoms = get_line_geometry(all_weirs)
-        all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
-        all_weirs_fields = sections_def_dict['WEIRS'].copy()
-        all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
-        weirs_layer = create_layer_from_table(all_weirs,'WEIRS','LineString','SWMM_weirs',all_weirs_fields)
-        add_layer_on_completion(folder_save, 'SWMM_weirs', 'style_regulators.qml')
+        if 'WEIRS' in dict_all_raw_vals.keys():
+            all_weirs= build_df_for_section('WEIRS', dict_all_raw_vals)
+            all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
+            all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert'])
+            all_weirs = all_weirs.rename(columns = {'Geom1':'Height','Geom2':'Length', 'Geom3':'SideSlope'})
+            all_weirs = all_weirs.applymap(replace_nan_null) 
+            weirs_geoms = get_line_geometry(all_weirs)
+            all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
+            all_weirs_fields = sections_def_dict['WEIRS'].copy()
+            all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
+            weirs_layer = create_layer_from_table(all_weirs,'WEIRS','LineString','SWMM_weirs',all_weirs_fields)
+            add_layer_on_completion(folder_save, 'SWMM_weirs', 'style_regulators.qml')
 
         ## POLYGONS 
-        all_polygons = build_df_for_section('Polygons',dict_all_raw_vals)
-        all_polygons = all_polygons.applymap(replace_nan_null)
-        def get_polygon_from_verts(polyg_name):
-                verts = all_polygons.copy()[all_polygons['Name']==polyg_name]
-                verts = verts.reset_index(drop=True)
-                verts_points = [get_point_from_x_y(verts.loc[i,:])[1] for i in verts.index]
-                verts_points = [x.asPoint() for x in verts_points]
-                polyg_geom = QgsGeometry.fromPolygonXY([verts_points])
-                return [polyg_name, polyg_geom]
+        if 'Polygons' in dict_all_raw_vals.keys():
+            all_polygons = build_df_for_section('Polygons',dict_all_raw_vals)
+            all_polygons = all_polygons.applymap(replace_nan_null)
+            def get_polygon_from_verts(polyg_name):
+                    verts = all_polygons.copy()[all_polygons['Name']==polyg_name]
+                    verts = verts.reset_index(drop=True)
+                    verts_points = [get_point_from_x_y(verts.loc[i,:])[1] for i in verts.index]
+                    verts_points = [x.asPoint() for x in verts_points]
+                    polyg_geom = QgsGeometry.fromPolygonXY([verts_points])
+                    return [polyg_name, polyg_geom]
 
         #subcatchments        
-        from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
-        all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
-        all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
-        all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()]
-        all_infiltr = build_df_from_vals_list(all_infiltr, list(sections_def_dict['INFILTRATION'].keys()))
-        all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
-                                                                                    all_subareas, 
-                                                                                    all_infiltr, 
-                                                                                    main_infiltration_method)
-        polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
-        polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
-        all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
-        all_subcatchments = all_subcatchments.applymap(replace_nan_null)
-        all_subcatchments_fields = sections_def_dict['SUBCATCHMENTS']
-        all_subcatchments_fields.update(sections_def_dict['SUBAREAS'])
-        all_subcatchments_fields.update(infiltr_dtypes)
-        subcatchments_layer = create_layer_from_table(all_subcatchments,'SUBCATCHMENTS','Polygon','SWMM_subcatchments', all_subcatchments_fields)
-        add_layer_on_completion(folder_save, 'SWMM_subcatchments', 'style_catchments.qml')
+        if 'SUBCATCHMENTS' in dict_all_raw_vals.keys():
+            from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
+            all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
+            all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
+            all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()]
+            all_infiltr = build_df_from_vals_list(all_infiltr, list(sections_def_dict['INFILTRATION'].keys()))
+            all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
+                                                                                        all_subareas, 
+                                                                                        all_infiltr, 
+                                                                                        main_infiltration_method)
+            polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
+            polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
+            all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
+            all_subcatchments = all_subcatchments.applymap(replace_nan_null)
+            all_subcatchments_fields = sections_def_dict['SUBCATCHMENTS']
+            all_subcatchments_fields.update(sections_def_dict['SUBAREAS'])
+            all_subcatchments_fields.update(infiltr_dtypes)
+            subcatchments_layer = create_layer_from_table(all_subcatchments,'SUBCATCHMENTS','Polygon','SWMM_subcatchments', all_subcatchments_fields)
+            add_layer_on_completion(folder_save, 'SWMM_subcatchments', 'style_catchments.qml')
         return {}
