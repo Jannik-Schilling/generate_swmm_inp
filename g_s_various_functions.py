@@ -30,7 +30,6 @@ def get_coords_from_geometry(df):
         return df['X_Coord'],df['Y_Coord']
     if all(QgsWkbTypes.displayString(g_type.wkbType()) in ['LineString', 'MultiLineString'] for g_type in df.geometry):
         return {na:extract_xy_from_line(geom) for geom,na in zip(df.geometry,df.Name)}
-    
     if all(QgsWkbTypes.displayString(g_type.wkbType()) in ['Polygon', 'MultiPolygon'] for g_type in df.geometry):
         def extract_xy_from_area(geom_row):
             '''extraxts xy from MultiPolygon or Polygon'''

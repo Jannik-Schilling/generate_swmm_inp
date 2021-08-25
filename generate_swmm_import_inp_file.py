@@ -158,7 +158,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                          'Param2':'Double',
                          'Param3':'Double',
                          'Param4':'Double',
-                         'Param5':'String'},# ['Name','kind', 'SuctHead', 'Conductiv', 'InitDef','LidContr'],
+                         'Param5':'String',
+                         'kind':'String'},
          'JUNCTIONS':{'Name':'String',
                       'Elevation':'Double',
                       'MaxDepth':'Double', 
@@ -320,7 +321,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             section_text = [x.strip() for x in section_text if not x.startswith(';')] #delete comments and "headers"
             section_vals = [x.split() for x in section_text]
             return section_vals
-            
+
         dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k]) for k in dict_search.keys()}
 
         def build_df_from_vals_list(section_vals, col_names):
@@ -351,16 +352,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
             return df
 
 
-        def adjust_line_length(ts_line, pos, line_length):
-            '''adds np.nan at pos in line lengt is not line length'''
-            line_length_not = line_length-1
-            if len(ts_line) == line_length_not:
-                ts_line.insert(pos, np.nan)
+        def adjust_line_length(ts_line, pos, line_length , insert_val=np.nan):
+            '''adds insert_val at pos in line lengt is not line length'''
+            if len(ts_line) < line_length:
+                ts_line[pos:pos] = insert_val
                 return ts_line
             elif len(ts_line) == line_length:
                 return ts_line
-            else:
-                return ['error']
             
         def del_kw_from_list(data_list, kw, pos):
             '''deletes elem from list at pos if elem in kw or elem==kw'''
@@ -404,7 +402,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # options    
         df_options = build_df_for_section('OPTIONS',dict_all_raw_vals)
         dict_to_excel({'OPTIONS':df_options},'gisswmm_options.xlsx')
-
+        main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
+        
         # inflows
         df_inflows = build_df_for_section('INFLOWS', dict_all_raw_vals)
         df_dry_weather = build_df_for_section('DWF', dict_all_raw_vals)  
@@ -515,7 +514,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         'Format':'String',
                         'Description':'String'}  
         all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
-        all_time_series = build_df_from_vals_list(dict_all_raw_vals['TIMESERIES'],sections_def_dict['TIMESERIES'])
+        all_time_series = build_df_from_vals_list(all_time_series,sections_def_dict['TIMESERIES'])
         all_time_series.insert(1,'Type',np.nan)
         all_time_series['Format'] = np.nan
         all_time_series['Description'] = np.nan
@@ -704,11 +703,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
         #weirs
         all_weirs= build_df_for_section('WEIRS', dict_all_raw_vals)
         all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
+        all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert'])
+        all_weirs = all_weirs.rename(columns = {'Geom1':'Height','Geom2':'Length', 'Geom3':'SideSlope'})
         all_weirs = all_weirs.applymap(replace_nan_null) 
         weirs_geoms = get_line_geometry(all_weirs)
         all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
         all_weirs_fields = sections_def_dict['WEIRS'].copy()
-        all_weirs_fields.update(sections_def_dict['XSECTIONS'])
+        all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
         weirs_layer = create_layer_from_table(all_weirs,'WEIRS','LineString','SWMM_weirs',all_weirs_fields)
         add_layer_on_completion(folder_save, 'SWMM_weirs', 'style_regulators.qml')
 
@@ -724,12 +725,22 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 return [polyg_name, polyg_geom]
 
         #subcatchments        
+        from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
         all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
+        all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
+        all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()]
+        all_infiltr = build_df_from_vals_list(all_infiltr, list(sections_def_dict['INFILTRATION'].keys()))
+        all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
+                                                                                    all_subareas, 
+                                                                                    all_infiltr, 
+                                                                                    main_infiltration_method)
         polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
         polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
         all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
-        subcatchments_layer = create_layer_from_table(all_subcatchments,'SUBCATCHMENTS','Polygon','SWMM_subcatchments')
+        all_subcatchments = all_subcatchments.applymap(replace_nan_null)
+        all_subcatchments_fields = sections_def_dict['SUBCATCHMENTS']
+        all_subcatchments_fields.update(sections_def_dict['SUBAREAS'])
+        all_subcatchments_fields.update(infiltr_dtypes)
+        subcatchments_layer = create_layer_from_table(all_subcatchments,'SUBCATCHMENTS','Polygon','SWMM_subcatchments', all_subcatchments_fields)
         add_layer_on_completion(folder_save, 'SWMM_subcatchments', 'style_catchments.qml')
-        
-        
         return {}
