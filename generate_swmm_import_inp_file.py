@@ -225,7 +225,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                   'CurveName':'String'},
          'XSECTIONS':{'Name':'String',
                       'Shape':'String',
-                      'Geom1':'Double',
+                      'Geom1':'String',
                       'Geom2':'Double',
                       'Geom3':'Double',
                       'Geom4':'Double',
