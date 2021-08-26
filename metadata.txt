@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description=This plugin generates SWMM Input files
-version=0.8
+version=0.9
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,7 +20,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=0.8 2021-08-25
+changelog=0.9 2021-09-01
+	- import of inp checks if section in inp
+	0.8 2021-08-25
 	- new tool: import inp
 	- improved vertices function
 	- position of raingage relative to subcatchments
