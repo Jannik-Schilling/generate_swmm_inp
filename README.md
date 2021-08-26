@@ -3,7 +3,7 @@ A QGIS plugin which generates an SWMM input file from existing shapefiles
 
 ## Recommended Workflow
 ### 0 Install 
-- [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation [see Links below](#further-useful-packages)
+- [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
 
 ### 1 Load default the data 
