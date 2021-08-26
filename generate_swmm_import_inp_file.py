@@ -681,7 +681,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_xsections = all_xsections.applymap(replace_nan_null)
             
             #losses
-            if 'LOSSES' in dict_all_raw_vals.keys()
+            if 'LOSSES' in dict_all_raw_vals.keys():
                 all_losses = build_df_for_section('LOSSES', dict_all_raw_vals)
                 all_losses = all_losses.applymap(replace_nan_null)
             else: 
