@@ -126,7 +126,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
          'OPTIONS':['Option', 'Value'],
          'REPORT':None,
          'FILES': None,
-         'RAINGAGES':['Description','Format','Interval','SCF', 'Source','SourceName'],
+         'RAINGAGES':['Description','Format','Interval','SCF', 'Source','SourceName', 'StationID','Units'],
          'EVAPORATION':None,
          'TEMPERATURE':None,
          'ADJUSTMENTS':None,
@@ -369,10 +369,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         def del_kw_from_list(data_list, kw, pos):
             '''deletes elem from list at pos if elem in kw or elem==kw'''
             if type(kw) == list:
-                if data_list[pos] in kw:
-                    data_list.pop(pos)
+                kw_upper = [k.upper() for k in kw]
+                kw_list = kw + kw_upper
             else:
-                if data_list[pos] == kw:
+                kw_list = [kw, kw.upper()]
+            if data_list[pos] in kw_list:
                     data_list.pop(pos)
             return data_list
                 
@@ -399,7 +400,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 if col_types[col.name] =='Bool': 
                     return [bool(x) for x in col]
                 if col_types[col.name] =='Date': 
-                    return  [datetime.strptime(x, '%d/%m/%Y').date() for x in col]
+                    return  [datetime.strptime(x, '%m/%d/%Y').date() for x in col]
                 if col_types[col.name] =='Time':
                     try:
                         return  [datetime.strptime(x, '%H:%M:%S').time() for x in col]
@@ -487,7 +488,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                            'Pump2': ['Name','Depth','Flow'],
                            'Pump3': ['Name','Head','Flow'],
                            'Pump4': ['Name','Depth','Flow'],
-                           'STORAGE': ['Name','Depth','Area'],
+                           'Storage': ['Name','Depth','Area'],
                            'Rating': ['Name','Head/Depth','Outflow'],
                            'Tidal':['Name','Hour_of_Day','Stage'],
                            'Control':['Name','Value','Setting'],

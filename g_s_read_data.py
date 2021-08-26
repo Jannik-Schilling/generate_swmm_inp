@@ -94,7 +94,12 @@ def read_data_from_table(data_dir,
     '''reads curves or other tables from excel or csv'''
     filename, file_extension = os.path.splitext(file)
     if file_extension == '.xlsx':
-        data_df = pd.read_excel(os.path.join(data_dir,file),sheet_name = sheet)
+        if sheet in pd.ExcelFile(os.path.join(data_dir,file)).sheet_names:
+            data_df = pd.read_excel(os.path.join(data_dir,file),sheet_name = sheet)
+        elif sheet.upper() in pd.ExcelFile(os.path.join(data_dir,file)).sheet_names:
+            data_df = pd.read_excel(os.path.join(data_dir,file),sheet_name = sheet.upper())
+        else:
+            data_df = pd.DataFrame()
     if file_extension == '.csv':
         data_df = pd.read_csv(os.path.join(data_dir,file))
     return data_df

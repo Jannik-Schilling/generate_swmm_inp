@@ -123,10 +123,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         from .g_s_read_data import read_data_from_table
         raw_data_dict['options_df'] = read_data_from_table(swmm_data_dir,file_options)
         raw_data_dict['curves'] = {}
-        for curve_type in ['STORAGE','Pump1','Pump2','Pump3','Pump4','Rating','Weir']:
-            raw_data_dict['curves'][curve_type] = read_data_from_table(swmm_data_dir,
-                         file_curves,
-                         sheet = curve_type)
+        for curve_type in ['Control','Pump1','Pump2','Pump3','Pump4','Storage','Rating','Weir','Tidal','Diversion','Shape']:
+            curve_df = read_data_from_table(swmm_data_dir,
+                                            file_curves,
+                                            sheet = curve_type)
+            if len(curve_df)>0:
+                raw_data_dict['curves'][curve_type] = curve_df
         raw_data_dict['patterns'] = {}
         for pattern_type in ['HOURLY','DAILY','MONTHLY','WEEKEND']:
             raw_data_dict['patterns'][pattern_type] = read_data_from_table(swmm_data_dir,
