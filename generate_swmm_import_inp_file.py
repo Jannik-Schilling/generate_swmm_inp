@@ -107,7 +107,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         return ImportInpFile()
 
     def processAlgorithm(self, parameters, context, feedback):
-            
         folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
         readfile = self.parameterAsString(parameters, self.INP_FILE, context)
         crs_result = self.parameterAsCrs(parameters, self.DATA_CRS, context)
@@ -126,7 +125,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         sections_def_dict={'TITLE':None,
          'OPTIONS':['Option', 'Value'],
          'EVAPORATION':None,
-         'RAINGAGES':None,
+         'RAINGAGES':['Description','Format','Interval','SCF', 'Source','SourceName'],
          'SUBCATCHMENTS': {'Name':'String',
                            'RainGage':'String', 
                            'Outlet':'String',
@@ -350,7 +349,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 return ts_line
             elif len(ts_line) == line_length:
                 return ts_line
-            
+
         def del_kw_from_list(data_list, kw, pos):
             '''deletes elem from list at pos if elem in kw or elem==kw'''
             if type(kw) == list:
@@ -501,12 +500,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # quality
         quality_cols_dict = {k:sections_def_dict[k] for k in ['POLLUTANTS','LANDUSES','COVERAGES','LOADINGS','BUILDUP','WASHOFF']}
-        if 'POLLUTANTS' in dict_all_raw_vals.keys():
-            all_quality = {k:build_df_for_section(k,dict_all_raw_vals) for k in quality_cols_dict.keys()}
-        else:
-            all_quality = {k:build_df_from_vals_list([],list(sections_def_dict[k].keys())) for k in quality_cols_dict.keys()}
-            #test!!!!
+        all_quality = {k:build_df_for_section(k,dict_all_raw_vals) for k in quality_cols_dict.keys() if k in dict_all_raw_vals.keys()}
+        missing_quality_data = {k:build_df_from_vals_list([],list(sections_def_dict[k].keys())) for k in quality_cols_dict.keys() if k not in dict_all_raw_vals.keys()}
+        all_quality.update(missing_quality_data)
         all_quality = {k:adjust_column_types(v,sections_def_dict[k]) for k,v in all_quality.items()}
+        if len(all_quality['BUILDUP']) == 0: #fill with np.nan in order to facilitate join below
+            if len(all_quality['LANDUSES']) > 0:
+                landuse_names = all_quality['LANDUSES']['Name']
+                landuse_count = len(landuse_names)
+                all_quality['BUILDUP'].loc[0:landuse_count,:] = np.nan 
+                all_quality['BUILDUP']['Name'] = landuse_names
         landuses = all_quality['BUILDUP'].copy().join(all_quality['LANDUSES'].copy().set_index('Name'), on = 'Name')
         col_names = all_quality['LANDUSES'].columns.tolist()
         col_names.extend(all_quality['BUILDUP'].columns.tolist()[1:])
@@ -530,7 +533,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         'Value':'Double', 
                         'Format':'String',
                         'Description':'String'}  
-        if 'RAINGAGES' in dict_all_raw_vals.keys():
+        if 'TIMESERIES' in dict_all_raw_vals.keys():
             all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
             all_time_series = build_df_from_vals_list(all_time_series,sections_def_dict['TIMESERIES'])
             all_time_series.insert(1,'Type',np.nan)
@@ -540,12 +543,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
         if 'RAINGAGES' in dict_all_raw_vals.keys():
             rain_gage = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],sections_def_dict['RAINGAGES'])
-            rain_gage = rain_gage.rename(columns={0:'Description',1:'Format',2:'Interval',3:'SCF', 4:'Source'})
             for i in rain_gage.index:
                 if rain_gage.loc[i,'Source'] == 'TIMESERIES':
-                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,5],'Type'] = 'rain_gage'
-                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,5],'Format'] = rain_gage.loc[i,'Format']
-                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,5],'Description'] = rain_gage.loc[i,'Description']
+                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Type'] = 'rain_gage'
+                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Format'] = rain_gage.loc[i,'Format']
+                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Description'] = rain_gage.loc[i,'Description']
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_to_excel({'Table1':all_time_series},'gisswmm_timeseries.xlsx')
             
@@ -618,11 +620,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
         all_geoms = pd.DataFrame(all_geoms, columns = ['Name', 'geometry']).set_index('Name')
 
         #junctions
-        all_junctions = build_df_for_section('JUNCTIONS',dict_all_raw_vals)
-        all_junctions = all_junctions.join(all_geoms, on = 'Name')
-        all_junctions = all_junctions.applymap(replace_nan_null)
-        junctions_layer = create_layer_from_table(all_junctions,'JUNCTIONS','Point','SWMM_junctions')
-        add_layer_on_completion(folder_save, 'SWMM_junctions', 'style_junctions.qml')
+        if 'JUNCTIONS' in dict_all_raw_vals.keys():
+            all_junctions = build_df_for_section('JUNCTIONS',dict_all_raw_vals)
+            all_junctions = all_junctions.join(all_geoms, on = 'Name')
+            all_junctions = all_junctions.applymap(replace_nan_null)
+            junctions_layer = create_layer_from_table(all_junctions,'JUNCTIONS','Point','SWMM_junctions')
+            add_layer_on_completion(folder_save, 'SWMM_junctions', 'style_junctions.qml')
             
         #storages
         if 'STORAGE' in dict_all_raw_vals.keys():
@@ -643,7 +646,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
 
         ##LINES
-        if 'VERTICES' in dict_all_raw_vals.keys():
+        if 'VERTICES' in dict_all_raw_vals.keys(): # vertices section seems to be always available
             all_vertices = build_df_for_section('VERTICES',dict_all_raw_vals)
         else:
             all_vertices = build_df_from_vals_list([],list(sections_def_dict['VERTICES']))
@@ -671,30 +674,35 @@ class ImportInpFile (QgsProcessingAlgorithm):
             lines_created = pd.DataFrame(lines_created, columns = ['Name', 'geometry']).set_index('Name')
             return lines_created 
             
-        #cross sections
-        all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
-        all_xsections = all_xsections.applymap(replace_nan_null)
-
-        #losses
-        all_losses = build_df_for_section('LOSSES', dict_all_raw_vals)
-        all_losses = all_losses.applymap(replace_nan_null)
-        
         #conduits
-        all_conduits = build_df_for_section('CONDUITS', dict_all_raw_vals)
-        all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
-        all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
-        conduits_geoms = get_line_geometry(all_conduits)
-        all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
-        all_conduits_fields = sections_def_dict['CONDUITS'].copy()
-        all_conduits_fields.update(sections_def_dict['XSECTIONS'])
-        all_conduits_fields.update(sections_def_dict['LOSSES'])
-        all_conduits = all_conduits.applymap(replace_nan_null)
-        conduits_layer = create_layer_from_table(all_conduits,
-                                                 'CONDUITS',
-                                                 'LineString',
-                                                 'SWMM_conduits',
-                                                 layer_fields = all_conduits_fields)
-        add_layer_on_completion(folder_save, 'SWMM_conduits', 'style_conduits.qml')
+        if 'CONDUITS' in dict_all_raw_vals.keys():
+            #cross sections
+            all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
+            all_xsections = all_xsections.applymap(replace_nan_null)
+            
+            #losses
+            if 'LOSSES' in dict_all_raw_vals.keys()
+                all_losses = build_df_for_section('LOSSES', dict_all_raw_vals)
+                all_losses = all_losses.applymap(replace_nan_null)
+            else: 
+                all_losses = build_df_from_vals_list([],list(sections_def_dict['LOSSES'].keys()))
+            
+            all_conduits = build_df_for_section('CONDUITS', dict_all_raw_vals)
+            all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
+            all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
+            all_conduits['FlapGate'] = all_conduits['FlapGate'].fillna('NO')
+            conduits_geoms = get_line_geometry(all_conduits)
+            all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
+            all_conduits_fields = sections_def_dict['CONDUITS'].copy()
+            all_conduits_fields.update(sections_def_dict['XSECTIONS'])
+            all_conduits_fields.update(sections_def_dict['LOSSES'])
+            all_conduits = all_conduits.applymap(replace_nan_null)
+            conduits_layer = create_layer_from_table(all_conduits,
+                                                     'CONDUITS',
+                                                     'LineString',
+                                                     'SWMM_conduits',
+                                                     layer_fields = all_conduits_fields)
+            add_layer_on_completion(folder_save, 'SWMM_conduits', 'style_conduits.qml')
 
         #outlets
         def adjust_outlets_list(outl_list_i):
@@ -746,7 +754,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     verts = verts.reset_index(drop=True)
                     verts_points = [get_point_from_x_y(verts.loc[i,:])[1] for i in verts.index]
                     verts_points = [x.asPoint() for x in verts_points]
-                    polyg_geom = QgsGeometry.fromPolygonXY([verts_points])
+                    if len (verts_points) < 3: #only 1 or 2 vertices
+                        polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5) #set geometry to buffer around first vertice
+                    else:
+                        polyg_geom = QgsGeometry.fromPolygonXY([verts_points])
                     return [polyg_name, polyg_geom]
 
         #subcatchments        
