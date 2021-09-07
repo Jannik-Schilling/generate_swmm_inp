@@ -5,7 +5,6 @@ Created on Mon May 17 14:45:10 2021
 @author: schilling
 """
 import numpy as np
-import datetime
 import pandas as pd
 from qgis.core import QgsWkbTypes
 
@@ -70,26 +69,28 @@ def check_columns(x_df, col_df):
 ## functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
     """generates curve data for the input file from tables (curve_raw)"""
-    curve_types = ['STORAGE','Pump1','Pump2','Pump3','Pump4','Rating','Weir']
+    from .g_s_defaults import def_curve_types
     curve_dict = dict()
-    for curve_type in curve_types:
-        curve_df = curves_raw[curve_type]
-        if len(curve_df.columns) > 3:
-            curve_df = curve_df[curve_df.columns[:3]]
-        curve_df = curve_df[curve_df[name_col] != ";"]
-        curve_df = curve_df[pd.notna(curve_df[name_col])]
-        if curve_df.empty:
-            pass
-        else:
-            curve_df.set_index(keys=[name_col], inplace=True)
-            for i in curve_df.index.unique():
-                curve = curve_df[curve_df.index == i]
-                curve = curve.reset_index(drop=True)
-                curve_dict[i] = {'Name':i, 'Type':curve_type,'frame':curve}
+    for curve_type in def_curve_types:
+        if curve_type in curves_raw.keys():
+            curve_df = curves_raw[curve_type]
+            if len(curve_df.columns) > 3:
+                curve_df = curve_df[curve_df.columns[:3]]
+            curve_df = curve_df[curve_df[name_col] != ";"]
+            curve_df = curve_df[pd.notna(curve_df[name_col])]
+            if curve_df.empty:
+                pass
+            else:
+                curve_df.set_index(keys=[name_col], inplace=True)
+                for i in curve_df.index.unique():
+                    curve = curve_df[curve_df.index == i]
+                    curve = curve.reset_index(drop=True)
+                    curve_dict[i] = {'Name':i, 'Type':curve_type,'frame':curve}
     return(curve_dict)
     
 
 def get_patterns_from_table(patterns_raw, name_col):
+    """generates a pattern dict for the input file from tables (patterns_raw)"""
     pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
     pattern_dict = {}
     for pattern_type in pattern_types:
@@ -109,6 +110,7 @@ def get_patterns_from_table(patterns_raw, name_col):
     
     
 def get_timeseries_from_table(ts_raw, name_col):
+    """generates a timeseries dict for the input file from tables (ts_raw)"""
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
     if ts_raw.empty:
@@ -117,7 +119,12 @@ def get_timeseries_from_table(ts_raw, name_col):
         for i in ts_raw[name_col].unique():
             ts_df = ts_raw[ts_raw[name_col] == i]
             ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
-            ts_df['Time']= [t.strftime('%H:%M:%S') for t in ts_df['Time']]
+            try:
+                ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
+            except:
+                #temp_time = [datetime.strptime(t,'%H:%M:%S') for t in ts_df['Time']]
+                #ts_df['Time']= [t.strftime('%H:%M:%S') for t in temp_time]
+                ts_df['Time'] = [str(t) for t in ts_df['Time']]
             ts_description= ts_df['Description'].fillna('').unique()[0]
             ts_format= ts_df['Format'].fillna('').unique()[0]
             ts_type = ts_df['Type'].unique()[0]
@@ -131,6 +138,7 @@ def get_timeseries_from_table(ts_raw, name_col):
     
 
 def get_raingages_from_timeseries(ts_dict):
+    """generates a raingages dict for the input file from timeseries dict"""
     from datetime import datetime
     rg_dict= {}
     rg_list = [k for k in ts_dict.keys() if (ts_dict[k]['Type'] == 'rain_gage')]
@@ -209,31 +217,52 @@ def get_options_from_table(options_df):
     Args:
         options_df
     '''
+    from datetime import datetime, time
     options_dict = {k:v for k,v in zip(options_df['Option'],options_df['Value'])}
-    if type(options_dict['START_DATE']) is datetime.datetime:
+    if type(options_dict['START_DATE']) is datetime:
         options_dict['START_DATE'] = options_dict['START_DATE'].strftime('%m/%d/%Y')
-    if type(options_dict['REPORT_START_DATE']) is datetime.datetime:
+    if type(options_dict['REPORT_START_DATE']) is datetime:
         options_dict['REPORT_START_DATE'] = options_dict['REPORT_START_DATE'].strftime('%m/%d/%Y')
-    if type(options_dict['END_DATE']) is datetime.datetime:
+    if type(options_dict['END_DATE']) is datetime:
         options_dict['END_DATE'] = options_dict['END_DATE'].strftime('%m/%d/%Y')
-    if type(options_dict['SWEEP_START']) is datetime.datetime:
+    if type(options_dict['SWEEP_START']) is datetime:
         options_dict['SWEEP_START'] = options_dict['SWEEP_START'].strftime('%m/%d')
-    if type(options_dict['SWEEP_END']) is datetime.datetime:
+    if type(options_dict['SWEEP_END']) is datetime:
         options_dict['SWEEP_END'] = options_dict['SWEEP_END'].strftime('%m/%d')
-    if type(options_dict['START_TIME']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['START_TIME']) in [datetime, time]:
         options_dict['START_TIME'] = options_dict['START_TIME'].strftime('%H:%M:%S')
-    if type(options_dict['REPORT_START_TIME']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['REPORT_START_TIME']) in [datetime, time]:
         options_dict['REPORT_START_TIME'] = options_dict['REPORT_START_TIME'].strftime('%H:%M:%S')
-    if type(options_dict['END_TIME']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['END_TIME']) in [datetime, time]:
         options_dict['END_TIME'] = options_dict['END_TIME'].strftime('%H:%M:%S')
-    if type(options_dict['REPORT_STEP']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['REPORT_STEP']) in [datetime, time]:
         options_dict['REPORT_STEP'] = options_dict['REPORT_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['WET_STEP']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['WET_STEP']) in [datetime, time]:
         options_dict['WET_STEP'] = options_dict['WET_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['DRY_STEP']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['DRY_STEP']) in [datetime, time]:
         options_dict['DRY_STEP'] = options_dict['DRY_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['ROUTING_STEP']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['ROUTING_STEP']) in [datetime, time]:
         options_dict['ROUTING_STEP'] = options_dict['ROUTING_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['RULE_STEP']) in [datetime.datetime, datetime.time]:
+    if type(options_dict['RULE_STEP']) in [datetime, time]:
         options_dict['RULE_STEP'] = options_dict['RULE_STEP'].strftime('%H:%M:%S')
     return options_dict
+    
+def convert_options_format_for_import(dict_options):
+    from datetime import datetime
+    dict_options['START_DATE'] = datetime.strptime(dict_options['START_DATE'],'%m/%d/%Y').date()
+    dict_options['REPORT_START_DATE'] = datetime.strptime(dict_options['REPORT_START_DATE'],'%m/%d/%Y').date()
+    dict_options['END_DATE'] = datetime.strptime(dict_options['END_DATE'],'%m/%d/%Y').date()
+    dict_options['SWEEP_START'] = datetime.strptime(dict_options['SWEEP_START'],'%m/%d').date()
+    dict_options['SWEEP_END'] = datetime.strptime(dict_options['SWEEP_END'],'%m/%d').date()
+    dict_options['START_TIME'] = datetime.strptime(dict_options['START_TIME'],'%H:%M:%S').time()
+    dict_options['REPORT_START_TIME'] = datetime.strptime(dict_options['REPORT_START_TIME'],'%H:%M:%S').time()
+    dict_options['END_TIME'] = datetime.strptime(dict_options['END_TIME'],'%H:%M:%S').time()
+    dict_options['REPORT_STEP'] = datetime.strptime(dict_options['REPORT_STEP'],'%H:%M:%S').time()
+    dict_options['WET_STEP'] = datetime.strptime(dict_options['WET_STEP'],'%H:%M:%S').time()
+    dict_options['DRY_STEP'] = datetime.strptime(dict_options['DRY_STEP'],'%H:%M:%S').time()
+    dict_options['ROUTING_STEP'] = datetime.strptime(dict_options['ROUTING_STEP'],'%H:%M:%S').time()
+    dict_options['RULE_STEP'] = datetime.strptime(dict_options['RULE_STEP'],'%H:%M:%S').time()
+    df_options = pd.DataFrame()
+    df_options['Option'] = dict_options.keys()
+    df_options['Value'] = dict_options.values()
+    return df_options

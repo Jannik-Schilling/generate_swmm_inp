@@ -88,7 +88,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['storage_df'] = pd.DataFrame()
         inp_dict['vertices_dict'] = {}
 
-        # reading Data
+        """ reading shapefiles"""
         feedback.setProgressText(self.tr('reading shapfiles'))
         feedback.setProgress(5)
         from .g_s_read_data import read_shapefiles
@@ -112,48 +112,69 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(20)
 
+        """reading data in tables (curves, patterns, inflows ...)"""
         feedback.setProgressText(self.tr('reading tables'))
-        """data in tables (curves, patterns, inflows ...)"""
         file_curves = 'gisswmm_curves.xlsx'
         file_patterns = 'gisswmm_patterns.xlsx'
         file_options = 'gisswmm_options.xlsx'
         file_timeseries = 'gisswmm_timeseries.xlsx'
         file_inflows = 'gisswmm_inflows.xlsx'
         file_quality = 'gisswmm_quality.xlsx'
+        file_transects = 'gisswmm_transects.xlsx'
         from .g_s_read_data import read_data_from_table
-        raw_data_dict['options_df'] = read_data_from_table(swmm_data_dir,file_options)
-        raw_data_dict['curves'] = {}
-        for curve_type in ['Control','Pump1','Pump2','Pump3','Pump4','Storage','Rating','Weir','Tidal','Diversion','Shape']:
-            curve_df = read_data_from_table(swmm_data_dir,
-                                            file_curves,
-                                            sheet = curve_type)
-            if len(curve_df)>0:
-                raw_data_dict['curves'][curve_type] = curve_df
-        raw_data_dict['patterns'] = {}
-        for pattern_type in ['HOURLY','DAILY','MONTHLY','WEEKEND']:
-            raw_data_dict['patterns'][pattern_type] = read_data_from_table(swmm_data_dir,
-                         file_patterns,
-                         sheet = pattern_type)
-        raw_data_dict['inflows'] = {}
-        for inflow_type in ['Direct','Dry_Weather']:
-             raw_data_dict['inflows'][inflow_type] = read_data_from_table(swmm_data_dir,
-                         file_inflows,
-                         sheet = inflow_type)
+        if file_options is not None:
+            if os.path.exists(os.path.join(swmm_data_dir,file_options)):
+                raw_data_dict['options_df'] = read_data_from_table(swmm_data_dir,file_options)
+        if file_curves is not None:
+            if os.path.exists(os.path.join(swmm_data_dir,file_curves)):
+                from .g_s_defaults import def_curve_types
+                raw_data_dict['curves'] = {}
+                for curve_type in def_curve_types:
+                    curve_df = read_data_from_table(swmm_data_dir,
+                                                    file_curves,
+                                                    sheet = curve_type)
+                    if len(curve_df)>0:
+                        raw_data_dict['curves'][curve_type] = curve_df
+        if file_patterns is not None:
+            if os.path.exists(os.path.join(swmm_data_dir,file_patterns)):
+                raw_data_dict['patterns'] = {}
+                for pattern_type in ['HOURLY','DAILY','MONTHLY','WEEKEND']:
+                    raw_data_dict['patterns'][pattern_type] = read_data_from_table(swmm_data_dir,
+                                 file_patterns,
+                                 sheet = pattern_type)
+        if file_inflows is not None:
+            if os.path.exists(os.path.join(swmm_data_dir,file_inflows)):
+                raw_data_dict['inflows'] = {}
+                for inflow_type in ['Direct','Dry_Weather']:
+                     raw_data_dict['inflows'][inflow_type] = read_data_from_table(swmm_data_dir,
+                                 file_inflows,
+                                 sheet = inflow_type)
         if file_timeseries is not None:
-            raw_data_dict['timeseries'] = read_data_from_table(swmm_data_dir, file_timeseries)   
+            if os.path.exists(os.path.join(swmm_data_dir,file_timeseries)):
+                raw_data_dict['timeseries'] = read_data_from_table(swmm_data_dir, file_timeseries)   
         if file_quality is not None:
-            raw_data_dict['quality']={}
-            for quality_param in['POLLUTANTS', 'LANDUSES', 'COVERAGES','LOADINGS']:
-                raw_data_dict['quality'][quality_param] = read_data_from_table(swmm_data_dir,
-                             file_quality,
-                             sheet = quality_param)
+            if os.path.exists(os.path.join(swmm_data_dir,file_quality)):
+                raw_data_dict['quality'] = {}
+                for quality_param in['POLLUTANTS', 'LANDUSES', 'COVERAGES','LOADINGS']:
+                    raw_data_dict['quality'][quality_param] = read_data_from_table(swmm_data_dir,
+                                 file_quality,
+                                 sheet = quality_param)
+        if file_transects is not None:
+            if os.path.exists(os.path.join(swmm_data_dir,file_transects)):
+                raw_data_dict['transects'] = {}
+                for transects_param in['Data', 'XSections']:
+                    raw_data_dict['transects'][transects_param] = read_data_from_table(swmm_data_dir,
+                                 file_transects,
+                                 sheet = transects_param)
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(25)
 
         feedback.setProgressText(self.tr('preparing data for input file'))
+        
         """options"""
-        from .g_s_various_functions import get_options_from_table
-        inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
+        if 'options_df' in raw_data_dict.keys():
+            from .g_s_various_functions import get_options_from_table
+            inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
 
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
@@ -205,8 +226,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
             outlets_verts = {k: del_first_last_vt(v) for k,v in outlets_verts.items() if len(v) > 2}
             inp_dict['vertices_dict'].update(outlets_verts)
-
-           
+            
+        """optional: transects for conduits or weirs"""
+        if 'conduits_raw' in raw_data_dict.keys() or 'weirs_raw' in raw_data_dict.keys():
+            if 'transects' in raw_data_dict.keys():
+                from .g_s_links import get_transects_from_table
+                transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
+                inp_dict['transects_string_list'] = transects_string_list
         """
         to do:
             # orifices
@@ -231,7 +257,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             storage_df['Psi'] = storage_df['Psi'].fillna('')
             storage_df['Ksat'] = storage_df['Ksat'].fillna('')
             storage_df['IMD'] = storage_df['IMD'].fillna('')
-            storage_df['Descriptio'] = storage_df['Descriptio'].fillna('')
+            #storage_df['Descriptio'] = storage_df['Descriptio'].fillna('')
             inp_dict['storage_df'] = storage_df
             
         """to do: dividers"""

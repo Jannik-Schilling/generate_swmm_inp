@@ -250,6 +250,18 @@ def write_inp(inp_file_name,
         file1.write('\n')
         print('done')
         
+    ## transects
+    if 'transects_string_list' in inp_dict.keys():
+        print('writing [TRANSECTS]...')
+        file1.write('[TRANSECTS]\n')
+        transects_string_list = inp_dict['transects_string_list']
+        for tr_string in transects_string_list:
+            file1.write(tr_string)
+            file1.write('\n')
+        file1.write('\n')
+        print('done')
+        
+        
     ## losses
     if 'losses_df' in inp_dict.keys():
         print('writing [LOSSES]...')

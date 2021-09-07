@@ -122,175 +122,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         except:
             raise QgsProcessingException(self.tr('Could not add default files to chosen folder'))
 
-        sections_def_dict={'TITLE':None,
-         'OPTIONS':['Option', 'Value'],
-         'REPORT':None,
-         'FILES': None,
-         'RAINGAGES':['Description','Format','Interval','SCF', 'Source','SourceName', 'StationID','Units'],
-         'EVAPORATION':None,
-         'TEMPERATURE':None,
-         'ADJUSTMENTS':None,
-         'SUBCATCHMENTS': {'Name':'String',
-                           'RainGage':'String', 
-                           'Outlet':'String',
-                           'Area':'Double', 
-                           'Imperv':'Double',
-                           'Width':'Double',
-                           'Slope':'Double',
-                           'CurbLen':'Double',
-                           'SnowPack':'String'}, 
-         'SUBAREAS':{'Name':'String',
-                     'N_Imperv':'Double',
-                     'N_Perv':'Double',
-                     'S_Imperv':'Double',
-                     'S_Perv':'Double',
-                     'PctZero':'Double',
-                     'RouteTo':'String',
-                     'PctRouted':'Double'},
-         'INFILTRATION':{'Name':'String',
-                         'Param1':'String', 
-                         'Param2':'Double',
-                         'Param3':'Double',
-                         'Param4':'Double',
-                         'Param5':'String',
-                         'kind':'String'},
-         'LID_CONTROLS':None,
-         'LID_USAGE':None,
-         'AQUIFERS':None,
-         'GROUNDWATER':None,
-         'GWF':None,
-         'SNOWPACKS':None,
-         'JUNCTIONS':{'Name':'String',
-                      'Elevation':'Double',
-                      'MaxDepth':'Double', 
-                      'InitDepth':'Double',
-                      'SurDepth':'Double', 
-                      'Aponded':'Double'},
-         'OUTFALLS':{'Name':'String',
-                     'Elevation':'Double',
-                     'Type':'String',
-                     'Data':'String',
-                     'FlapGate':'String',
-                     'RouteTo':'String'}, 
-         'DIVIDERS':None,
-         'STORAGE':{'Name':'String',
-                    'Elevation':'Double',
-                    'MaxDepth':'Double',
-                    'InitDepth':'Double',
-                    'Type':'String',
-                    'Curve':'String',
-                    'Apond':'String',
-                    'Fevap':'Double',
-                    'Psi':'Double',
-                    'Ksat':'Double',
-                    'IMD':'Double'},
-         'CONDUITS': {'Name':'String',
-                      'FromNode':'String',
-                      'ToNode':'String',
-                      'Length':'Double',
-                      'Roughness':'Double',
-                      'InOffset':'Double',
-                      'OutOffset':'Double',
-                      'InitFlow':'Double',
-                      'MaxFlow':'Double'},
-         'PUMPS':{'Name':'String',
-                  'FromNode':'String',
-                  'ToNode':'String',
-                  'PumpCurve':'String',
-                  'Status':'String',
-                  'Startup':'Double',
-                  'Shutoff':'Double'},
-         'ORIFICES':None,
-         'WEIRS':{'Name':'String',
-                  'FromNode':'String',
-                  'ToNode':'String',
-                  'Type':'String',
-                  'CrestHeigh':'Double',
-                  'Qcoeff':'Double',
-                  'FlapGate':'String',
-                  'EndContrac':'Double',
-                  'EndCoeff':'Double',
-                  'Surcharge':'String',
-                  'RoadWidth':'Double',
-                  'RoadSurf':'String',
-                  'Coeff_Curve':'String'},
-         'OUTLETS':{'Name':'String',
-                  'FromNode':'String',
-                  'ToNode':'String',
-                  'InOffset':'Double',
-                  'Rate_Curve':'String',
-                  'Qcoeff':'String',
-                  'Qexpon':'Double',
-                  'FlapGate':'String',
-                  'CurveName':'String'},
-         'XSECTIONS':{'Name':'String',
-                      'Shape':'String',
-                      'Geom1':'String',
-                      'Geom2':'Double',
-                      'Geom3':'Double',
-                      'Geom4':'Double',
-                      'Barrels':'Double',
-                      'Culvert':'String'},
-         'TRANSECTS':None,
-         'LOSSES': {'Name':'String',
-                    'Inlet':'Double',
-                    'Outlet':'Double',
-                    'Averge':'Double',
-                    'FlapGate':'String',
-                    'Seepage':'Double'},
-         'CONTROLS':None,
-         'POLLUTANTS':{'Name':'String',
-                       'Units':'String',
-                       'RainConcentr':'Double',
-                       'GwConcentr':'Double',
-                       'IiConcentr':'Double',
-                       'DecayCoeff':'Double',
-                       'SnowOnly':'String',
-                       'CoPollutant':'String',
-                       'CoFraction':'Double',
-                       'DwfConcentr':'Double',
-                       'InitConcetr':'Double'},
-         'LANDUSES':{'Name':'String', 
-                     'SweepingInterval':'Double', 
-                     'SweepingFractionAvailable':'Double', 
-                     'LastSwept':'Double'},
-         'COVERAGES':{'Subcatchment':'String',
-                      'Landuse':'String',
-                      'Percent':'Double'},
-         'LOADINGS':{'Subcatchment':'String',
-                     'Pollutant':'String',
-                     'InitialBuildup':'Double'},
-         'BUILDUP':{'Name':'String',
-                    'Pollutant':'String',
-                    'BuildupFunction':'String', 
-                    'BuildupMax':'Double', 
-                    'BuildupRateConstant':'Double',
-                    'BuildupExponent_SatConst':'Double',
-                    'BuildupPerUnit':'String'},
-         'WASHOFF':{'Name':'String', 
-                    'Pollutant':'String',
-                    'WashoffFunction':'String',
-                    'WashoffpCoefficient':'Double', 
-                    'WashoffExponenet':'Double', 
-                    'WashoffCleaninfEfficiency':'Double',
-                    'WashoffBmpEfficiency':'Double'},
-         'TREATMENT':None,
-         'INFLOWS':['Name','Constituent','Baseline',
-                    'Baseline_Pattern','Time_Series',
-                    'Scale_Factor','Type'],
-         'DWF':['Name','Constituent','Average_Value',
-                'Time_Pattern1','Time_Pattern2',
-                'Time_Pattern3','Time_Pattern4'],
-         'RDII':None,
-         'HYDROGRAPHS':None,
-         'CURVES':['Name','XVal','YVal'],
-         'TIMESERIES':['Name','Date','Time','Value'],
-         'PATTERNS':None,
-         'COORDINATES':['Name','X_Coord','Y_Coord'],
-         'VERTICES':['Name','X_Coord','Y_Coord'],
-         'Polygons':['Name','X_Coord','Y_Coord'],
-         'SYMBOLS':['Name','X_Coord','Y_Coord'],
-         'TAGS': None}
+        """defaults for all sections"""
+        from .g_s_defaults import def_sections_dict
 
         with open(readfile) as f:
             inp_text = f.readlines()
@@ -300,7 +133,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         inp_text = [x for x in inp_text if not x.startswith(';;')]
         inp_text = [x.replace('\n','') for x in inp_text]
 
-        section_list_brackets = ['['+k+']' for k in sections_def_dict.keys()]
+        section_list_brackets = ['['+k+']' for k in def_sections_dict.keys()]
         section_list_brackets = [sect for sect in section_list_brackets if sect in inp_text] #remove section which are not available
         pos_start_list = [inp_text.index(sect) for sect in section_list_brackets] 
 
@@ -345,12 +178,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         def build_df_for_section(section_name, dict_raw):
             '''builds dataframes for a section'''
-            if type(sections_def_dict[section_name]) == list:
-                col_names = sections_def_dict[section_name]
-            if sections_def_dict[section_name] is None:
+            if type(def_sections_dict[section_name]) == list:
+                col_names = def_sections_dict[section_name]
+            if def_sections_dict[section_name] is None:
                 col_names = None
-            if type(sections_def_dict[section_name]) == dict:
-                col_names = list(sections_def_dict[section_name].keys())
+            if type(def_sections_dict[section_name]) == dict:
+                col_names = list(def_sections_dict[section_name].keys())
             if not section_name in dict_raw.keys():
                 df = pd.DataFrame(columns = col_names)
             else:
@@ -411,8 +244,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # options    
         if 'OPTIONS' in dict_all_raw_vals.keys():
+            from .g_s_various_functions import convert_options_format_for_import
             df_options = build_df_for_section('OPTIONS',dict_all_raw_vals)
-            dict_to_excel({'OPTIONS':df_options},'gisswmm_options.xlsx')
+            dict_options = {k:v for k,v in zip(df_options['Option'],df_options['Value'])}
+            df_options_converted = convert_options_format_for_import(dict_options)
+            dict_to_excel({'OPTIONS':df_options_converted},'gisswmm_options.xlsx')
             main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
         else: 
             main_infiltration_method = 'HORTON' #assumption for main infiltration method if not in options
@@ -421,11 +257,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'INFLOWS' in dict_all_raw_vals.keys():
             df_inflows = build_df_for_section('INFLOWS', dict_all_raw_vals)
         else:
-            df_inflows = build_df_from_vals_list([], sections_def_dict['INFLOWS'])
+            df_inflows = build_df_from_vals_list([], def_sections_dict['INFLOWS'])
         if 'DWF' in dict_all_raw_vals.keys():
             df_dry_weather = build_df_for_section('DWF', dict_all_raw_vals)
         else:
-            df_dry_weather = build_df_from_vals_list([], sections_def_dict['DWF'])
+            df_dry_weather = build_df_from_vals_list([], def_sections_dict['DWF'])
         dict_inflows = {'Direct':df_inflows,
                         'Dry_Weather':df_dry_weather}
         dict_to_excel(dict_inflows,'gisswmm_inflows.xlsx')
@@ -496,11 +332,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
                            'Shape':['Name','Depth', 'Width'],
                            'Weir': ['Name','Head','Coefficient']
                            }
+        
         if 'CURVES' in dict_all_raw_vals.keys():
             curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in curve_cols_dict.keys()}
-            all_curves = [del_kw_from_list(l, list(curve_cols_dict.keys()), 1) for l in dict_all_raw_vals['CURVES'].copy()]
-            all_curves = build_df_from_vals_list(all_curves, sections_def_dict['CURVES'])
-            all_curves['CurveType'] = [curve_type_dict[i] for i in all_curves['Name']]
+            # if upper case:
+            upper_keys = [i.upper() for i in curve_cols_dict.keys()]
+            curve_type_dict_upper= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in upper_keys}
+            curve_type_dict.update(curve_type_dict_upper)
+            occuring_curve_types = list(set(curve_type_dict.values()))
+            all_curves = [del_kw_from_list(l, occuring_curve_types, 1) for l in dict_all_raw_vals['CURVES'].copy()]
+            all_curves = build_df_from_vals_list(all_curves, def_sections_dict['CURVES'])
+            all_curves['CurveType'] = [curve_type_dict[i].capitalize() for i in all_curves['Name']] # capitalize as in curve_cols_dict
             all_curves['XVal'] = [float(x) for x in all_curves['XVal']]
             all_curves['YVal'] = [float(x) for x in all_curves['YVal']]
             all_curves = {k:v[['Name','XVal','YVal']] for k, v in all_curves.groupby('CurveType')}
@@ -516,11 +358,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
 
         # quality
-        quality_cols_dict = {k:sections_def_dict[k] for k in ['POLLUTANTS','LANDUSES','COVERAGES','LOADINGS','BUILDUP','WASHOFF']}
+        quality_cols_dict = {k:def_sections_dict[k] for k in ['POLLUTANTS','LANDUSES','COVERAGES','LOADINGS','BUILDUP','WASHOFF']}
         all_quality = {k:build_df_for_section(k,dict_all_raw_vals) for k in quality_cols_dict.keys() if k in dict_all_raw_vals.keys()}
-        missing_quality_data = {k:build_df_from_vals_list([],list(sections_def_dict[k].keys())) for k in quality_cols_dict.keys() if k not in dict_all_raw_vals.keys()}
+        missing_quality_data = {k:build_df_from_vals_list([],list(def_sections_dict[k].keys())) for k in quality_cols_dict.keys() if k not in dict_all_raw_vals.keys()}
         all_quality.update(missing_quality_data)
-        all_quality = {k:adjust_column_types(v,sections_def_dict[k]) for k,v in all_quality.items()}
+        all_quality = {k:adjust_column_types(v,def_sections_dict[k]) for k,v in all_quality.items()}
         if len(all_quality['BUILDUP']) == 0: #fill with np.nan in order to facilitate join below
             if len(all_quality['LANDUSES']) > 0:
                 landuse_names = all_quality['LANDUSES']['Name']
@@ -552,14 +394,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         'Description':'String'}  
         if 'TIMESERIES' in dict_all_raw_vals.keys():
             all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
-            all_time_series = build_df_from_vals_list(all_time_series,sections_def_dict['TIMESERIES'])
+            all_time_series = build_df_from_vals_list(all_time_series,def_sections_dict['TIMESERIES'])
             all_time_series.insert(1,'Type',np.nan)
             all_time_series['Format'] = np.nan
             all_time_series['Description'] = np.nan
         else:
             all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
         if 'RAINGAGES' in dict_all_raw_vals.keys():
-            rain_gage = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],sections_def_dict['RAINGAGES'])
+            rain_gage = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],def_sections_dict['RAINGAGES'])
             for i in rain_gage.index:
                 if rain_gage.loc[i,'Source'] == 'TIMESERIES':
                     all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Type'] = 'rain_gage'
@@ -590,7 +432,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                                 'Int':QVariant.Int,
                                 'Bool': QVariant.Bool}
             if layer_fields == 'not_set':
-                layer_fields = sections_def_dict[section_name]
+                layer_fields = def_sections_dict[section_name]
             for col in layer_fields:
                 field_type_string = layer_fields[col]
                 field_type = field_types_dict[field_type_string]
@@ -666,7 +508,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'VERTICES' in dict_all_raw_vals.keys(): # vertices section seems to be always available
             all_vertices = build_df_for_section('VERTICES',dict_all_raw_vals)
         else:
-            all_vertices = build_df_from_vals_list([],list(sections_def_dict['VERTICES']))
+            all_vertices = build_df_from_vals_list([],list(def_sections_dict['VERTICES']))
         def get_line_geometry(section_df):
             def get_line_from_points(line_name):
             # From vertices section
@@ -702,7 +544,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_losses = build_df_for_section('LOSSES', dict_all_raw_vals)
                 all_losses = all_losses.applymap(replace_nan_null)
             else: 
-                all_losses = build_df_from_vals_list([],list(sections_def_dict['LOSSES'].keys()))
+                all_losses = build_df_from_vals_list([],list(def_sections_dict['LOSSES'].keys()))
             
             all_conduits = build_df_for_section('CONDUITS', dict_all_raw_vals)
             all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
@@ -710,9 +552,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_conduits['FlapGate'] = all_conduits['FlapGate'].fillna('NO')
             conduits_geoms = get_line_geometry(all_conduits)
             all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
-            all_conduits_fields = sections_def_dict['CONDUITS'].copy()
-            all_conduits_fields.update(sections_def_dict['XSECTIONS'])
-            all_conduits_fields.update(sections_def_dict['LOSSES'])
+            all_conduits_fields = def_sections_dict['CONDUITS'].copy()
+            all_conduits_fields.update(def_sections_dict['XSECTIONS'])
+            all_conduits_fields.update(def_sections_dict['LOSSES'])
             all_conduits = all_conduits.applymap(replace_nan_null)
             conduits_layer = create_layer_from_table(all_conduits,
                                                      'CONDUITS',
@@ -720,6 +562,64 @@ class ImportInpFile (QgsProcessingAlgorithm):
                                                      'SWMM_conduits',
                                                      layer_fields = all_conduits_fields)
             add_layer_on_completion(folder_save, 'SWMM_conduits', 'style_conduits.qml')
+        
+        
+            # transects in hec2 format
+            transects_columns = ['TransectName',
+                                 'RoughnessLeftBank',
+                                 'RoughnessRightBank',
+                                 'RoughnessChannel',
+                                 'BankStationLeft',
+                                 'BankStationRight',
+                                 'ModifierMeander',
+                                 'ModifierStations',
+                                 'ModifierElevations']
+            if 'TRANSECTS' in dict_all_raw_vals.keys():
+                all_transects_data_df = dict()
+                transects_list = dict_all_raw_vals['TRANSECTS'].copy()
+                tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
+                tr_endp = tr_startp[1:]+[len(transects_list)]
+                #tr_dict = {transects_list[x+1][1]:get_transects_data(transects_list[x:y]) for x,y in zip(tr_startp,tr_endp)}
+                def get_transects_data(tr_i):
+                    tr_roughness = tr_i[0][1:]
+                    tr_name = tr_i[1][1]
+                    tr_count = tr_i[1][2]
+                    tr_bankstat_left = tr_i[1][3]
+                    tr_bankstat_right = tr_i[1][4]
+                    tr_modifier = tr_i[1][7:10]
+                    tr_data = [tr_name]+tr_roughness+[tr_bankstat_left]+[tr_bankstat_right]+tr_modifier
+                    return tr_data
+                    
+                    
+                def get_transects_vals(tr_i):
+                    tr_name = tr_i[1][1]
+                    tr_count = tr_i[1][2]
+                    tr_values = [del_kw_from_list(x, 'GR', 0) for x in tr_i[2:]]
+                    tr_values = [x for sublist in tr_values for x in sublist]
+                    tr_values_splitted = [[tr_values[x*2],tr_values[(x*2)+1]] for x in range(int(tr_count))] #split into list of lists of len 2
+                    tr_values_splitted = [[tr_name] + x for x in tr_values_splitted]
+                    return tr_values_splitted
+               
+                all_tr_vals = [get_transects_vals(transects_list[x:y]) for x,y in zip(tr_startp,tr_endp)]
+                all_tr_vals = [x for sublist in all_tr_vals for x in sublist]
+                all_tr_dats = [get_transects_data(transects_list[x:y]) for x,y in zip(tr_startp,tr_endp)]
+                
+                all_tr_vals_df = build_df_from_vals_list(all_tr_vals, ['TransectName', 'Elevation', 'Station'])
+                all_tr_vals_df = all_tr_vals_df[['TransectName',
+                                                 'Station',
+                                                 'Elevation']] # order of columns according to swmm interface
+                all_tr_dats_df = build_df_from_vals_list(all_tr_dats, transects_columns)
+                all_tr_dats_df = all_tr_dats_df[['TransectName',
+                                 'RoughnessLeftBank',
+                                 'RoughnessRightBank',
+                                 'RoughnessChannel',
+                                 'BankStationLeft',
+                                 'BankStationRight',
+                                 'ModifierStations',
+                                 'ModifierElevations',
+                                 'ModifierMeander']]# order of columns according to swmm interface
+                transects_dict = {'Data':all_tr_dats_df, 'XSections':all_tr_vals_df}
+                dict_to_excel(transects_dict,'gisswmm_transects.xlsx')
 
         #outlets
         def adjust_outlets_list(outl_list_i):
@@ -757,7 +657,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_weirs = all_weirs.applymap(replace_nan_null) 
             weirs_geoms = get_line_geometry(all_weirs)
             all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
-            all_weirs_fields = sections_def_dict['WEIRS'].copy()
+            all_weirs_fields = def_sections_dict['WEIRS'].copy()
             all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
             weirs_layer = create_layer_from_table(all_weirs,'WEIRS','LineString','SWMM_weirs',all_weirs_fields)
             add_layer_on_completion(folder_save, 'SWMM_weirs', 'style_regulators.qml')
@@ -783,7 +683,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
             all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
             all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()]
-            all_infiltr = build_df_from_vals_list(all_infiltr, list(sections_def_dict['INFILTRATION'].keys()))
+            all_infiltr = build_df_from_vals_list(all_infiltr, list(def_sections_dict['INFILTRATION'].keys()))
             all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
                                                                                         all_subareas, 
                                                                                         all_infiltr, 
@@ -792,8 +692,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
             all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
             all_subcatchments = all_subcatchments.applymap(replace_nan_null)
-            all_subcatchments_fields = sections_def_dict['SUBCATCHMENTS']
-            all_subcatchments_fields.update(sections_def_dict['SUBAREAS'])
+            all_subcatchments_fields = def_sections_dict['SUBCATCHMENTS']
+            all_subcatchments_fields.update(def_sections_dict['SUBAREAS'])
             all_subcatchments_fields.update(infiltr_dtypes)
             subcatchments_layer = create_layer_from_table(all_subcatchments,'SUBCATCHMENTS','Polygon','SWMM_subcatchments', all_subcatchments_fields)
             add_layer_on_completion(folder_save, 'SWMM_subcatchments', 'style_catchments.qml')

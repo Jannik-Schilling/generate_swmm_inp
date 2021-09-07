@@ -31,12 +31,8 @@ def get_conduits_from_shapefile(conduits_raw):
                                 'Geom3',
                                 'Geom4',
                                 'Barrels',
-                                'Culvert',
-                                'Curve',
-                                'Tsect']].copy()
+                                'Culvert']].copy()
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
-    xsections_df['Curve'] = xsections_df['Curve'].fillna('')
-    xsections_df['Tsect'] = xsections_df['Tsect'].fillna('')
     losses_df = conduits_raw[['Name',
                               'Inlet',
                               'Outlet',
@@ -44,6 +40,9 @@ def get_conduits_from_shapefile(conduits_raw):
                               'FlapGate',
                               'Seepage']].copy()
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
+    losses_df['Inlet'] = losses_df['Inlet'].fillna('0')
+    losses_df['Outlet'] = losses_df['Outlet'].fillna('0')
+    losses_df['Averge'] = losses_df['Averge'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
 def del_first_last_vt(link):
@@ -78,7 +77,7 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
     weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('*')
     weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('*')
-    weirs_df['Coeff_Cur'] = weirs_df['Coeff_Cur'].fillna('')
+    weirs_df['Coeff_Curv'] = weirs_df['Coeff_Curv'].fillna('')
     weirs_df['EndContrac'] = weirs_df['EndContrac'].fillna('0')
     weirs_df['EndCoeff'] = weirs_df['EndCoeff'].fillna('0')
     weirs_df=weirs_df[['Name',
@@ -93,7 +92,7 @@ def get_weirs_from_shapefile(weirs_raw):
                        'Surcharge',
                        'RoadWidth',
                        'RoadSurf',
-                       'Coeff_Cur']]
+                       'Coeff_Curv']]
     shape_dict = {'TRANSVERSE':'RECT_OPEN',
      'SIDEFLOW':'RECT_OPEN',
      'V-NOTCH':'TRIANGULAR',
@@ -110,8 +109,6 @@ def get_weirs_from_shapefile(weirs_raw):
                                 'Geom4']].copy()
     xsections_df['Barrels'] = ''
     xsections_df['Culvert'] = ''
-    xsections_df['Curve'] = ''
-    xsections_df['Tsect'] = ''
     return weirs_df, xsections_df
     
 def get_outlets_from_shapefile(outlets_raw):
@@ -132,3 +129,32 @@ def get_outlets_from_shapefile(outlets_raw):
                              'Qexpon', 
                              'FlapGate']]
     return outlets_df 
+    
+# transects_raw = raw_data_dict['transects'].copy()
+def get_transects_from_table(transects_raw):
+    """writes strings for transects"""
+    tr_data = transects_raw['Data']
+    tr_vals = transects_raw['XSections']
+    def write_transect_lines (T_Name):
+        tr_data_i = tr_data[tr_data['TransectName'] == T_Name] 
+        tr_vals_i = tr_vals[tr_vals['TransectName'] == T_Name]
+        tr_count_i = len(tr_vals_i)
+        tr_roughn_i = tr_data_i[['RoughnessLeftBank', 'RoughnessRightBank', 'RoughnessChannel']].values.tolist()[0]
+        tr_bank_i = tr_data_i[['BankStationLeft','BankStationRight']].values.tolist()[0]
+        tr_modifier_i = tr_data_i[['ModifierMeander','ModifierStations', 'ModifierElevations']].values.tolist()[0]
+        NC_data_i = ['NC']+tr_roughn_i
+        NC_string_i = '    '.join([str(i) for i in NC_data_i])
+        X1_data_i = ['X1', T_Name, '', tr_count]+tr_bank_i+[0.0,0.0]+tr_modifier_i
+        X1_string_i = '    '.join([str(i) for i in X1_data_i])
+        tr_vals_i_list = [tr_vals_i.loc[i,['Elevation','Station']].to_list() for i in tr_vals_i.index]
+        tr_vals_i_list = [str(x) for sublist in tr_vals_i_list for x in sublist]
+        tr_vals_i_list_splitted = [tr_vals_i_list[i:i + 10] for i in range(0, len(tr_vals_i_list), 10)]
+        tr_vals_i_list_splitted = [['GR']+x for x in tr_vals_i_list_splitted]
+        def concat_tr_str(tr_line):
+            return'    '.join([str(i) for i in tr_line])
+        GR_strings_i = [concat_tr_str(x) for x in tr_vals_i_list_splitted]
+        GR_strings_i_joined = '\n'.join(GR_strings_i)
+        tr_string = NC_string_i+'\n'+X1_string_i+'\n'+GR_strings_i_joined
+        return tr_string
+    transects_string_list = [write_transect_lines(x) for x in tr_data['TransectName']]
+    return transects_string_list

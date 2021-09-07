@@ -26,7 +26,7 @@ def get_quality_params_from_table(quality_raw_dict, subcatchments_df = None):
             pollutants_df = pollutants_df.fillna('*')
         if q_p == 'LANDUSES':
             q_df_raw = q_df_raw[q_df_raw['Name'] != ";"]
-            landuses_df = q_df_raw[['Name', ' SweepingInterval', ' SweepingFractionAvailable', 'LastSwept']].drop_duplicates()
+            landuses_df = q_df_raw[['Name', 'SweepingInterval', 'SweepingFractionAvailable', 'LastSwept']].drop_duplicates()
             landuses_df = landuses_df.reset_index(drop=True)
             buildup_df = q_df_raw[['Name', 
                                    'Pollutant',
