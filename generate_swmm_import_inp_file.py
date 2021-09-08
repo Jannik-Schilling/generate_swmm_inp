@@ -195,7 +195,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             return df
 
 
-        def adjust_line_length(ts_line, pos, line_length , insert_val=np.nan):
+        def adjust_line_length(ts_line, pos, line_length , insert_val=[np.nan]):
             '''adds insert_val at pos in line lengt is not line length'''
             if len(ts_line) < line_length:
                 ts_line[pos:pos] = insert_val
