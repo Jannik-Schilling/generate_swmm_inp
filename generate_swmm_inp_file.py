@@ -319,9 +319,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                   inp_dict)
         feedback.setProgress(98)
         
-        err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
-        err_file.write(err_text)
-        err_file.close()
+        #err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
+        #err_file.write(err_text)
+        #err_file.close()
         feedback.setProgressText(self.tr('input file saved in '+str(os.path.join(project_dir,inp_file_name))))
         return {}
         
