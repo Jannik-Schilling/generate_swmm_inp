@@ -236,13 +236,26 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     return [int(x) for x in col]
                 if col_types[col.name] =='Bool': 
                     return [bool(x) for x in col]
-                if col_types[col.name] =='Date': 
-                    return  [datetime.strptime(x, '%m/%d/%Y').date() for x in col]
+                if col_types[col.name] =='Date':
+                    def date_conversion(x):
+                        if pd.isna(x):
+                            return np.nan
+                        else:
+                            try:
+                                return datetime.strptime(x, '%m/%d/%Y').date()
+                            except:
+                                return datetime.strptime(x, '%m/%d/%Y').date()
+                    return [date_conversion(x) for x in col]
                 if col_types[col.name] =='Time':
-                    try:
-                        return  [datetime.strptime(x, '%H:%M:%S').time() for x in col]
-                    except:
-                        return  [datetime.strptime(x, '%H:%M').time() for x in col]
+                    def time_conversion(x):
+                        try:
+                            return  datetime.strptime(str(x), '%H:%M:%S').time()
+                        except:
+                            try:
+                                return datetime.strptime(str(x), '%H:%M').time()
+                            except:
+                                return datetime.strptime(str(x), '%H').time()
+                    return [time_conversion(x) for x in col]
             df = df.apply(col_conversion, axis = 0)
             return df
 
