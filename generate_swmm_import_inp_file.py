@@ -595,6 +595,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_conduits_fields.update(def_sections_dict['XSECTIONS'])
             all_conduits_fields.update(def_sections_dict['LOSSES'])
             all_conduits = all_conduits.applymap(replace_nan_null)
+            if (all_xsections['Shape'] == 'IRREGULAR').any(): 
+                all_conduits_fields['Geom1'] = 'String'
+            if (all_xsections['Shape'] == 'CUSTOM').any(): 
+                all_conduits_fields['Geom2'] = 'String'
             conduits_layer = create_layer_from_table(all_conduits,
                                                      'CONDUITS',
                                                      'LineString',
