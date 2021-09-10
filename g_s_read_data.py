@@ -9,9 +9,7 @@ import os
 import numpy as np
 from qgis.core import (QgsVectorLayer, NULL)
 
-
-def read_shapefiles(data_dir,
-                       file_outfalls,
+def read_shapefiles_direct(file_outfalls,
                        file_storages,
                        file_subcatchments,
                        file_conduits,
@@ -36,64 +34,56 @@ def read_shapefiles(data_dir,
         df = df.applymap(replace_null_nan)
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
-    def load_shapefile_to_df(data_file):
+    def load_shapefile_to_df(vlayer):
         """reads shapefile attributes and geometries"""
-        vlayer = QgsVectorLayer(data_file,'temp','ogr')
         cols = [f.name() for f in vlayer.fields()]
         datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
         
     if file_outfalls is not None:
-        if os.path.exists(os.path.join(data_dir,file_outfalls)): 
-            data_dict['outfalls_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_outfalls))
+        data_dict['outfalls_raw'] = load_shapefile_to_df(file_outfalls)
     
     if file_storages is not None:
-        if os.path.exists(os.path.join(data_dir,file_storages)): 
-            data_dict['storages_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_storages))
+        data_dict['storages_raw'] = load_shapefile_to_df(file_storages)
     
     if file_subcatchments is not None:
-        if os.path.exists(os.path.join(data_dir,file_subcatchments)): 
-            data_dict['subcatchments_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_subcatchments))
+        data_dict['subcatchments_raw'] = load_shapefile_to_df(file_subcatchments)
     
     if file_conduits is not None:
-        if os.path.exists(os.path.join(data_dir,file_conduits)): 
-            data_dict['conduits_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_conduits))
+        data_dict['conduits_raw'] = load_shapefile_to_df(file_conduits)
     
     if file_junctions is not None:
-        if os.path.exists(os.path.join(data_dir,file_junctions)): 
-            data_dict['junctions_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_junctions))
+        data_dict['junctions_raw'] = load_shapefile_to_df(file_junctions)
     
     if file_pumps is not None:
-        if os.path.exists(os.path.join(data_dir,file_pumps)):
-            data_dict['pumps_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_pumps))
+        data_dict['pumps_raw'] = load_shapefile_to_df(file_pumps)
     
     if file_outlets is not None:
-        if os.path.exists(os.path.join(data_dir,file_outlets)):
-            data_dict['outlets_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_outlets))
+        data_dict['outlets_raw'] = load_shapefile_to_df(file_outlets)
     
     if file_weirs is not None:
-        if os.path.exists(os.path.join(data_dir,file_weirs)):
-            data_dict['weirs_raw'] = load_shapefile_to_df(os.path.join(data_dir,file_weirs))
+        data_dict['weirs_raw'] = load_shapefile_to_df(file_weirs)
     data_dict = {key_i:del_none_bool(data_dict[key_i]) for key_i in data_dict.keys()}
     return data_dict
 
 
 
-def read_data_from_table(data_dir,
-                         file, sheet=0): 
+    
+def read_data_from_table_direct(file, sheet=0): 
     '''reads curves or other tables from excel or csv'''
     filename, file_extension = os.path.splitext(file)
     if file_extension == '.xlsx':
         if sheet == 0:
-            data_df = pd.read_excel(os.path.join(data_dir,file),sheet_name = sheet)
+            data_df = pd.read_excel(file,sheet_name = sheet)
         else:
-            if sheet in pd.ExcelFile(os.path.join(data_dir,file)).sheet_names:
-                data_df = pd.read_excel(os.path.join(data_dir,file),sheet_name = sheet)
-            elif str(sheet).upper() in pd.ExcelFile(os.path.join(data_dir,file)).sheet_names:
-                data_df = pd.read_excel(os.path.join(data_dir,file),sheet_name = str(sheet).upper())
+            print ('sheet not 0')
+            if sheet in pd.ExcelFile(file).sheet_names:
+                data_df = pd.read_excel(file,sheet_name = sheet)
+            elif str(sheet).upper() in pd.ExcelFile(file).sheet_names:
+                data_df = pd.read_excel(file,sheet_name = str(sheet).upper())
             else:
                 data_df = pd.DataFrame()
     if file_extension == '.csv':
-        data_df = pd.read_csv(os.path.join(data_dir,file))
+        data_df = pd.read_csv(file)
     return data_df

@@ -39,7 +39,8 @@ from qgis.core import (QgsProject,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFile,
-                       QgsProcessingParameterFileDestination)
+                       QgsProcessingParameterFileDestination,
+                       QgsProcessingParameterVectorLayer)
 
 
 
@@ -48,17 +49,30 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
     generates a swmm input file from shapefiles and tables
     """
-
-    SWMM_FOLDER = 'SWMM_FOLDER'
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
+    SWMM_FOLDER = 'SWMM_FOLDER'
+    FILE_OUTFALLS = 'FILE_OUTFALLS'
+    FILE_STORAGES = 'FILE_STORAGES'
+    FILE_SUBCATCHMENTS= 'FILE_SUBCATCHMENTS'
+    FILE_CONDUITS = 'FILE_CONDUITS'
+    FILE_JUNCTIONS = 'FILE_JUNCTIONS'
+    FILE_PUMPS    = 'FILE_PUMPS'
+    FILE_WEIRS = 'FILE_WEIRS'
+    FILE_OUTLETS = 'FILE_OUTLETS'
+    FILE_CURVES = 'FILE_CURVES'
+    FILE_PATTERNS = 'FILE_PATTERNS'
+    FILE_OPTIONS = 'FILE_OPTIONS'
+    FILE_TIMESERIES = 'FILE_TIMESERIES'
+    FILE_INFLOWS = 'FILE_INFLOWS'
+    FILE_QUALITY = 'FILE_QUALITY'
+    FILE_TRANSECTS = 'FILE_TRANSECTS'
+    
     
     
     def initAlgorithm(self, config):
         """
         inputs and output of the algorithm
         """
-
-
         self.addParameter(
             QgsProcessingParameterFileDestination(
                 self.QGIS_OUT_INP_FILE,
@@ -68,19 +82,146 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_JUNCTIONS,
+                self.tr('Junctions Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorPoint],
+                optional = True#,defaultValue = 'SWMM_junctions'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_CONDUITS,
+                self.tr('Conduits Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorLine],
+                optional = True#,defaultValue = 'SWMM_conduits'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_SUBCATCHMENTS,
+                self.tr('Subcatchments Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorAnyGeometry],
+                optional = True#,defaultValue = 'SWMM_subcatchments'
+                ))
+                
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_STORAGES,
+                self.tr('Storages Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorPoint],
+                optional = True#,defaultValue = 'SWMM_storages'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_OUTFALLS,
+                self.tr('Outfalls Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorPoint],
+                optional = True#,defaultValue = 'SWMM_outfalls'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_PUMPS,
+                self.tr('Pumps Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorLine],
+                optional = True#,defaultValue = 'SWMM_Pumps'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_WEIRS,
+                self.tr('Weirs Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorLine],
+                optional = True#,defaultValue = 'SWMM_weirs'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_OUTLETS,
+                self.tr('Outlets Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorLine],
+                optional = True#,defaultValue = 'SWMM_outlets'
+                ))
+        
+        
+        self.addParameter(
             QgsProcessingParameterFile(
-                self.SWMM_FOLDER,
-                self.tr('Folder with all swmm data (e.g.\"swmm_data\")'),
-                behavior=QgsProcessingParameterFile.Folder))
+                self.FILE_OPTIONS,
+                self.tr('Options table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_CURVES,
+                self.tr('Curves table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_PATTERNS,
+                self.tr('Patterns table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+                
+
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_TIMESERIES,
+                self.tr('Timeseries table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_INFLOWS,
+                self.tr('Inflows table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_QUALITY,
+                self.tr('Quality table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_TRANSECTS,
+                self.tr('Transects table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
+
 
     def processAlgorithm(self, parameters, context, feedback):
         today = date.today()
         now = datetime.now()
+        
+        """input file name and path"""
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
         project_dir = os.path.dirname(inp_file_path)
-        swmm_data_dir = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
-        
+
+        """initializing the input dictionary and error text"""
         err_text = ''
         inp_dict = dict()
         inp_dict['junctions_df'] = pd.DataFrame()
@@ -91,17 +232,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """ reading shapefiles"""
         feedback.setProgressText(self.tr('reading shapfiles'))
         feedback.setProgress(5)
-        from .g_s_read_data import read_shapefiles
-        file_outfalls = 'SWMM_outfalls.shp'
-        file_storages = 'SWMM_storages.shp'
-        file_subcatchments = 'SWMM_subcatchments.shp'
-        file_conduits = 'SWMM_conduits.shp'
-        file_junctions = 'SWMM_junctions.shp'
-        file_pumps = 'SWMM_pumps.shp'
-        file_weirs = 'SWMM_weirs.shp'
-        file_outlets = 'SWMM_outlets.shp'
-        raw_data_dict = read_shapefiles(swmm_data_dir,
-                                           file_outfalls,
+        from .g_s_read_data import read_shapefiles_direct
+        file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
+        file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
+        file_subcatchments = self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)
+        file_conduits = self.parameterAsVectorLayer(parameters, self.FILE_CONDUITS, context)
+        file_junctions = self.parameterAsVectorLayer(parameters, self.FILE_JUNCTIONS, context)
+        file_pumps = self.parameterAsVectorLayer(parameters, self.FILE_PUMPS, context)
+        file_weirs = self.parameterAsVectorLayer(parameters, self.FILE_WEIRS, context)
+        file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
+        raw_data_dict = read_shapefiles_direct(file_outfalls,
                                            file_storages,
                                            file_subcatchments,
                                            file_conduits,
@@ -114,58 +254,54 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         """reading data in tables (curves, patterns, inflows ...)"""
         feedback.setProgressText(self.tr('reading tables'))
-        file_curves = 'gisswmm_curves.xlsx'
-        file_patterns = 'gisswmm_patterns.xlsx'
-        file_options = 'gisswmm_options.xlsx'
-        file_timeseries = 'gisswmm_timeseries.xlsx'
-        file_inflows = 'gisswmm_inflows.xlsx'
-        file_quality = 'gisswmm_quality.xlsx'
-        file_transects = 'gisswmm_transects.xlsx'
-        from .g_s_read_data import read_data_from_table
-        if file_options is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_options)):
-                raw_data_dict['options_df'] = read_data_from_table(swmm_data_dir,file_options)
-        if file_curves is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_curves)):
-                from .g_s_defaults import def_curve_types
-                raw_data_dict['curves'] = {}
-                for curve_type in def_curve_types:
-                    curve_df = read_data_from_table(swmm_data_dir,
-                                                    file_curves,
-                                                    sheet = curve_type)
-                    if len(curve_df)>0:
-                        raw_data_dict['curves'][curve_type] = curve_df
-        if file_patterns is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_patterns)):
-                raw_data_dict['patterns'] = {}
-                for pattern_type in ['HOURLY','DAILY','MONTHLY','WEEKEND']:
-                    raw_data_dict['patterns'][pattern_type] = read_data_from_table(swmm_data_dir,
-                                 file_patterns,
-                                 sheet = pattern_type)
-        if file_inflows is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_inflows)):
-                raw_data_dict['inflows'] = {}
-                for inflow_type in ['Direct','Dry_Weather']:
-                     raw_data_dict['inflows'][inflow_type] = read_data_from_table(swmm_data_dir,
-                                 file_inflows,
-                                 sheet = inflow_type)
-        if file_timeseries is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_timeseries)):
-                raw_data_dict['timeseries'] = read_data_from_table(swmm_data_dir, file_timeseries)   
-        if file_quality is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_quality)):
-                raw_data_dict['quality'] = {}
-                for quality_param in['POLLUTANTS', 'LANDUSES', 'COVERAGES','LOADINGS']:
-                    raw_data_dict['quality'][quality_param] = read_data_from_table(swmm_data_dir,
-                                 file_quality,
-                                 sheet = quality_param)
-        if file_transects is not None:
-            if os.path.exists(os.path.join(swmm_data_dir,file_transects)):
+        file_curves = self.parameterAsString(parameters, self.FILE_CURVES, context)
+        file_patterns = self.parameterAsString(parameters, self.FILE_PATTERNS, context)
+        file_options = self.parameterAsString(parameters, self.FILE_OPTIONS, context)
+        file_timeseries = self.parameterAsString(parameters, self.FILE_TIMESERIES, context)
+        file_inflows = self.parameterAsString(parameters, self.FILE_INFLOWS, context)
+        file_quality = self.parameterAsString(parameters, self.FILE_QUALITY, context)
+        file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
+        print(str(file_options))
+        from .g_s_read_data import  read_data_from_table_direct
+        """options table"""
+        if file_options != '': #check if parameter is given as a string
+            raw_data_dict['options_df'] = read_data_from_table_direct(file_options)
+        """curves table"""
+        if file_curves != '':
+            from .g_s_defaults import def_curve_types
+            raw_data_dict['curves'] = {}
+            for curve_type in def_curve_types:
+                curve_df = read_data_from_table_direct(file_curves,
+                                                       sheet = curve_type)
+                if len(curve_df)>0:
+                    raw_data_dict['curves'][curve_type] = curve_df
+        """patterns table"""
+        if file_patterns != '':
+            raw_data_dict['patterns'] = {}
+            for pattern_type in ['HOURLY','DAILY','MONTHLY','WEEKEND']:
+                raw_data_dict['patterns'][pattern_type] = read_data_from_table_direct(file_patterns,
+                                                                                      sheet = pattern_type)
+        """inflows table"""
+        if file_inflows != '':
+            raw_data_dict['inflows'] = {}
+            for inflow_type in ['Direct','Dry_Weather']:
+                 raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(file_inflows,
+                                                                                     sheet = inflow_type)
+        """timeseries table"""
+        if file_timeseries != '':
+            raw_data_dict['timeseries'] = read_data_from_table_direct(file_timeseries)   
+        """quality table"""
+        if file_quality != '':
+            raw_data_dict['quality'] = {}
+            for quality_param in['POLLUTANTS', 'LANDUSES', 'COVERAGES','LOADINGS']:
+                raw_data_dict['quality'][quality_param] = read_data_from_table_direct(file_quality,
+                                                                                      sheet = quality_param)
+        """transects table"""
+        if file_transects != '':
                 raw_data_dict['transects'] = {}
                 for transects_param in['Data', 'XSections']:
-                    raw_data_dict['transects'][transects_param] = read_data_from_table(swmm_data_dir,
-                                 file_transects,
-                                 sheet = transects_param)
+                    raw_data_dict['transects'][transects_param] = read_data_from_table_direct(file_transects,
+                                                                                              sheet = transects_param)
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(25)
 
@@ -267,25 +403,29 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(50)
 
         """inflows"""
-        from .g_s_various_functions import get_inflows_from_table
-        dwf_dict , inflow_dict, err_txt = get_inflows_from_table(raw_data_dict['inflows'],junctions_df)
-        err_text = err_text+err_txt
-        if len(inflow_dict) > 0:
-            inp_dict['inflow_dict'] = inflow_dict
-        if len(dwf_dict) > 0:
-            inp_dict['dwf_dict'] = dwf_dict
+        if 'junctions_raw' in raw_data_dict.keys():
+            if 'inflows' in raw_data_dict.keys():
+                from .g_s_various_functions import get_inflows_from_table
+                dwf_dict , inflow_dict, err_txt = get_inflows_from_table(raw_data_dict['inflows'],junctions_df)
+                err_text = err_text+err_txt
+                if len(inflow_dict) > 0:
+                    inp_dict['inflow_dict'] = inflow_dict
+                if len(dwf_dict) > 0:
+                    inp_dict['dwf_dict'] = dwf_dict
         feedback.setProgress(55)
 
         """Curves"""
-        from .g_s_various_functions import get_curves_from_table
-        inp_dict['curves_dict'] = get_curves_from_table(raw_data_dict['curves'],
-                                                             name_col='Name')
+        if 'curves' in raw_data_dict.keys():
+            from .g_s_various_functions import get_curves_from_table
+            inp_dict['curves_dict'] = get_curves_from_table(raw_data_dict['curves'],
+                                                                 name_col='Name')
         feedback.setProgress(60)
 
         """patterns"""
-        from .g_s_various_functions import get_patterns_from_table
-        inp_dict['patterns_dict'] = get_patterns_from_table(raw_data_dict['patterns'],
-                                                             name_col='Name')
+        if 'patterns' in raw_data_dict.keys():
+            from .g_s_various_functions import get_patterns_from_table
+            inp_dict['patterns_dict'] = get_patterns_from_table(raw_data_dict['patterns'],
+                                                                 name_col='Name')
         feedback.setProgress(65)
         
         """time series"""
@@ -311,12 +451,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(80)
 
-        feedback.setProgressText(self.tr('writing inp'))
+        feedback.setProgressText(self.tr('Creating inp file'))
         """writing inp"""
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,
-                  inp_dict)
+                  inp_dict,
+                  feedback)
         feedback.setProgress(98)
         
         #err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
