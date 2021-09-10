@@ -23,6 +23,7 @@ hasProcessingProvider=yes
 changelog= 0.11 2021-10-01
 	- updated default data
 	- basic feedback for import function
+	- layer selection for second tool
 	0.10. 2021-09-08
 	- improved date formats 
 	0.9 2021-09-01
