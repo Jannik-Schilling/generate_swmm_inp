@@ -32,7 +32,9 @@ Then you can edit the shapefiles in QGIS and data in tables to create your own m
 If you start from scratch, a useful tool to create a network from a line layer is the QGIS plugin "WaterNetAnalyzer" (available in the [QGIS plugin repository](https://plugins.qgis.org/plugins/WaterNetAnalyzer-master/) or on [Github](https://github.com/Jannik-Schilling/WaterNetAnalyzer)).
 
 ### 3 Write a swmm input file (.inp)
-...with the second tool **(2_GenerateSwmmInpFile)**. The default files serve as a template for your own model, because file names and column names have to be matching in order to identify the correct information for the inp file.
+...with the second tool **(2_GenerateSwmmInpFile)**. The default files serve as a template for your own model, because column names have to be matching in order to identify the correct information for the inp file. 
+ - until version 0.10 you chose the folder in which all shapefiles and tables are stored. The file names have to remain the same as in the default data set.
+ - from version 0.11 on you don´t have to keep the original file names. Now you can rename the file e.g. in order to have different variants of conduits layers.
 
 ### 4 Run the model
 ...dirctly in SWMM or with the help of scripts in R or python (see below). There migth be several errors in th model at first -> return to step 2.
