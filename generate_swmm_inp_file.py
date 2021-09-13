@@ -471,8 +471,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         File names and column names have to be the same as in the default data set.
         Proposed workflow:\n
         1) load default data with the first tool.\n
-        2) copy all files to a new folder and change the data set.\n
-        3) select the new folder to create the input file (.inp)\n
+        2) copy all files to a new folder and edit the data set.\n
+        3) select the edited layers / files to create the input file (.inp)\n
         4) run the input file in swmm
         """)
 

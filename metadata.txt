@@ -20,30 +20,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.11 2021-10-01
-	- updated default data
-	- basic feedback for import function
-	- layer selection for second tool
-	0.10. 2021-09-08
-	- improved date formats 
-	0.9 2021-09-01
-	- import of inp checks if section in inp
-	- new: Transects section
-	0.8 2021-08-25
-	- new tool: import inp
-	- improved vertices function
-	- position of raingage relative to subcatchments
-	0.7 2021-08-12
-	- possible fix for the replace NULL issue
-	0.6 2021-07-22
-	- hint for pandas dependency
-	0.5 2021-07-21
-	- outlets integrated
-	- weir curves integrated
-	0.4 2021-07-16
-	- updated help strings and tool names
-	- updated processing feedback
-	- updated default data
+changelog= 0.12 2021-09-13
+	- new helpstrings
+
 
 
 # Tags are comma separated with spaces allowed
