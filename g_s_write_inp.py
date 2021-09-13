@@ -8,7 +8,8 @@ Created on Wed Oct  7 13:53:11 2020
 """
 def write_inp(inp_file_name,
               project_dir,
-              inp_dict):
+              inp_dict,
+              feedback):
     import os
     
     keys_dict = {'DWF':['Name','Baseline','Patterns'],
@@ -25,12 +26,13 @@ def write_inp(inp_file_name,
                 ';;Project Title/Notes\n' +
                 'test_name\n' +
                 '\n')
-    
-    file1.write('[OPTIONS]\n')
-    options_dict = inp_dict['options_dict']
-    for key in options_dict.keys():
-        file1.write(str(key)+'    '+str(options_dict[key])+'\n')
-    file1.write('\n')
+                
+    if 'options_dict' in inp_dict.keys():
+        file1.write('[OPTIONS]\n')
+        options_dict = inp_dict['options_dict']
+        for key in options_dict.keys():
+            file1.write(str(key)+'    '+str(options_dict[key])+'\n')
+        file1.write('\n')
     
     ##evaporation
     file1.write('[EVAPORATION]\n'+
@@ -40,7 +42,7 @@ def write_inp(inp_file_name,
     
     ##raingages
     if 'raingages_dict' in inp_dict.keys():
-        print('writing [RAINGAGES]...')
+        feedback.setProgressText('writing [RAINGAGES]...')
         file1.write('[RAINGAGES]\n')
         raingages_dict = inp_dict['raingages_dict']
         for rg_key in raingages_dict.keys():
@@ -51,13 +53,12 @@ def write_inp(inp_file_name,
                         str(rg_i['SCF'])+'    '+
                         str(rg_i['Source']))
             file1.write('\n')
-        file1.write('\n')
     
     
     
     ##subcatchments
     if 'subcatchments_df' in inp_dict.keys():
-        print('writing [SUBCATCHMENTS]...')
+        feedback.setProgressText('writing [SUBCATCHMENTS]...')
         subcatchments_df = inp_dict['subcatchments_df']
         file1.write('[SUBCATCHMENTS]\n')
         for i in range(len(subcatchments_df)):
@@ -73,13 +74,12 @@ def write_inp(inp_file_name,
                         str(scm['SnowPack']))
             file1.write('\n')
         file1.write('\n') 
-        print('done')
         
         
         
     ## subareas 
     if 'subcatchments_df' in inp_dict.keys():
-        print('writing [SUBAREAS]...')
+        feedback.setProgressText('writing [SUBAREAS]...')
         subcatchments_df = inp_dict['subcatchments_df']
         file1.write('[SUBAREAS]\n')
         for i in range(len(subcatchments_df)):
@@ -94,12 +94,11 @@ def write_inp(inp_file_name,
                         str(scm['PctRouted']))
             file1.write('\n')
         file1.write('\n')    
-        print('done')
     
     
     ## infiltration
     if 'subcatchments_df' in inp_dict.keys():
-        print('writing [INFILTRATION]...')
+        feedback.setProgressText('writing [INFILTRATION]...')
         subcatchments_df = inp_dict['subcatchments_df']
         file1.write('[INFILTRATION]\n')
         for i in range(len(subcatchments_df)):
@@ -113,12 +112,12 @@ def write_inp(inp_file_name,
                         str(scm['kind']))
             file1.write('\n')   
         file1.write('\n')    
-        print('done')
+
     
     
     ## junctions
     if 'junctions_df' in inp_dict.keys():
-        print('writing [JUNCTIONS]...')
+        feedback.setProgressText('writing [JUNCTIONS]...')
         junctions_df = inp_dict['junctions_df']
         file1.write('[JUNCTIONS]\n')
         for i in range(len(junctions_df)):
@@ -131,12 +130,11 @@ def write_inp(inp_file_name,
                         +str(jnct['Aponded']))
             file1.write('\n')  
         file1.write('\n')   
-        print('done')
     
     
     ## outfalls
     if 'outfalls_df' in inp_dict.keys():
-        print('writing [OUTFALLS]...')
+        feedback.setProgressText('writing [OUTFALLS]...')
         outfalls_df = inp_dict['outfalls_df']
         file1.write('[OUTFALLS]\n')
         for i in range(len(outfalls_df)):
@@ -149,11 +147,10 @@ def write_inp(inp_file_name,
                         str(outl['RouteTo']))
             file1.write('\n')  
         file1.write('\n')          
-        print('done')
-    
+   
     ## storages
     if 'storage_df' in inp_dict.keys():
-        print('writing [STORAGES]...')
+        feedback.setProgressText('writing [STORAGES]...')
         storage_df = inp_dict['storage_df']
         file1.write('[STORAGE]\n')
         for i in range(len(storage_df)):
@@ -171,11 +168,11 @@ def write_inp(inp_file_name,
                         str(stor['IMD']))  
             file1.write('\n')  
         file1.write('\n')  
-        print('done')
+
     
     ## conduits
     if 'conduits_df' in inp_dict.keys():
-        print('writing [CONDUITS]...')
+        feedback.setProgressText('writing [CONDUITS]...')
         conduits_df = inp_dict['conduits_df']
         file1.write('[CONDUITS]\n')
         for i in range(len(conduits_df)):
@@ -191,11 +188,11 @@ def write_inp(inp_file_name,
                         + str(con['MaxFlow']))
             file1.write('\n')     
         file1.write('\n')  
-        print('done')
+
     
     ## pumps
     if 'pumps_df' in inp_dict.keys():
-        print('writing [PUMPS]...')
+        feedback.setProgressText('writing [PUMPS]...')
         pumps_df = inp_dict['pumps_df']
         file1.write('[PUMPS]\n')
         for i in range(len(pumps_df)):
@@ -209,31 +206,31 @@ def write_inp(inp_file_name,
                         str(pmp['Shutoff']))
             file1.write('\n')
         file1.write('\n')
-        print('done')
+
         
     ## weirs orifices and outlets
     if 'weirs_df' in inp_dict.keys():
         # to_do: orifices
-        print('writing [WEIRS]...')
+        feedback.setProgressText('writing [WEIRS]...')
         weirs_df = inp_dict['weirs_df']
         file1.write('[WEIRS]\n')
         file1.write(weirs_df.to_string(header = False, index = False))
         file1.write('\n')
         file1.write('\n')
-        print('done')
+
         
     if 'outlets_df' in inp_dict.keys():
-        print('writing [OUTLETS]...')
+        feedback.setProgressText('writing [OUTLETS]...')
         outlets_df = inp_dict['outlets_df']
         file1.write('[OUTLETS]\n')
         file1.write(outlets_df.to_string(header = False, index = False))
         file1.write('\n')
         file1.write('\n')
-        print('done')
+
     
     ## cross sections
     if 'xsections_df' in inp_dict.keys():
-        print('writing [XSECTIONS]...')
+        feedback.setProgressText('writing [XSECTIONS]...')
         xsections_df = inp_dict['xsections_df']
         file1.write('[XSECTIONS]\n')
         for i in range(len(xsections_df)):
@@ -248,23 +245,23 @@ def write_inp(inp_file_name,
                         str(xscn['Culvert']))
             file1.write('\n')
         file1.write('\n')
-        print('done')
+
         
     ## transects
     if 'transects_string_list' in inp_dict.keys():
-        print('writing [TRANSECTS]...')
+        feedback.setProgressText('writing [TRANSECTS]...')
         file1.write('[TRANSECTS]\n')
         transects_string_list = inp_dict['transects_string_list']
         for tr_string in transects_string_list:
             file1.write(tr_string)
             file1.write('\n')
         file1.write('\n')
-        print('done')
+
         
         
     ## losses
     if 'losses_df' in inp_dict.keys():
-        print('writing [LOSSES]...')
+        feedback.setProgressText('writing [LOSSES]...')
         file1.write('[LOSSES]\n')
         losses_df = inp_dict['losses_df']
         for i in range(len(losses_df)):
@@ -277,11 +274,11 @@ def write_inp(inp_file_name,
                         str(los['Seepage']))
             file1.write('\n')
         file1.write('\n')
-        print('done')
+
         
     ## quality
     if 'quality_dict' in inp_dict.keys():
-        print('writing [Quality Parameters]...')
+        feedback.setProgressText('writing [Quality Parameters]...')
         quality_dict = inp_dict['quality_dict'].copy()
         for q_k in quality_dict.keys():
             q_df = quality_dict[q_k]
@@ -292,7 +289,7 @@ def write_inp(inp_file_name,
                 file1.write(q_df.to_string(header = False, index = False))
                 file1.write('\n')
             file1.write('\n')
-        print('done')
+
 
     def compose_dict_text(dict_i, section, keys_dict):
         section_keys = keys_dict[section]
@@ -300,24 +297,23 @@ def write_inp(inp_file_name,
         
     ## inflows
     if 'inflow_dict' in inp_dict.keys():
-        print('writing [INFLOWS]...')
+        feedback.setProgressText('writing [INFLOWS]...')
         inflow_dict = inp_dict['inflow_dict'].copy()
         file1.write('[INFLOWS]\n')
         file1.write(''.join(compose_dict_text(inflow_dict,'INFLOWS',keys_dict)))
         file1.write('\n')
-        print('done')
-        
+
     if 'dwf_dict' in inp_dict.keys():
-        print('writing [Dry Weather Flows]...')
+        feedback.setProgressText('writing [Dry Weather Flows]...')
         dwf_dict = inp_dict['dwf_dict'].copy()
         file1.write('[DWF]\n')
         file1.write(''.join(compose_dict_text(dwf_dict,'DWF',keys_dict)))
         file1.write('\n')
-        print('done')
+
         
     ## curves
     if 'curves_dict' in inp_dict.keys():
-        print('writing [CURVES]...')
+        feedback.setProgressText('writing [CURVES]...')
         curves_dict = inp_dict['curves_dict'].copy()
         file1.write('[CURVES]\n')
         for curve_key in curves_dict.keys():
@@ -336,14 +332,14 @@ def write_inp(inp_file_name,
                     file1.write('\n')
             file1.write(';\n')
         file1.write('\n')
-        print('done')
+
                                  
                     
         
     
     ## time series
     if 'timeseries_dict' in inp_dict.keys():
-        print('writing [TIMESERIES]...')
+        feedback.setProgressText('writing [TIMESERIES]...')
         timeseries_dict = inp_dict['timeseries_dict'].copy()
         file1.write('[TIMESERIES]\n')
         for ts_key in timeseries_dict.keys():
@@ -353,11 +349,11 @@ def write_inp(inp_file_name,
             file1.write(ts_df.to_string(header = False, index = False))
             file1.write('\n')
         file1.write('\n')
-        print('done')
+
     
     
     if 'patterns_dict' in inp_dict.keys():
-        print('writing [PATTERNS]...')
+        feedback.setProgressText('writing [PATTERNS]...')
         patterns_dict = inp_dict['patterns_dict'].copy()
         file1.write('[PATTERNS]\n')
         for patterns_key in patterns_dict.keys():
@@ -380,16 +376,16 @@ def write_inp(inp_file_name,
                         file1.write('\n')
             file1.write(';\n')
         file1.write('\n')
-        print('done')
+
         
     ## report options
-    print('writing [REPORT options]...')
+    feedback.setProgressText('writing [REPORT options]...')
     file1.write('[REPORT]\n')
     file1.write('SUBCATCHMENTS ALL\n')
     file1.write('NODES ALL\n')
     file1.write('LINKS ALL\n')
     file1.write('\n')
-    print('done')
+
     
     
     ##tags
@@ -399,7 +395,7 @@ def write_inp(inp_file_name,
     
     ## point coordinates
     file1.write('[COORDINATES]\n')
-    print('writing [COORDINATES]...')
+    feedback.setProgressText('writing [COORDINATES]...')
     if 'junctions_df' in inp_dict.keys():
         junctions_df = inp_dict['junctions_df'].copy()
         for i in range(len(junctions_df)):
@@ -421,11 +417,10 @@ def write_inp(inp_file_name,
             file1.write(str(stor['Name'])+'    '+str(stor['X_Coord'])+'    '+str(stor['Y_Coord']))
             file1.write('\n') 
     file1.write('\n')
-    print('done')
     
     ## line coordinates
     if 'vertices_dict' in inp_dict.keys():
-        print('writing [VERTICES]...')
+        feedback.setProgressText('writing [VERTICES]...')
         file1.write('[VERTICES]\n')
         vertices_dict = inp_dict['vertices_dict']
         for vert_key in vertices_dict.keys():
@@ -437,12 +432,11 @@ def write_inp(inp_file_name,
             file1.write(vert_df.to_string(header = False, index = False))
             file1.write('\n')
         file1.write('\n')
-        print('done')
     
     
     ## subcatchment polygons
     if 'polygons_dict' in inp_dict.keys():
-        print('writing [Polygons]...')
+        feedback.setProgressText('writing [Polygons]...')
         polygons_dict = inp_dict['polygons_dict']
         file1.write('[Polygons]\n')
         for pol_key in polygons_dict.keys():
@@ -454,8 +448,7 @@ def write_inp(inp_file_name,
             file1.write(pol_df.to_string(header = False, index = False))
             file1.write('\n')
         file1.write('\n')
-        print('done')
-    
+        
     
     ## gage symbol
     if 'raingages_dict' in inp_dict.keys():
