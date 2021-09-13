@@ -144,7 +144,7 @@ def get_transects_from_table(transects_raw):
         tr_modifier_i = tr_data_i[['ModifierMeander','ModifierStations', 'ModifierElevations']].values.tolist()[0]
         NC_data_i = ['NC']+tr_roughn_i
         NC_string_i = '    '.join([str(i) for i in NC_data_i])
-        X1_data_i = ['X1', T_Name, '', tr_count]+tr_bank_i+[0.0,0.0]+tr_modifier_i
+        X1_data_i = ['X1', T_Name, '', tr_count_i]+tr_bank_i+[0.0,0.0]+tr_modifier_i
         X1_string_i = '    '.join([str(i) for i in X1_data_i])
         tr_vals_i_list = [tr_vals_i.loc[i,['Elevation','Station']].to_list() for i in tr_vals_i.index]
         tr_vals_i_list = [str(x) for sublist in tr_vals_i_list for x in sublist]
