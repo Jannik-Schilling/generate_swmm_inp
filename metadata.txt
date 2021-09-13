@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description=This plugin generates SWMM Input files
-version=0.11
+version=0.12
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
