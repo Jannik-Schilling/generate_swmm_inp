@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description=This plugin generates SWMM Input files
-version=0.12
+version=0.13
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,8 +20,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.12 2021-09-13
-	- new helpstrings
+changelog= 0.13 2021-10-01
+	- functions comments
 
 
 
