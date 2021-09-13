@@ -799,6 +799,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_polygons = build_df_for_section('Polygons',dict_all_raw_vals)
             all_polygons = all_polygons.applymap(replace_nan_null)
             def get_polygon_from_verts(polyg_name):
+                    '''
+                    creates polygon geometries from vertices
+                    :param str polyg_name
+                    :returns: list
+                    '''
                     verts = all_polygons.copy()[all_polygons['Name']==polyg_name]
                     verts = verts.reset_index(drop=True)
                     verts_points = [get_point_from_x_y(verts.loc[i,:])[1] for i in verts.index]
