@@ -376,18 +376,21 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """
         feedback.setProgress(40)
 
-
+        """nodes (junctions, outfalls, orifices)"""
         from .g_s_various_functions import get_coords_from_geometry
+        all_nodes = list()
         if 'junctions_raw' in raw_data_dict.keys():
             junctions_df = raw_data_dict['junctions_raw'].copy()
             junctions_df['X_Coord'],junctions_df['Y_Coord'] = get_coords_from_geometry(junctions_df)
             inp_dict['junctions_df'] = junctions_df
+            all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
             outfalls_df = raw_data_dict['outfalls_raw'].copy()
             outfalls_df['RouteTo'] = outfalls_df['RouteTo'].fillna('')
             outfalls_df['Data'] = outfalls_df['Data'].fillna('')
             outfalls_df['X_Coord'],outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
             inp_dict['outfalls_df'] = outfalls_df
+            all_nodes = all_nodes+outfalls_df['Name'].tolist()
         if 'storages_raw' in raw_data_dict.keys():
             storage_df = raw_data_dict['storages_raw'].copy()
             storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
@@ -396,6 +399,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             storage_df['IMD'] = storage_df['IMD'].fillna('')
             #storage_df['Descriptio'] = storage_df['Descriptio'].fillna('')
             inp_dict['storage_df'] = storage_df
+            all_nodes = all_nodes+storage_df['Name'].tolist()
             
         """to do: dividers"""
         # if 'dividers_rwa' in raw_data_dict.keys():
@@ -404,10 +408,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(50)
 
         """inflows"""
-        if 'junctions_raw' in raw_data_dict.keys():
+        nodes_df = pd.DataFrame()
+        if len(all_nodes) > 0:
             if 'inflows' in raw_data_dict.keys():
                 from .g_s_various_functions import get_inflows_from_table
-                dwf_dict , inflow_dict, err_txt = get_inflows_from_table(raw_data_dict['inflows'],junctions_df)
+                dwf_dict , inflow_dict, err_txt = get_inflows_from_table(raw_data_dict['inflows'],all_nodes)
                 err_text = err_text+err_txt
                 if len(inflow_dict) > 0:
                     inp_dict['inflow_dict'] = inflow_dict
