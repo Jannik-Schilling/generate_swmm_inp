@@ -6,7 +6,7 @@ A QGIS plugin which generates an SWMM input file from existing shapefiles
 - [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
 
-### 1 Load default the data 
+### 1 Load the default data 
 ...with the first tool (**1_GenerateDefaultData**). Alternatively you can load existing shapefiles into QGIS (**step 5**). To date shapefiles are provided for the main infrastructures:
 - junctions (SWMM_junctions.shp)
 - conduits (SWMM_conduits.shp)
