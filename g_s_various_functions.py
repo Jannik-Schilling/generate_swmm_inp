@@ -50,8 +50,6 @@ def get_point_from_x_y(sr):
     geom = QgsGeometry.fromWkt('POINT('+str(x_coord)+' '+str(y_coord)+')')
     return [sr['Name'],geom]
 
-
-
 def check_columns(x_df, col_df):
     '''checks if all columns are in a dataframe'''
     cols_oblig =  col_df[col_df['oblig'] == True]
@@ -64,7 +62,6 @@ def check_columns(x_df, col_df):
         else:
             x_df[check_col] = cols_volunt.loc[cols_volunt['col_name']==check_col,'default'].values[0]
     return x_df
-
 
 ## functions for data in tables
 def get_curves_from_table(curves_raw, name_col):

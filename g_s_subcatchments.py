@@ -5,7 +5,6 @@ Created on Wed May 12 15:48:56 2021
 @author: schilling
 """
 
-import os
 import pandas as pd
 import numpy as np
 

@@ -7,7 +7,7 @@ Created on Wed May 12 16:42:33 2021
 import pandas as pd
 import os
 import numpy as np
-from qgis.core import (QgsVectorLayer, NULL)
+from qgis.core import (NULL)
 
 def read_shapefiles_direct(file_outfalls,
                        file_storages,
@@ -16,6 +16,7 @@ def read_shapefiles_direct(file_outfalls,
                        file_junctions,
                        file_pumps,
                        file_weirs,
+                       file_orifices,
                        file_outlets):
     """reads shapefiles from swmm model"""
     data_dict = dict()
@@ -61,6 +62,9 @@ def read_shapefiles_direct(file_outfalls,
     
     if file_outlets is not None:
         data_dict['outlets_raw'] = load_shapefile_to_df(file_outlets)
+    
+    if file_orifices is not None:
+        data_dict['orifices_raw'] = load_shapefile_to_df(file_orifices)
     
     if file_weirs is not None:
         data_dict['weirs_raw'] = load_shapefile_to_df(file_weirs)

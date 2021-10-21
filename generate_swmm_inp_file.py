@@ -30,13 +30,10 @@ __copyright__ = '(C) 2021 by Jannik Schilling'
 
 __revision__ = '$Format:%H$'
 
-from datetime import datetime, date
-import numpy as np
 import os
 import pandas as pd
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProject,
-                       QgsProcessing,
+from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination,
@@ -50,15 +47,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     generates a swmm input file from shapefiles and tables
     """
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
-    SWMM_FOLDER = 'SWMM_FOLDER'
-    FILE_OUTFALLS = 'FILE_OUTFALLS'
-    FILE_STORAGES = 'FILE_STORAGES'
-    FILE_SUBCATCHMENTS= 'FILE_SUBCATCHMENTS'
     FILE_CONDUITS = 'FILE_CONDUITS'
     FILE_JUNCTIONS = 'FILE_JUNCTIONS'
-    FILE_PUMPS    = 'FILE_PUMPS'
-    FILE_WEIRS = 'FILE_WEIRS'
+    FILE_ORIFICES = 'FILE_ORIFICES'
+    FILE_OUTFALLS = 'FILE_OUTFALLS'
     FILE_OUTLETS = 'FILE_OUTLETS'
+    FILE_STORAGES = 'FILE_STORAGES'
+    FILE_PUMPS    = 'FILE_PUMPS'
+    FILE_SUBCATCHMENTS= 'FILE_SUBCATCHMENTS'
+    FILE_WEIRS = 'FILE_WEIRS'
+    
     FILE_CURVES = 'FILE_CURVES'
     FILE_PATTERNS = 'FILE_PATTERNS'
     FILE_OPTIONS = 'FILE_OPTIONS'
@@ -80,7 +78,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 'INP files (*.inp)', #defaultValue=['date.inp'] 
             )
         )
-
+        
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_JUNCTIONS,
@@ -96,7 +94,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 types=[QgsProcessing.SourceType.TypeVectorLine],
                 optional = True#,defaultValue = 'SWMM_conduits'
                 ))
-                
+        
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_SUBCATCHMENTS,
@@ -104,8 +102,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 types=[QgsProcessing.SourceType.TypeVectorAnyGeometry],
                 optional = True#,defaultValue = 'SWMM_subcatchments'
                 ))
-                
-                
+        
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_STORAGES,
@@ -136,6 +133,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Weirs Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
                 optional = True#,defaultValue = 'SWMM_weirs'
+                ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_ORIFICES,
+                self.tr('Orifices Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorLine],
+                optional = True#,defaultValue = 'SWMM_orifices'
                 ))
                 
         self.addParameter(
@@ -212,10 +217,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 ))
 
 
-    def processAlgorithm(self, parameters, context, feedback):
-        today = date.today()
-        now = datetime.now()
-        
+    def processAlgorithm(self, parameters, context, feedback):      
         """input file name and path"""
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
@@ -240,6 +242,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_junctions = self.parameterAsVectorLayer(parameters, self.FILE_JUNCTIONS, context)
         file_pumps = self.parameterAsVectorLayer(parameters, self.FILE_PUMPS, context)
         file_weirs = self.parameterAsVectorLayer(parameters, self.FILE_WEIRS, context)
+        file_orifices = self.parameterAsVectorLayer(parameters, self.FILE_ORIFICES, context)
         file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
         raw_data_dict = read_shapefiles_direct(file_outfalls,
                                            file_storages,
@@ -248,6 +251,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                            file_junctions,
                                            file_pumps,
                                            file_weirs,
+                                           file_orifices,
                                            file_outlets)
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(20)
@@ -348,6 +352,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """weirs"""
         if 'weirs_raw' in raw_data_dict.keys():
             from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
+            from .g_s_various_functions import get_coords_from_geometry
             weirs_df, xsections_df= get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
             weirs_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
             weirs_verts = {k: del_first_last_vt(v) for k,v in weirs_verts.items() if len(v) > 2} #first and last vertices are in nodes coordinates anyway
@@ -359,6 +364,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """outlets"""
         if 'outlets_raw' in raw_data_dict.keys():
             from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
+            from .g_s_various_functions import get_coords_from_geometry
             inp_dict['outlets_df'] = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
             outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
             outlets_verts = {k: del_first_last_vt(v) for k,v in outlets_verts.items() if len(v) > 2}
@@ -370,11 +376,20 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 from .g_s_links import get_transects_from_table
                 transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
                 inp_dict['transects_string_list'] = transects_string_list
-        """
-        to do:
-            # orifices
-        """
+        
+        """orifices"""
+        if 'orifices_raw' in raw_data_dict.keys():
+            from .g_s_links import get_orifices_from_shapefile, del_first_last_vt
+            orifices_df, xsections_df= get_orifices_from_shapefile(raw_data_dict['orifices_raw'])
+            orifices_verts = get_coords_from_geometry(raw_data_dict['orifices_raw'].copy())
+            orifices_verts = {k: del_first_last_vt(v) for k,v in orifices_verts.items() if len(v) > 2} #first and last vertices are in nodes coordinates anyway
+            inp_dict['vertices_dict'].update(orifices_verts)
+            inp_dict['xsections_df'] = inp_dict['xsections_df'].append(xsections_df)
+            inp_dict['xsections_df'] = inp_dict['xsections_df'].reset_index(drop=True)
+            inp_dict['orifices_df'] = orifices_df
+
         feedback.setProgress(40)
+
 
         """nodes (junctions, outfalls, orifices)"""
         from .g_s_various_functions import get_coords_from_geometry
@@ -408,7 +423,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(50)
 
         """inflows"""
-        nodes_df = pd.DataFrame()
         if len(all_nodes) > 0:
             if 'inflows' in raw_data_dict.keys():
                 from .g_s_various_functions import get_inflows_from_table
