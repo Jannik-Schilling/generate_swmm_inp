@@ -61,14 +61,14 @@ pumps_columns = pd.DataFrame([['Name',True,''],
 def get_pumps_from_shapefile(pumps_raw):
     """prepares pumps data for writing an input file"""
     from .g_s_various_functions import check_columns
-    pumps_df = pumps_raw.rename(columns={'Curve':'PumpCurve'})
-    pumps_df = check_columns(pumps_df.copy(), pumps_columns)
+    pumps_df = check_columns(pumps_raw.copy(), pumps_columns)
     pumps_df = pumps_df.reset_index(drop=True)
     return pumps_df
 
 
 
 def get_weirs_from_shapefile(weirs_raw):
+    #from .g_s_defaults import def_sections_dict
     """prepares weirs data for writing an input file"""
     weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
                                          'Length':'Geom2',
@@ -110,7 +110,28 @@ def get_weirs_from_shapefile(weirs_raw):
     xsections_df['Barrels'] = ''
     xsections_df['Culvert'] = ''
     return weirs_df, xsections_df
-    
+
+
+def get_orifices_from_shapefile(orifices_raw):
+    """prepares orifices data for writing an input file"""
+    from .g_s_defaults import def_sections_dict
+    orifices_attrs = list(def_sections_dict['ORIFICES'].keys())
+    orifices_df = orifices_raw.copy()
+    orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')
+    orifices_df = orifices_df[orifices_attrs]
+    orifices_raw['Geom1'] = orifices_raw['Height']
+    orifices_raw['Geom2'] = orifices_raw['Width']
+    orifices_raw['Geom2'] = orifices_raw['Geom2'].fillna('0')
+    orifices_raw['Geom3'] = 0
+    orifices_raw['Geom4'] = 0
+    xsections_df = orifices_raw[['Name',
+                                'Shape',
+                                'Geom1',
+                                'Geom2',
+                                'Geom3',
+                                'Geom4']].copy()
+    return orifices_df, xsections_df
+
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
     def get_outl_curve(outl_row):

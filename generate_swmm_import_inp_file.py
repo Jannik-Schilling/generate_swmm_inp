@@ -651,21 +651,21 @@ class ImportInpFile (QgsProcessingAlgorithm):
             lines_created = pd.DataFrame(lines_created, columns = ['Name', 'geometry']).set_index('Name')
             return lines_created 
             
+        '''cross-sections'''
+        if 'XSECTIONS' in dict_all_raw_vals.keys():
+            all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
+            all_xsections = all_xsections.applymap(replace_nan_null)
+            
         '''conduits section '''
         if 'CONDUITS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating conduits shapefile ...'))
             feedback.setProgress(65)
-            #cross sections
-            all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
-            all_xsections = all_xsections.applymap(replace_nan_null)
-            
             #losses
             if 'LOSSES' in dict_all_raw_vals.keys():
                 all_losses = build_df_for_section('LOSSES', dict_all_raw_vals)
                 all_losses = all_losses.applymap(replace_nan_null)
             else: 
                 all_losses = build_df_from_vals_list([],list(def_sections_dict['LOSSES'].keys()))
-            
             all_conduits = build_df_for_section('CONDUITS', dict_all_raw_vals)
             all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
             all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
@@ -701,14 +701,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if 'TRANSECTS' in dict_all_raw_vals.keys():
                 feedback.setProgressText(self.tr('generating transects file ...'))
                 feedback.setProgress(70)
-                all_transects_data_df = dict()
                 transects_list = dict_all_raw_vals['TRANSECTS'].copy()
                 tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
                 tr_endp = tr_startp[1:]+[len(transects_list)]
                 def get_transects_data(tr_i):
                     tr_roughness = tr_i[0][1:]
                     tr_name = tr_i[1][1]
-                    tr_count = tr_i[1][2]
+                    #tr_count = tr_i[1][2]
                     tr_bankstat_left = tr_i[1][3]
                     tr_bankstat_right = tr_i[1][4]
                     tr_modifier = tr_i[1][7:10]
@@ -791,6 +790,23 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
             weirs_layer = create_layer_from_table(all_weirs,'WEIRS','LineString','SWMM_weirs',all_weirs_fields)
             add_layer_on_completion(folder_save, 'SWMM_weirs', 'style_regulators.qml')
+            
+            
+        '''ORIFICES section'''
+        if 'ORIFICES' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('generating orifices shapefile ...'))
+            feedback.setProgress(85)
+            all_orifices = build_df_for_section('ORIFICES', dict_all_raw_vals)
+            all_orifices = all_orifices.join(all_xsections.set_index('Name'), on = 'Name')
+            all_orifices = all_orifices.drop(columns=['Geom3', 'Geom4', 'Barrels', 'Culvert'])
+            all_orifices = all_orifices.rename(columns = {'Geom1':'Height','Geom2':'Width'})
+            all_orifices = all_orifices.applymap(replace_nan_null) 
+            orifices_geoms = get_line_geometry(all_orifices)
+            all_orifices = all_orifices.join(orifices_geoms, on = 'Name')
+            all_orifices_fields = def_sections_dict['ORIFICES'].copy()
+            all_orifices_fields.update({'Shape':'String','Height':'Double','Width':'Double'})
+            orifices_layer = create_layer_from_table(all_orifices,'ORIFICES','LineString','SWMM_orifices',all_orifices_fields)
+            add_layer_on_completion(folder_save, 'SWMM_orifices', 'style_regulators.qml')
 
         ''' POLYGONS '''
         if 'Polygons' in dict_all_raw_vals.keys():

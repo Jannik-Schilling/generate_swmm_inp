@@ -218,6 +218,14 @@ def write_inp(inp_file_name,
         file1.write('\n')
         file1.write('\n')
 
+    if 'orifices_df' in inp_dict.keys():
+        # to_do: orifices
+        feedback.setProgressText('writing [ORIFICES]...')
+        orifices_df = inp_dict['orifices_df']
+        file1.write('[ORIFICES]\n')
+        file1.write(orifices_df.to_string(header = False, index = False))
+        file1.write('\n')
+        file1.write('\n')
         
     if 'outlets_df' in inp_dict.keys():
         feedback.setProgressText('writing [OUTLETS]...')

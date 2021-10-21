@@ -50,8 +50,6 @@ def get_point_from_x_y(sr):
     geom = QgsGeometry.fromWkt('POINT('+str(x_coord)+' '+str(y_coord)+')')
     return [sr['Name'],geom]
 
-
-
 def check_columns(x_df, col_df):
     '''checks if all columns are in a dataframe'''
     cols_oblig =  col_df[col_df['oblig'] == True]
@@ -64,7 +62,6 @@ def check_columns(x_df, col_df):
         else:
             x_df[check_col] = cols_volunt.loc[cols_volunt['col_name']==check_col,'default'].values[0]
     return x_df
-
 
 ## functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
@@ -157,10 +154,10 @@ def get_raingages_from_timeseries(ts_dict):
     return (rg_dict)
                
     
-def get_inflows_from_table(inflows_raw,junctions_df):
+def get_inflows_from_table(inflows_raw,all_nodes):
     '''
     generates a dict for direct inflow and
-    dry weather inflow from tables in swmm_inflows.xlsx
+    dry weather inflow from tables in "inflows_raw"
     '''
     def compose_infl_dict(inflow,i,inf_type):
         if inf_type == 'Direct':
@@ -183,21 +180,24 @@ def get_inflows_from_table(inflows_raw,junctions_df):
         return i_dict
     err_txt = ''
     for inflow_type in ['Direct','Dry_Weather']:
+        # delete inflows for nodes which do no exist
         inflow_df = inflows_raw[inflow_type]
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
-        infl_err = inflow_df[~inflow_df['Name'].isin(junctions_df['Name'])]
+        infl_err = inflow_df[~inflow_df['Name'].isin(all_nodes)]
         infl_err = infl_err[pd.notna(infl_err['Name'])]
         if len(infl_err)>0:
             err_txt = err_txt+'\n---\nFehlende Junctions für Abflusstyp "'+inflow_type+'":\n'+'\n'.join([n for n in infl_err['Name'].unique()])
-        inflow_df = inflow_df[inflow_df['Name'].isin(junctions_df['Name'])]
+        inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
         inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
         inflow_df = inflow_df.fillna('""')
-        if inflow_df.empty:
+        if inflow_df.empty: 
+            #if no flow of the current inflow_type and existing nodes is given, return empty dicts
             if inflow_type == 'Direct':
                 inflow_dict={}
             else:
                 dwf_dict={}
         else:
+            # prepare a dict with node names and constituents
             a_l = inflow_df['Name'].tolist()
             b_l = inflow_df['Constituent'].tolist()
             inflow_df['temp'] = [str(a)+'    '+str(b) for a,b in zip(a_l, b_l)]
@@ -206,7 +206,6 @@ def get_inflows_from_table(inflows_raw,junctions_df):
                 inflow_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
             else: 
                 dwf_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
-
     return dwf_dict, inflow_dict, err_txt
     
     

@@ -10,7 +10,7 @@ version=0.13
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
-about=Generates SWMM Input files from existing shapefiles, exemplary data with all fields are provided and can be added to a QGIS project with the first tool. This plugin needs the python library 'pandas'. For the import tool the python library 'openpyxl' is also required. If it is not already installed, it can be added in a advanced QGIS installation or via pip.
+about=Generates SWMM Input files from existing shapefiles, exemplary data with all fields are provided and can be added to a QGIS project with the first tool. This plugin needs the python libraries 'pandas' and 'openpyxl' (for the import tool) which should be included in current QGIS versions. If they are not already installed, they can be added in a advanced QGIS installation or via pip.
 
 tracker=https://github.com/Jannik-Schilling/generate_swmm_inp/issues
 repository=https://github.com/Jannik-Schilling/generate_swmm_inp
@@ -20,8 +20,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.13 2021-10-01
-	- functions comments
+changelog= 0.13 2021-10-12
+	- inflows now possible for all node types
+	- added functions comments
 
 
 
