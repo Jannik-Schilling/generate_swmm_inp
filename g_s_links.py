@@ -119,12 +119,9 @@ def get_orifices_from_shapefile(orifices_raw):
     orifices_df = orifices_raw.copy()
     orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')
     orifices_df = orifices_df[orifices_attrs]
-    orifices_shapes = ['CIRCULAR','RECT_CLOSED']
     orifices_raw['Geom1'] = orifices_raw['Height']
-    if orifices_raw['Shape'] == orifices_shapes[0]:
-        orifices_raw['Geom2'] = 0
-    else:
-        orifices_raw['Geom2'] = orifices_raw['Width']
+    orifices_raw['Geom2'] = orifices_raw['Width']
+    orifices_raw['Geom2'] = orifices_raw['Geom2'].fillna('0')
     orifices_raw['Geom3'] = 0
     orifices_raw['Geom4'] = 0
     xsections_df = orifices_raw[['Name',
@@ -134,7 +131,6 @@ def get_orifices_from_shapefile(orifices_raw):
                                 'Geom3',
                                 'Geom4']].copy()
     return orifices_df, xsections_df
-
 
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
@@ -154,8 +150,8 @@ def get_outlets_from_shapefile(outlets_raw):
                              'Qexpon', 
                              'FlapGate']]
     return outlets_df 
-
-
+    
+# transects_raw = raw_data_dict['transects'].copy()
 def get_transects_from_table(transects_raw):
     """writes strings for transects"""
     tr_data = transects_raw['Data']
