@@ -265,7 +265,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_inflows = self.parameterAsString(parameters, self.FILE_INFLOWS, context)
         file_quality = self.parameterAsString(parameters, self.FILE_QUALITY, context)
         file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
-        print(str(file_options))
+        #print(str(file_options))
         
         from .g_s_read_data import  read_data_from_table_direct
         """options table"""

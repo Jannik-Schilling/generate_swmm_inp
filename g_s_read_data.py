@@ -81,7 +81,7 @@ def read_data_from_table_direct(file, sheet=0):
         if sheet == 0:
             data_df = pd.read_excel(file,sheet_name = sheet)
         else:
-            print ('sheet not 0')
+            #print ('sheet not 0')
             if sheet in pd.ExcelFile(file).sheet_names:
                 data_df = pd.read_excel(file,sheet_name = sheet)
             elif str(sheet).upper() in pd.ExcelFile(file).sheet_names:
