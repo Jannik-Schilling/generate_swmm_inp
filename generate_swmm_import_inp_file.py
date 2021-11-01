@@ -158,6 +158,27 @@ class ImportInpFile (QgsProcessingAlgorithm):
         dict_search = {section_list[i]:[pos_start_list[i],pos_end_list[i]] for i in range(len(section_list))}
 
 
+        def concat_quoted_vals(text_line):
+            '''
+            finds quoted text and cocatenates text strings if 
+            they have been separated by whitespace or other separators
+            '''
+            #find start position of quoted elements
+            quoted_elms = [i for i, x in enumerate(text_line) if x.startswith('"')]
+            if len(quoted_elms) > 0:
+                for q_e in quoted_elms:
+                    #find end position of quoted elements
+                    quoted_elms_end = [i for i, x in enumerate(text_line[q_e:]) if x.endswith('"')]
+                    if quoted_elms_end[0] == 0:
+                        # quoted element ends with quotation
+                        pass
+                    else:
+                        # has been separated
+                        concat_elems = text_line[q_e:q_e+quoted_elms_end[0]+1]
+                        cocatenated_elems = ' '.join(concat_elems)
+                        text_line[q_e:q_e+quoted_elms_end[0]+1] = [cocatenated_elems]
+            return text_line
+            
         def extract_section_vals_from_text(text_limits):
             '''
             extracts sections from inp_text
@@ -167,6 +188,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             section_text = inp_text[text_limits[0]+1:text_limits[1]]
             section_text = [x.strip() for x in section_text if not x.startswith(';')] #delete comments and "headers"
             section_vals = [x.split() for x in section_text]
+            section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             return section_vals
 
         dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k]) for k in dict_search.keys()}
