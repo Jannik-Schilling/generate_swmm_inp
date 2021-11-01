@@ -189,7 +189,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             section_text = [x.strip() for x in section_text if not x.startswith(';')] #delete comments and "headers"
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
-            return section_vals
+            return section_vals_clean
 
         dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k]) for k in dict_search.keys()}
 
