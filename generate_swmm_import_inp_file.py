@@ -529,6 +529,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             f.setAttributes(df.tolist()[:-1])
             pr.addFeature(f)
 
+                                                     
         def create_layer_from_table(data_df,section_name,geom_type,layer_name, layer_fields = 'not_set'):
             '''
             creates a QgsVectorLayer from data in data_df
@@ -571,7 +572,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 return NULL
             else:
                 return data
-                
+        
         def insert_nan_after_kw(df_line, kw_position, kw, insert_position):
             '''
             adds np.nan after keyword (kw)
@@ -676,8 +677,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
         '''cross-sections'''
         if 'XSECTIONS' in dict_all_raw_vals.keys():
             all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
+            all_xsections['Shp_Trnsct'] = np.nan # For CUSTOM or IRREGULAR Shapes
+            if any(all_xsections['Shape'] == 'IRREGULAR') or any(all_xsections['Shape'] == 'CUSTOM'):
+                all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR','Geom1']
+                all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1'] = np.nan
+                all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM','Geom2']
+                all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
             all_xsections = all_xsections.applymap(replace_nan_null)
-            
+
         '''conduits section '''
         if 'CONDUITS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating conduits shapefile ...'))
@@ -696,12 +703,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
             all_conduits_fields = def_sections_dict['CONDUITS'].copy()
             all_conduits_fields.update(def_sections_dict['XSECTIONS'])
+            all_conduits_fields.update({'Shp_Trnsct':'String'})
             all_conduits_fields.update(def_sections_dict['LOSSES'])
             all_conduits = all_conduits.applymap(replace_nan_null)
-            if (all_xsections['Shape'] == 'IRREGULAR').any(): 
-                all_conduits_fields['Geom1'] = 'String'
-            if (all_xsections['Shape'] == 'CUSTOM').any(): 
-                all_conduits_fields['Geom2'] = 'String'
             conduits_layer = create_layer_from_table(all_conduits,
                                                      'CONDUITS',
                                                      'LineString',
@@ -803,7 +807,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(82)
             all_weirs= build_df_for_section('WEIRS', dict_all_raw_vals)
             all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
-            all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert'])
+            all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct'])
             all_weirs = all_weirs.rename(columns = {'Geom1':'Height','Geom2':'Length', 'Geom3':'SideSlope'})
             all_weirs = all_weirs.applymap(replace_nan_null) 
             weirs_geoms = get_line_geometry(all_weirs)
@@ -820,7 +824,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(85)
             all_orifices = build_df_for_section('ORIFICES', dict_all_raw_vals)
             all_orifices = all_orifices.join(all_xsections.set_index('Name'), on = 'Name')
-            all_orifices = all_orifices.drop(columns=['Geom3', 'Geom4', 'Barrels', 'Culvert'])
+            all_orifices = all_orifices.drop(columns=['Geom3', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct'])
             all_orifices = all_orifices.rename(columns = {'Geom1':'Height','Geom2':'Width'})
             all_orifices = all_orifices.applymap(replace_nan_null) 
             orifices_geoms = get_line_geometry(all_orifices)
