@@ -6,6 +6,7 @@ Created on Wed May 12 15:56:10 2021
 """
 
 import pandas as pd
+from qgis.core import QgsProcessingException
 
 def get_conduits_from_shapefile(conduits_raw):
     """
@@ -21,6 +22,7 @@ def get_conduits_from_shapefile(conduits_raw):
                                'OutOffset',
                                'InitFlow',
                                'MaxFlow']].copy()
+    # Asteriscs indicate that InOffset or OutOffset is the same as node elevation: 
     conduits_df['InOffset'] = conduits_df['InOffset'].fillna('*')
     conduits_df['OutOffset'] = conduits_df['OutOffset'].fillna('*')
     
@@ -33,6 +35,13 @@ def get_conduits_from_shapefile(conduits_raw):
                                 'Barrels',
                                 'Culvert']].copy()
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
+    if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM'):
+        if 'Shp_Trnsct' not in conduits_raw.columns:
+            raise QgsProcessingException('Column "Shp_Trnsct is missing for IRREGULAR or CUSTOM Shape')
+        else:
+            xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
+            xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
+    
     losses_df = conduits_raw[['Name',
                               'Inlet',
                               'Outlet',
