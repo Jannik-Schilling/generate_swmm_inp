@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description=This plugin generates SWMM Input files
-version=0.13
+version=0.14
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,7 +20,7 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.13 2021-10-12
+changelog= 0.13 2021-11-03
 	- inflows now possible for all node types
 	- new column "Shp_Trnsct" in conduits shapefile for CUSTOM or IRREGULAR cross-section shapes
 	- new comments for functions in code
