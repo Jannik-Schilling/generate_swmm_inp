@@ -275,9 +275,9 @@ def write_inp(inp_file_name,
         for i in range(len(losses_df)):
             los = losses_df.loc[i,:]
             file1.write(str(los['Name'])+'   '+
-                        str(los['Inlet'])+'   '+
-                        str(los['Outlet'])+'   '+
-                        str(los['Averge'])+'   '+
+                        str(los['Kentry'])+'   '+
+                        str(los['Kexit'])+'   '+
+                        str(los['Kavg'])+'   '+
                         str(los['FlapGate'])+'   '+
                         str(los['Seepage']))
             file1.write('\n')

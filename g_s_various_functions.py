@@ -247,6 +247,11 @@ def get_options_from_table(options_df):
     return options_dict
     
 def convert_options_format_for_import(dict_options):
+    '''
+    converts formats in dict_options for the options file
+    Args:
+        dict_options
+    '''
     from datetime import datetime
     dict_options['START_DATE'] = datetime.strptime(dict_options['START_DATE'],'%m/%d/%Y').date()
     dict_options['REPORT_START_DATE'] = datetime.strptime(dict_options['REPORT_START_DATE'],'%m/%d/%Y').date()
