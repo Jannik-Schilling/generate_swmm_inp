@@ -620,6 +620,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STORAGE' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating storages shapefile ...'))
             feedback.setProgress(45)
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',6) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',7) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',8) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'FUNCTIONAL',5) for x in dict_all_raw_vals['STORAGE'].copy()]
+            # if no seepage loss is defined:
+            dict_all_raw_vals['STORAGE'] = [adjust_line_length(x,11,14,[np.nan,np.nan,np.nan]) for x in dict_all_raw_vals['STORAGE'].copy()]
             all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
             all_storages = all_storages.join(all_geoms, on = 'Name')
             all_storages = all_storages.applymap(replace_nan_null)
@@ -636,7 +642,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_outfalls = all_outfalls.applymap(replace_nan_null)
             outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point','SWMM_outfalls')
             add_layer_on_completion(folder_save, 'SWMM_outfalls', 'style_outfalls.qml')
-
+        
+        ''' outfalls section '''
+        if 'DIVIDERS' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('generating dividers shapefile ...'))
+            feedback.setProgress(51)
+            # dict_all_raw_vals['DIVIDERS'] = [insert_nan_after_kw(x,2,'FREE',3) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            # all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
+            # all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
+            # all_outfalls = all_outfalls.applymap(replace_nan_null)
+            # outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point','SWMM_outfalls')
+            # add_layer_on_completion(folder_save, 'SWMM_outfalls', 'style_outfalls.qml')
 
         '''LINES'''
         feedback.setProgressText(self.tr('extracting vertices ...'))

@@ -35,6 +35,7 @@ import pandas as pd
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingException,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer)
@@ -409,10 +410,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'storages_raw' in raw_data_dict.keys():
             storage_df = raw_data_dict['storages_raw'].copy()
             storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
+            if 'Apond' in storage_df.columns and 'Coeff' not in storage_df.columns:
+                raise QgsProcessingException('Storages Layer: With version 0.14 the column name for the A-Value / Coefficient was renamed into "Coeff" (before: "Apond"')
+            # Empty linestrings will be ignored:"            
+            storage_df['Curve'] = storage_df['Curve'].fillna('')
+            storage_df['Coeff'] = storage_df['Coeff'].fillna('')
+            storage_df['Exponent'] = storage_df['Exponent'].fillna('')
+            storage_df['Constant'] = storage_df['Constant'].fillna('')
             storage_df['Psi'] = storage_df['Psi'].fillna('')
             storage_df['Ksat'] = storage_df['Ksat'].fillna('')
             storage_df['IMD'] = storage_df['IMD'].fillna('')
-            #storage_df['Descriptio'] = storage_df['Descriptio'].fillna('')
             inp_dict['storage_df'] = storage_df
             all_nodes = all_nodes+storage_df['Name'].tolist()
             

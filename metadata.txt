@@ -20,12 +20,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.13 2021-11-03
-	- inflows now possible for all node types
-	- new column "Shp_Trnsct" in conduits shapefile for CUSTOM or IRREGULAR cross-section shapes
-	- new comments for functions in code
-	- fix files quotation issue
-
+changelog= 0.14 2021-11-21
+	- fix storage Type FUNCTIONAL
 
 
 # Tags are comma separated with spaces allowed
