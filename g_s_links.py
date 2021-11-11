@@ -54,9 +54,9 @@ def get_conduits_from_shapefile(conduits_raw):
                               'FlapGate',
                               'Seepage']].copy()
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
-    losses_df['Inlet'] = losses_df['Inlet'].fillna('0')
-    losses_df['Outlet'] = losses_df['Outlet'].fillna('0')
-    losses_df['Averge'] = losses_df['Averge'].fillna('0')
+    losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
+    losses_df['Kexit'] = losses_df['Kexit'].fillna('0')
+    losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
 def del_first_last_vt(link):
