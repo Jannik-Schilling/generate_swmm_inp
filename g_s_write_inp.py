@@ -146,7 +146,29 @@ def write_inp(inp_file_name,
                         str(outl['FlapGate'])+'    '+
                         str(outl['RouteTo']))
             file1.write('\n')  
-        file1.write('\n')          
+        file1.write('\n')        
+     
+    ## dividers   
+    if 'dividers_df' in inp_dict.keys():
+        feedback.setProgressText('writing [DIVIDERS]...')
+        dividers_df = inp_dict['dividers_df']
+        file1.write('[DIVIDERS]\n')
+        for i in range(len(dividers_df)):
+            div =  dividers_df.loc[i,:]
+            file1.write(str(div['Name'])+'    '+
+                        str(div['Elevation'])+'    '+
+                        str(div['DivertLink'])+'    '+
+                        str(div['Type'])+'    '+
+                        str(div['CutOffFlow'])+'    '+
+                        str(div['WeirMinFlo'])+'    '+
+                        str(div['WeirMaxDep'])+'    '+
+                        str(div['WeirCoeff'])+'    '+
+                        str(div['MaxDepth'])+'    '+
+                        str(div['InitDepth'])+'    '+
+                        str(div['SurDepth'])+'    '+
+                        str(div['Aponded']))
+            file1.write('\n')  
+        file1.write('\n')    
    
     ## storages
     if 'storage_df' in inp_dict.keys():
@@ -426,6 +448,13 @@ def write_inp(inp_file_name,
         for i in range(len(storage_df)):
             stor = storage_df.loc[i,:]
             file1.write(str(stor['Name'])+'    '+str(stor['X_Coord'])+'    '+str(stor['Y_Coord']))
+            file1.write('\n') 
+            
+    if 'dividers_df' in inp_dict.keys():
+        dividers_df = inp_dict['dividers_df'].copy()
+        for i in range(len(dividers_df)):
+            div = dividers_df.loc[i,:]
+            file1.write(str(div['Name'])+'    '+str(div['X_Coord'])+'    '+str(div['Y_Coord']))
             file1.write('\n') 
     file1.write('\n')
     
