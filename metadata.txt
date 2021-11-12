@@ -20,7 +20,7 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.14 2021-11-21
+changelog= 0.14 2021-11-12
 	- fix storage Type FUNCTIONAL
 
 
