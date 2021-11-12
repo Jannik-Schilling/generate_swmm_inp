@@ -126,6 +126,12 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         outlets.loadNamedStyle(os.path.join(data_save_folder,'style_regulators.qml'))
         context.temporaryLayerStore().addMapLayer(outlets)
         context.addLayerToLoadOnCompletion(outlets.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+
+        """ dividers """
+        dividers = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_dividers.shp'), 'SWMM_dividers', "ogr")
+        dividers.loadNamedStyle(os.path.join(data_save_folder,'style_dividers.qml'))
+        context.temporaryLayerStore().addMapLayer(dividers)
+        context.addLayerToLoadOnCompletion(dividers.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
         return {}
 
     def name(self):

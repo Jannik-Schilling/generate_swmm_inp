@@ -35,6 +35,7 @@ import pandas as pd
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingException,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer)
@@ -49,6 +50,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
     FILE_CONDUITS = 'FILE_CONDUITS'
     FILE_JUNCTIONS = 'FILE_JUNCTIONS'
+    FILE_DIVIDERS = 'FILE_DIVIDERS'
     FILE_ORIFICES = 'FILE_ORIFICES'
     FILE_OUTFALLS = 'FILE_OUTFALLS'
     FILE_OUTLETS = 'FILE_OUTLETS'
@@ -118,6 +120,15 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
                 optional = True#,defaultValue = 'SWMM_outfalls'
                 ))
+                
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_DIVIDERS,
+                self.tr('Dividers Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorPoint],
+                optional = True#,defaultValue = 'SWMM_dividers'
+                ))
+                
                 
         self.addParameter(
             QgsProcessingParameterVectorLayer(
@@ -244,6 +255,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_weirs = self.parameterAsVectorLayer(parameters, self.FILE_WEIRS, context)
         file_orifices = self.parameterAsVectorLayer(parameters, self.FILE_ORIFICES, context)
         file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
+        file_dividers = self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)
         raw_data_dict = read_shapefiles_direct(file_outfalls,
                                            file_storages,
                                            file_subcatchments,
@@ -252,7 +264,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                            file_pumps,
                                            file_weirs,
                                            file_orifices,
-                                           file_outlets)
+                                           file_outlets,
+                                           file_dividers)
         feedback.setProgressText(self.tr('done'))
         feedback.setProgress(20)
 
@@ -265,7 +278,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_inflows = self.parameterAsString(parameters, self.FILE_INFLOWS, context)
         file_quality = self.parameterAsString(parameters, self.FILE_QUALITY, context)
         file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
-        #print(str(file_options))
+
         
         from .g_s_read_data import  read_data_from_table_direct
         """options table"""
@@ -409,16 +422,28 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'storages_raw' in raw_data_dict.keys():
             storage_df = raw_data_dict['storages_raw'].copy()
             storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
+            if 'Apond' in storage_df.columns and 'Coeff' not in storage_df.columns:
+                raise QgsProcessingException('Storages Layer: With version 0.14 the column name for the A-Value / Coefficient was renamed into "Coeff" (before: "Apond"')
+            # Empty linestrings will be ignored:"            
+            storage_df['Curve'] = storage_df['Curve'].fillna('')
+            storage_df['Coeff'] = storage_df['Coeff'].fillna('')
+            storage_df['Exponent'] = storage_df['Exponent'].fillna('')
+            storage_df['Constant'] = storage_df['Constant'].fillna('')
             storage_df['Psi'] = storage_df['Psi'].fillna('')
             storage_df['Ksat'] = storage_df['Ksat'].fillna('')
             storage_df['IMD'] = storage_df['IMD'].fillna('')
-            #storage_df['Descriptio'] = storage_df['Descriptio'].fillna('')
             inp_dict['storage_df'] = storage_df
             all_nodes = all_nodes+storage_df['Name'].tolist()
-            
-        """to do: dividers"""
-        # if 'dividers_rwa' in raw_data_dict.keys():
-            # #dividers
+        if 'dividers_raw' in raw_data_dict.keys():
+            dividers_df = raw_data_dict['dividers_raw'].copy()
+            dividers_df['X_Coord'],dividers_df['Y_Coord'] = get_coords_from_geometry(dividers_df)
+            dividers_df['CutOffFlow'] = dividers_df['CutOffFlow'].fillna('')
+            dividers_df['Curve'] = dividers_df['Curve'].fillna('')
+            dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
+            dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
+            dividers_df['WeirCoeff'] = dividers_df['WeirCoeff'].fillna('')
+            inp_dict['dividers_df'] = dividers_df
+            all_nodes = all_nodes+dividers_df['Name'].tolist()
             # pass
         feedback.setProgress(50)
 

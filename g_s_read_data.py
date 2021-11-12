@@ -17,7 +17,8 @@ def read_shapefiles_direct(file_outfalls,
                        file_pumps,
                        file_weirs,
                        file_orifices,
-                       file_outlets):
+                       file_outlets,
+                       file_dividers):
     """reads shapefiles from swmm model"""
     data_dict = dict()
     def del_none_bool(df):
@@ -68,6 +69,9 @@ def read_shapefiles_direct(file_outfalls,
     
     if file_weirs is not None:
         data_dict['weirs_raw'] = load_shapefile_to_df(file_weirs)
+    
+    if file_dividers is not None:
+        data_dict['dividers_raw'] = load_shapefile_to_df(file_dividers)
     data_dict = {key_i:del_none_bool(data_dict[key_i]) for key_i in data_dict.keys()}
     return data_dict
 

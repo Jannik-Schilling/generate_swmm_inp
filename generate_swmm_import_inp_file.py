@@ -573,17 +573,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 return data
         
-        def insert_nan_after_kw(df_line, kw_position, kw, insert_position):
+        def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
             '''
             adds np.nan after keyword (kw)
             :param list df_line
             :param int kw_position: expected position of keyword
             :param str kw: Keyword
-            :param int insert_position: position at which np.nan should be insertet
+            :param list insert_positions: position at which np.nan should be insertet
             :return: list
             '''
             if df_line[kw_position] == kw:
-                df_line.insert(insert_position,np.nan)
+                for i_p in insert_positions:
+                    df_line.insert(i_p,np.nan)
             return df_line
         
         def add_layer_on_completion(folder_save, layer_name, style_file):
@@ -620,6 +621,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STORAGE' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating storages shapefile ...'))
             feedback.setProgress(45)
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',[6,7,8]) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'FUNCTIONAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
+            # if no seepage loss is defined:
+            dict_all_raw_vals['STORAGE'] = [adjust_line_length(x,11,14,[np.nan,np.nan,np.nan]) for x in dict_all_raw_vals['STORAGE'].copy()]
             all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
             all_storages = all_storages.join(all_geoms, on = 'Name')
             all_storages = all_storages.applymap(replace_nan_null)
@@ -630,13 +635,29 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OUTFALLS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating outfalls shapefile ...'))
             feedback.setProgress(50)
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',3) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
             all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
             all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
             all_outfalls = all_outfalls.applymap(replace_nan_null)
             outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point','SWMM_outfalls')
             add_layer_on_completion(folder_save, 'SWMM_outfalls', 'style_outfalls.qml')
-
+        
+        ''' outfalls section '''
+        if 'DIVIDERS' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('generating dividers shapefile ...'))
+            feedback.setProgress(51)
+            divider_raw = dict_all_raw_vals['DIVIDERS'].copy()
+            divider_raw = [insert_nan_after_kw(x,3,'OVERFLOW',[4,5,6,7,8]) for x in divider_raw]
+            divider_raw = [insert_nan_after_kw(x,3,'CUTOFF',[5,6,7,8]) for x in divider_raw]
+            divider_raw = [insert_nan_after_kw(x,3,'TABULAR',[4,6,7,8]) for x in divider_raw]
+            divider_raw = [insert_nan_after_kw(x,3,'WEIR',[4,5]) for x in divider_raw]
+            divider_raw = [adjust_line_length(x,10,13,[np.nan,np.nan,np.nan]) for x in divider_raw]
+            dict_all_raw_vals['DIVIDERS'] = divider_raw.copy()
+            all_dividers = build_df_for_section('DIVIDERS',dict_all_raw_vals)
+            all_dividers = all_dividers.join(all_geoms, on = 'Name')
+            all_dividers = all_dividers.applymap(replace_nan_null)
+            dividers_layer = create_layer_from_table(all_dividers,'DIVIDERS','Point','SWMM_dividers')
+            add_layer_on_completion(folder_save, 'SWMM_dividers', 'style_dividers.qml')
 
         '''LINES'''
         feedback.setProgressText(self.tr('extracting vertices ...'))

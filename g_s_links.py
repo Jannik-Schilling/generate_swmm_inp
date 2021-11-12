@@ -41,17 +41,22 @@ def get_conduits_from_shapefile(conduits_raw):
         else:
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
-    
+    if 'Inlet' in conduits_raw.columns and 'Kentry' not in conduits_raw.columns:
+        raise QgsProcessingException('Conduits Layer: With version 0.14 the column name for the Entry Loss Coeff. was renamed into "Kentry" (before: "Inlet"')
+    if 'Outlet' in conduits_raw.columns and 'Kexit' not in conduits_raw.columns:
+        raise QgsProcessingException('Conduits Layer: With version 0.14 the column name for the Exit Loss Coeff. was renamed into "Kexit" (before: "Outlet"')
+    if 'Averge' in conduits_raw.columns and 'Kavg' not in conduits_raw.columns:
+        raise QgsProcessingException('Conduits Layer: With version 0.14 the column name for the Avg. Loss Coeff. was renamed into "Kavg" (before: "Average"')
     losses_df = conduits_raw[['Name',
-                              'Inlet',
-                              'Outlet',
-                              'Averge',
+                              'Kentry',
+                              'Kexit',
+                              'Kavg',
                               'FlapGate',
                               'Seepage']].copy()
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
-    losses_df['Inlet'] = losses_df['Inlet'].fillna('0')
-    losses_df['Outlet'] = losses_df['Outlet'].fillna('0')
-    losses_df['Averge'] = losses_df['Averge'].fillna('0')
+    losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
+    losses_df['Kexit'] = losses_df['Kexit'].fillna('0')
+    losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
 def del_first_last_vt(link):
