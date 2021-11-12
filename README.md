@@ -19,6 +19,8 @@ A QGIS plugin which generates an SWMM input file from existing shapefiles
 - pumps (SWMM_pumps.shp)
 - weirs (SWMM_weirs.shp)
 - outlets (SWMM_outlets.shp)
+- orifices (SWMM_orifices.shp)
+- dividers (SWMM_dividers.shp)
 
 Further data is provided in tables and can be edited there:
 - curves (gisswmm_curves.xlsx)
@@ -27,6 +29,7 @@ Further data is provided in tables and can be edited there:
 - patterns (gisswmm_patterns.xlsx)
 - quality  (gisswmm_quality.xlsx)
 - timeseries (gisswmm_timeseries.xlsx)
+- transects (gisswmm_transects.xlsx)
 
 ### 2 Edit
 A first test run with the default data is recommended (**steps 3 and 4**).
