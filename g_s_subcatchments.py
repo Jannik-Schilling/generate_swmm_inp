@@ -10,33 +10,46 @@ import numpy as np
 
 
 #subcatchments_df = raw_data_dict['subcatchments_raw']
-def get_subcatchments_from_shapefile(subcatchments_df):
-    '''reads subcatchment shapefile'''
-    def rename_for_infiltation(subc_row):
+def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method):
+    '''
+    reads subcatchment shapefile
+    '''
+    subc_feedback = ''
+    def rename_for_infiltation(subc_row, main_infiltration_method):
         """selects and renames different columns according to the columns 'kind'"""
-        if subc_row['kind'] in ['GREEN_AMPT','MODIFIED_GREEN_AMPT']:
+        infiltr_method = subc_row['kind']
+        if pd.isna(infiltr_method):
+            # take main infiltration method, if not given for subcatchment
+            infiltr_method = main_infiltration_method
+        if infiltr_method in ['GREEN_AMPT','MODIFIED_GREEN_AMPT']:
             subc_row = subc_row.rename({'SuctHead':'Param1',#mod-green ampt
                                         'Conductiv':'Param2', #mod-green ampt
                                         'InitDef':'Param3'})#mod-green ampt
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
-        if subc_row['kind'] in ['HORTON','MODIFIED_HORTON']:
+        if infiltr_method in ['HORTON','MODIFIED_HORTON']:
             subc_row = subc_row.rename({'MaxRate':'Param1', 
                                         'MinRate':'Param2', #Horton
                                         'Decay':'Param3',  #Horton
                                         'DryTime':'Param4', #Horton
                                         'MaxInf':'Param5'})#Horton
-        if subc_row['kind'] == 'CURVE_NUMBER':
+        if infiltr_method == 'CURVE_NUMBER':
             subc_row = subc_row.rename({'CurveNum':'Param1',#mod-green ampt
                                         'Conductiv':'Param2', #mod-green ampt
                                         'DryTime':'Param3'})#mod-green ampt
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
+        if infiltr_method is None:
+            subc_row['Param1'] = ''
+            subc_row['Param2'] = ''
+            subc_row['Param3'] = ''
+            subc_row['Param4'] = ''
+            subc_row['Param5'] = ''
         return subc_row
-    subcatchments_df = subcatchments_df.apply(rename_for_infiltation, axis =1)
+    subcatchments_df = subcatchments_df.apply(rename_for_infiltation, 
+                                              axis=1, 
+                                              args=(main_infiltration_method,))
     subcatchments_df['SnowPack'] = subcatchments_df['SnowPack'].fillna('')
-    subcatchments_df = subcatchments_df[subcatchments_df['Outlet'] != '']
-    subcatchments_df = subcatchments_df[subcatchments_df['Outlet'].notna()]
     subcatchments_df = subcatchments_df.reset_index(drop=True)
     return(subcatchments_df)
 

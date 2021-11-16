@@ -329,12 +329,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'options_df' in raw_data_dict.keys():
             from .g_s_various_functions import get_options_from_table
             inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
-
+            main_infiltration_method = inp_dict['options_dict']['INFILTRATION']
+        else:
+            #no main infiltration method given:
+            main_infiltration_method = None 
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
             from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
             from .g_s_various_functions import get_coords_from_geometry
-            subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'])
+            subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'],
+                                                                main_infiltration_method)
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
             inp_dict['subcatchments_df'] = subcatchments_df
             rg_x_mean, rg_y_mean = rg_position(inp_dict['polygons_dict']) # mean position of catchments for rain gage
