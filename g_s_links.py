@@ -131,7 +131,10 @@ def get_weirs_from_shapefile(weirs_raw):
 
 
 def get_orifices_from_shapefile(orifices_raw):
-    """prepares orifices data for writing an input file"""
+    """
+    prepares orifices data for writing an input file
+    param: pd.DataFrame orifices_raw
+    """
     from .g_s_defaults import def_sections_dict
     orifices_attrs = list(def_sections_dict['ORIFICES'].keys())
     orifices_df = orifices_raw.copy()
