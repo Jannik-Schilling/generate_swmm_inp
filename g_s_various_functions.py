@@ -178,15 +178,10 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                                            inflow['Time_Pattern3'],
                                            inflow['Time_Pattern4']])}
         return i_dict
-    err_txt = ''
     for inflow_type in ['Direct','Dry_Weather']:
         # delete inflows for nodes which do no exist
         inflow_df = inflows_raw[inflow_type]
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
-        infl_err = inflow_df[~inflow_df['Name'].isin(all_nodes)]
-        infl_err = infl_err[pd.notna(infl_err['Name'])]
-        if len(infl_err)>0:
-            err_txt = err_txt+'\n---\nFehlende Junctions für Abflusstyp "'+inflow_type+'":\n'+'\n'.join([n for n in infl_err['Name'].unique()])
         inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
         inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
         inflow_df = inflow_df.fillna('""')
@@ -206,7 +201,7 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                 inflow_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
             else: 
                 dwf_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
-    return dwf_dict, inflow_dict, err_txt
+    return dwf_dict, inflow_dict
     
     
 def get_options_from_table(options_df): 

@@ -235,7 +235,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         project_dir = os.path.dirname(inp_file_path)
 
         """initializing the input dictionary and error text"""
-        err_text = ''
         inp_dict = dict()
         inp_dict['junctions_df'] = pd.DataFrame()
         inp_dict['conduits_df'] = pd.DataFrame()
@@ -455,8 +454,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if len(all_nodes) > 0:
             if 'inflows' in raw_data_dict.keys():
                 from .g_s_various_functions import get_inflows_from_table
-                dwf_dict , inflow_dict, err_txt = get_inflows_from_table(raw_data_dict['inflows'],all_nodes)
-                err_text = err_text+err_txt
+                dwf_dict , inflow_dict = get_inflows_from_table(raw_data_dict['inflows'],all_nodes)
                 if len(inflow_dict) > 0:
                     inp_dict['inflow_dict'] = inflow_dict
                 if len(dwf_dict) > 0:
@@ -509,9 +507,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                   feedback)
         feedback.setProgress(98)
         
-        #err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
-        #err_file.write(err_text)
-        #err_file.close()
         feedback.setProgressText(self.tr('input file saved in '+str(os.path.join(project_dir,inp_file_name))))
         return {}
         
