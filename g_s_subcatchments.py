@@ -52,6 +52,7 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
                                               axis=1, 
                                               args=(main_infiltration_method,))
     subcatchments_df['SnowPack'] = subcatchments_df['SnowPack'].fillna('')
+    subcatchments_df['PctRouted'] = subcatchments_df['PctRouted'].fillna(100)
     subcatchments_df = subcatchments_df.reset_index(drop=True)
     return(subcatchments_df)
 
