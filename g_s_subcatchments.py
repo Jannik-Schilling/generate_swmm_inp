@@ -16,7 +16,7 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
     reads subcatchment shapefile
     '''
     if 'kind' in subcatchments_df.columns and 'InfMethod' not in subcatchments_df.columns:
-        raise QgsProcessingException('Conduits Layer: With version 0.15 the column name for the infiltration method was renamed into "InfMethod" (before: "kind"')
+        raise QgsProcessingException('Subcatchments Layer: With version 0.15 the column name for the infiltration method was renamed into "InfMethod" (before: "kind"). Please rename column.')
     def rename_for_infiltation(subc_row, main_infiltration_method):
         """selects and renames different columns according to the columns 'InfMethod'"""
         infiltr_method = subc_row['InfMethod']
@@ -24,21 +24,21 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
             # take main infiltration method, if not given for subcatchment
             infiltr_method = main_infiltration_method
         if infiltr_method in ['GREEN_AMPT','MODIFIED_GREEN_AMPT']:
-            subc_row = subc_row.rename({'SuctHead':'Param1',#mod-green ampt
-                                        'Conductiv':'Param2', #mod-green ampt
-                                        'InitDef':'Param3'})#mod-green ampt
+            subc_row = subc_row.rename({'SuctHead':'Param1',
+                                        'Conductiv':'Param2',
+                                        'InitDef':'Param3'})
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
         if infiltr_method in ['HORTON','MODIFIED_HORTON']:
             subc_row = subc_row.rename({'MaxRate':'Param1', 
-                                        'MinRate':'Param2', #Horton
-                                        'Decay':'Param3',  #Horton
-                                        'DryTime':'Param4', #Horton
-                                        'MaxInf':'Param5'})#Horton
+                                        'MinRate':'Param2',
+                                        'Decay':'Param3',  
+                                        'DryTime':'Param4', 
+                                        'MaxInf':'Param5'})
         if infiltr_method == 'CURVE_NUMBER':
-            subc_row = subc_row.rename({'CurveNum':'Param1',#mod-green ampt
-                                        'Conductiv':'Param2', #mod-green ampt
-                                        'DryTime':'Param3'})#mod-green ampt
+            subc_row = subc_row.rename({'CurveNum':'Param1',
+                                        'Conductiv':'Param2', 
+                                        'DryTime':'Param3'})
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
         if infiltr_method is None:
