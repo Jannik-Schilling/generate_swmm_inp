@@ -12,6 +12,7 @@ def get_conduits_from_shapefile(conduits_raw):
     """
     prepares conduits data for writing an input file
     removes columns which are not needed, replaces empty values with '' or '*' 
+    :param pd.DataFrame conduits_raw
     """
     conduits_df = conduits_raw[['Name',
                                'FromNode',
@@ -60,7 +61,10 @@ def get_conduits_from_shapefile(conduits_raw):
     return conduits_df, xsections_df, losses_df
 
 def del_first_last_vt(link):
-    '''deletes first and last vertex as it is already in nodes coordinates'''
+    """
+    deletes first and last vertex as it is already in nodes coordinates
+    :param list link
+    """
     return link[1:-1]
 
 pumps_columns = pd.DataFrame([['Name',True,''],
