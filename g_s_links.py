@@ -43,11 +43,23 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
     if 'Inlet' in conduits_raw.columns and 'Kentry' not in conduits_raw.columns:
-        raise QgsProcessingException('Conduits Layer: With version 0.14 the column name for the Entry Loss Coeff. was renamed into "Kentry" (before: "Inlet"')
+        raise QgsProcessingException(create_rename_error_message('Conduits Layer',
+                                            'Inlet',
+                                            'Kentry',
+                                            'Entry Loss Coeff.',
+                                            '0.14'))
     if 'Outlet' in conduits_raw.columns and 'Kexit' not in conduits_raw.columns:
-        raise QgsProcessingException('Conduits Layer: With version 0.14 the column name for the Exit Loss Coeff. was renamed into "Kexit" (before: "Outlet"')
+        raise QgsProcessingException(create_rename_error_message('Conduits Layer',
+                                            'Outlet',
+                                            'Kexit',
+                                            'Exit Loss Coeff.',
+                                            '0.14'))
     if 'Averge' in conduits_raw.columns and 'Kavg' not in conduits_raw.columns:
-        raise QgsProcessingException('Conduits Layer: With version 0.14 the column name for the Avg. Loss Coeff. was renamed into "Kavg" (before: "Average"')
+        raise QgsProcessingException(create_rename_error_message('Conduits Layer',
+                                            'Average',
+                                            'Kavg',
+                                            'Avg. Loss Coeff.',
+                                            '0.14'))
     losses_df = conduits_raw[['Name',
                               'Kentry',
                               'Kexit',
@@ -95,7 +107,7 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
     weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('*')
     weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('*')
-    weirs_df['Coeff_Curv'] = weirs_df['Coeff_Curv'].fillna('')
+    weirs_df['CoeffCurve'] = weirs_df['CoeffCurve'].fillna('')
     weirs_df['EndContrac'] = weirs_df['EndContrac'].fillna('0')
     weirs_df['EndCoeff'] = weirs_df['EndCoeff'].fillna('0')
     weirs_df=weirs_df[['Name',
@@ -110,7 +122,7 @@ def get_weirs_from_shapefile(weirs_raw):
                        'Surcharge',
                        'RoadWidth',
                        'RoadSurf',
-                       'Coeff_Curv']]
+                       'CoeffCurve']]
     shape_dict = {'TRANSVERSE':'RECT_OPEN',
      'SIDEFLOW':'RECT_OPEN',
      'V-NOTCH':'TRIANGULAR',
@@ -157,7 +169,7 @@ def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
     def get_outl_curve(outl_row):
         """selects curve data according to rating curve type"""
-        if outl_row['Rate_Curve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
+        if outl_row['RateCurve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
             return outl_row['Qcoeff']
         else:
             return outl_row['CurveName']
@@ -166,7 +178,7 @@ def get_outlets_from_shapefile(outlets_raw):
                              'FromNode',
                              'ToNode', 
                              'InOffset', 
-                             'Rate_Curve', 
+                             'RateCurve', 
                              'QCurve',
                              'Qexpon', 
                              'FlapGate']]

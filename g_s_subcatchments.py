@@ -16,7 +16,11 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
     reads subcatchment shapefile
     '''
     if 'kind' in subcatchments_df.columns and 'InfMethod' not in subcatchments_df.columns:
-        raise QgsProcessingException('Subcatchments Layer: With version 0.15 the column name for the infiltration method was renamed into "InfMethod" (before: "kind"). Please rename column.')
+        raise QgsProcessingException(create_rename_error_message('Subcatchments Layer',
+                                            'kind',
+                                            'InfMethod',
+                                            'infiltration method',
+                                            '0.15'))
     def rename_for_infiltation(subc_row, main_infiltration_method):
         """selects and renames different columns according to the columns 'InfMethod'"""
         infiltr_method = subc_row['InfMethod']

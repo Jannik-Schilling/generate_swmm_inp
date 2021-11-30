@@ -659,7 +659,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             dividers_layer = create_layer_from_table(all_dividers,'DIVIDERS','Point','SWMM_dividers')
             add_layer_on_completion(folder_save, 'SWMM_dividers', 'style_dividers.qml')
 
-        '''LINES'''
+        """LINES"""
         feedback.setProgressText(self.tr('extracting vertices ...'))
         feedback.setProgress(55)
         if 'VERTICES' in dict_all_raw_vals.keys(): # vertices section seems to be always available

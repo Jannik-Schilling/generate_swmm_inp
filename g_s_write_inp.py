@@ -163,7 +163,7 @@ def write_inp(inp_file_name,
                         str(div['Elevation'])+'    '+
                         str(div['DivertLink'])+'    '+
                         str(div['Type'])+'    '+
-                        str(div['CutOffFlow'])+'    '+
+                        str(div['CutoffFlow'])+'    '+
                         str(div['WeirMinFlo'])+'    '+
                         str(div['WeirMaxDep'])+'    '+
                         str(div['WeirCoeff'])+'    '+
