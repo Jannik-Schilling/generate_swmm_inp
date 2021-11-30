@@ -209,8 +209,8 @@ IMD & float &  &  \\
 \end{tabular}
 \\
 \subsubsection{Dividers}
+\textsc{Description}: If the routing option (see options section) is set to 'Steady Flow' or 'Kinematic Wave', flow dividers divert inflows in a certain way, prescribed by the user with the attribute "Type". With the 'Dynamic wave' routing model, dividers are treatet as junctions. \\
 \textsc{Changes}: \textcolor{red}{"CutoffFlow" was renamed in version 0.15, before: "CutOffFlow"} \\
-\textsc{Description}: \\
 \\
 \begin{tabular}{p{1.9cm}|p{1.1cm}|P{3cm}|P{8cm}}
 \hline 
@@ -223,7 +223,7 @@ MaxDepth & float & Max. Depth & \\
 InitDepth & float & Initial Depth & \\
 SurDepth & float & Surcharge Depth& \\
 Aponded & float & Ponded Area& \\
-Type & string & Type & \\
+Type & string & Type & 'CUTOFF', 'TABULAR', 'WEIR' or 'OVERFLOW'\\
 CutoffFlow & float & Cutoff Flow & if Type is 'CUTOFF'\\
 Curve & float & Curve Name & if Type is 'TABULAR'; the names of the curves have to be matching with those in the divider curves table\\
 \cline{4-4}
@@ -234,6 +234,8 @@ WeirCoeff & float & Maximum Flow& \\
 \end{tabular}
 
 \subsubsection{Outfalls}
+\textsc{Description}:\\
+\textsc{Changes}: \textcolor{red}{"FixedStage" and "Curve\_TS" were added in version 0.15 instead of "Data" to enable different types of boundary conditions} \\
 \begin{tabular}{p{1.9cm}|p{1.1cm}|P{3cm}|P{8cm}}
 \hline 
 \textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
@@ -243,7 +245,8 @@ Elevation & float & Invert El. & \\
 FlapGate & string & Tide Gate & 'YES' or 'NO'\\
 RouteTo & string & Route To& Subcatchment outflow ist routed onto; leave blank if not applicable\\
 Type & string & Type & 'FREE','NORMAL','FIXED','TIDAL' or 'TIMESERIES'\\
-Data & float/string &  & \textcolor{red}{Das muss überarbeitet werden!}\\
+FixedStage & float & Fixed Stage & for outfalls with FIXED type\\
+Curve\_TS & string & Curve Name or Series Name & for TIDAL type: the name of the tidal curve has to be matching with the name in the curves table; for TIMESERIES type: the name of the time series has to be matching with then name in the time series table  \\
 \hline
 \end{tabular}
 
@@ -403,17 +406,18 @@ You may want to set the options already in your input file. To do so, you simply
 \subsection{Curves}
 Any type of curves can be imported as a table in an xlsx file. Each curve type has to be in a seperate table named with the curve type. Curve types are:
 \begin{itemize}
-\item Pump1
-\item Pump2
-\item Pump3
-\item Pump4
-\item Weir
-\item Storage
-\item Rating
-\item Tidal
-\item Control
-\item Diversion
-\item Shape
+	\setlength\itemsep{0pt}
+	\item Pump1
+	\item Pump2
+	\item Pump3
+	\item Pump4
+	\item Weir
+	\item Storage
+	\item Rating
+	\item Tidal
+	\item Control
+	\item Diversion
+	\item Shape
 \end{itemize}
 Different curves oft the same type are stored in the same table by using different names. Just like in the SWMM GUI, curves always consist of three columns: Name, a x-value and a y-value. More culomns can be added (e.g. for annotations), but only the first three columns are relevant for the import into SWMM. Rows beginning with a semicolon (";") will be ignored. Example for a table of two storage curves (where "Depth" is the x-value and "Area" is the y-value) :\\
 \\
@@ -453,14 +457,22 @@ second\_StC & 4 & 12 & \\
 
 \subsection{Patterns}
 Patterns can be imported in an xlsx file, 
-where each pattern type is stored in a separate table. Pattern types are
+where each pattern type is stored in a separate table named after the pattern type. Each table is in a format as follows:\\
+\begin{tabular}{|p{1.7cm}|p{2.4cm}|P{1.3cm}|}
+\hline 
+\textbf{Name} & \textbf{Time\_Stamp} & \textbf{Value}\\ 
+\hline 
+\end{tabular}
+\\
+\\
+Pattern types are:
 \begin{itemize}
-\item daily
-\item weekly
-\item monthly
+	\setlength\itemsep{0pt}
+	\item HOURLY, where the Time\_Stamp column is called "Hour" (from 0:00 to 23:00)
+	\item DAILY, where the Time\_Stamp column is called "Day" (from Sunday to Saturday)
+	\item MONTHLY, where the Time\_Stamp column is called "Month" (from January to December)
+	\item WEEKEND, where the Time\_Stamp column is called "Hour" (from 12AM to 11PM)
 \end{itemize}
-
-
 \subsection{Quality}
 Quality parameters can be imported with a xlsx file with the four tables: 
 

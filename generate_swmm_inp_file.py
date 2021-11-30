@@ -440,9 +440,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['junctions_df'] = junctions_df
             all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
-            outfalls_df = raw_data_dict['outfalls_raw'].copy()
-            outfalls_df['RouteTo'] = outfalls_df['RouteTo'].fillna('')
-            outfalls_df['Data'] = outfalls_df['Data'].fillna('')
+            from .g_s_nodes import get_outfalls_from_shapefile
+            outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
             outfalls_df['X_Coord'],outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
             inp_dict['outfalls_df'] = outfalls_df
             all_nodes = all_nodes+outfalls_df['Name'].tolist()

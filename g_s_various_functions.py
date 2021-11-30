@@ -279,3 +279,13 @@ def create_rename_error_message(l_name,c_n_old,c_n_new,swmm_attr,p_version):
     err_message = str(l_name)+': With version '+str(p_version)+ ' the column name for the '+str(swmm_attr)+ ' was renamed into "'+str(c_n_new)+'" (before: "'+str(c_n_old)+'")'
     return err_message
     
+
+def check_deprecated_cols(layer):
+    """checks if columns have been renamed"""
+    pass
+    # load for layer:
+    # l_name = 
+    # c_n_old =
+    # c_n_new =
+    # swmm_attr =
+    # p_version =

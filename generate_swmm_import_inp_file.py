@@ -635,7 +635,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OUTFALLS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating outfalls shapefile ...'))
             feedback.setProgress(50)
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'NORMAL',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FIXED',[4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIDAL',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIMESERIES',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
             all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
             all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
             all_outfalls = all_outfalls.applymap(replace_nan_null)
