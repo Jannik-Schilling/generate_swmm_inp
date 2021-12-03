@@ -10,14 +10,14 @@ from qgis.core import QgsWkbTypes
 
 ## geometry functions
 def get_coords_from_geometry(df):
-    '''extracts coords from any gpd.geodataframe'''
+    """extracts coords from any gpd.geodataframe"""
     def extract_xy_from_simple_line(line_simple):
-        '''extracts x and y coordinates from a LineString'''
+        """extracts x and y coordinates from a LineString"""
         xy_arr = np.dstack((p.x(),p.y()) for p in line_simple)[0]
         xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
         return xy_df
     def extract_xy_from_line(line_row):
-        '''extraxts xy from LineString or MultiLineString'''
+        """extraxts xy from LineString or MultiLineString"""
         if QgsWkbTypes.displayString(line_row.wkbType()) == 'LineString':
             return extract_xy_from_simple_line(line_row.asPolyline())
         if QgsWkbTypes.displayString(line_row.wkbType()) == 'MultiLineString':
@@ -31,7 +31,7 @@ def get_coords_from_geometry(df):
         return {na:extract_xy_from_line(geom) for geom,na in zip(df.geometry,df.Name)}
     if all(QgsWkbTypes.displayString(g_type.wkbType()) in ['Polygon', 'MultiPolygon'] for g_type in df.geometry):
         def extract_xy_from_area(geom_row):
-            '''extraxts xy from MultiPolygon or Polygon'''
+            """extraxts xy from MultiPolygon or Polygon"""
             if QgsWkbTypes.displayString(geom_row.wkbType()) == 'MultiPolygon':
                 xy_arr = np.dstack((v.x(),v.y()) for v in geom_row.vertices())[0]
                 xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
@@ -43,7 +43,10 @@ def get_coords_from_geometry(df):
         return {na:extract_xy_from_area(ge) for ge,na in zip(df.geometry,df.Name)}
 
 def get_point_from_x_y(sr):
-    '''converts x and y coordinates from a pd.Series (arg: sr) to a QgsPoint geometry'''
+    """
+    converts x and y coordinates from a pd.Series to a QgsPoint geometry
+    :param pd.Series sr)
+    """
     from qgis.core import QgsGeometry
     x_coord = sr['X_Coord']
     y_coord = sr['Y_Coord']
@@ -51,7 +54,7 @@ def get_point_from_x_y(sr):
     return [sr['Name'],geom]
 
 def check_columns(x_df, col_df):
-    '''checks if all columns are in a dataframe'''
+    """checks if all columns are in a dataframe"""
     cols_oblig =  col_df[col_df['oblig'] == True]
     cols_volunt = col_df[col_df['oblig'] == False]
     if not all(np.isin(cols_oblig['col_name'],x_df.columns)):
@@ -143,8 +146,6 @@ def get_raingages_from_timeseries(ts_dict):
         rg_i = ts_dict[rg]
         rg_i['TimeSeries'] = rg_i['TimeSeries'].reset_index(drop=True)
         timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M:%S')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M:%S')
-        #rg_hours, remainder = divmod(timediff.total_seconds(), 3600)
-        #rg_minutes, seconds = divmod(remainder, 60)
         rg_interval = str(timediff)[:-3]
         rg_dict[rg_i['Description']] = {'Name':rg_i['Description'],
                'Format':rg_i['Format'],
@@ -165,7 +166,7 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                'Constituent':inflow['Constituent'],
                'Time_Series':inflow['Time_Series'],
                'Type':inflow['Type'],
-               'Mfactor':1,
+               'Mfactor':inflow['Units_Factor'],
                'Sfactor':inflow['Scale_Factor'],
                'Baseline':inflow['Baseline'],
                'Pattern':inflow['Baseline_Pattern']}
@@ -178,15 +179,10 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                                            inflow['Time_Pattern3'],
                                            inflow['Time_Pattern4']])}
         return i_dict
-    err_txt = ''
     for inflow_type in ['Direct','Dry_Weather']:
         # delete inflows for nodes which do no exist
         inflow_df = inflows_raw[inflow_type]
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
-        infl_err = inflow_df[~inflow_df['Name'].isin(all_nodes)]
-        infl_err = infl_err[pd.notna(infl_err['Name'])]
-        if len(infl_err)>0:
-            err_txt = err_txt+'\n---\nFehlende Junctions für Abflusstyp "'+inflow_type+'":\n'+'\n'.join([n for n in infl_err['Name'].unique()])
         inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
         inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
         inflow_df = inflow_df.fillna('""')
@@ -206,16 +202,15 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                 inflow_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
             else: 
                 dwf_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
-    return dwf_dict, inflow_dict, err_txt
+    return dwf_dict, inflow_dict
     
     
 def get_options_from_table(options_df): 
-    '''
+    """
     converts file_options_df to dict and 
     converts datetime formats to string
-    Args:
-        options_df
-    '''
+    :param pd.DataFrame options_df
+    """
     from datetime import datetime, time
     options_dict = {k:v for k,v in zip(options_df['Option'],options_df['Value'])}
     if type(options_dict['START_DATE']) is datetime:
@@ -249,8 +244,7 @@ def get_options_from_table(options_df):
 def convert_options_format_for_import(dict_options):
     '''
     converts formats in dict_options for the options file
-    Args:
-        dict_options
+    :param dict dict_options
     '''
     from datetime import datetime
     dict_options['START_DATE'] = datetime.strptime(dict_options['START_DATE'],'%m/%d/%Y').date()
@@ -270,3 +264,28 @@ def convert_options_format_for_import(dict_options):
     df_options['Option'] = dict_options.keys()
     df_options['Value'] = dict_options.values()
     return df_options
+    
+    
+## errors and feedback
+def create_rename_error_message(l_name,c_n_old,c_n_new,swmm_attr,p_version):
+    """
+    writes an error message if old column names are in use
+    :param str l_name: layer name
+    :param str c_n_old: old column name
+    :param str c_n_new: new column name
+    :param str swmm_attr: name of swmm attr
+    :param str p_version: plugin version at which the change was applied
+    """
+    err_message = str(l_name)+': With version '+str(p_version)+ ' the column name for the '+str(swmm_attr)+ ' was renamed into "'+str(c_n_new)+'" (before: "'+str(c_n_old)+'")'
+    return err_message
+    
+
+def check_deprecated_cols(layer):
+    """checks if columns have been renamed"""
+    pass
+    # load for layer:
+    # l_name = 
+    # c_n_old =
+    # c_n_new =
+    # swmm_attr =
+    # p_version =

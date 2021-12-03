@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct  7 13:53:11 2020
-
 @author: schilling
-
-
 """
 def write_inp(inp_file_name,
               project_dir,
               inp_dict,
               feedback):
+    """
+    This script writes the data in inp_dict into a text file
+    :param str inp_file_name
+    :param str project_dir
+    :param dict inp_dict
+    :param QgsProcessingFeedback feedback 
+    """
     import os
     
     keys_dict = {'DWF':['Name','Baseline','Patterns'],
@@ -109,7 +113,7 @@ def write_inp(inp_file_name,
                         str(scm['Param3'])+'    '+
                         str(scm['Param4'])+'    '+
                         str(scm['Param5'])+'    '+
-                        str(scm['kind']))
+                        str(scm['InfMethod']))
             file1.write('\n')   
         file1.write('\n')    
 
@@ -159,7 +163,7 @@ def write_inp(inp_file_name,
                         str(div['Elevation'])+'    '+
                         str(div['DivertLink'])+'    '+
                         str(div['Type'])+'    '+
-                        str(div['CutOffFlow'])+'    '+
+                        str(div['CutoffFlow'])+'    '+
                         str(div['WeirMinFlo'])+'    '+
                         str(div['WeirMaxDep'])+'    '+
                         str(div['WeirCoeff'])+'    '+
@@ -325,6 +329,7 @@ def write_inp(inp_file_name,
 
 
     def compose_dict_text(dict_i, section, keys_dict):
+        """writes text lines from inflows dictionaries"""
         section_keys = keys_dict[section]
         return ['    '.join([str(dict_i[item_key][s_k]) for s_k in section_keys])+'\n' for item_key in dict_i.keys()]
         

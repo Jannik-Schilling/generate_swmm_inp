@@ -1,0 +1,729 @@
+\documentclass[10pt,a4paper,oneside]{scrbook}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\addtokomafont{disposition}{\rmfamily}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{multirow}
+
+\usepackage{xcolor}
+\definecolor{mygray}{rgb}{0.8,0.8,0.8}
+
+\usepackage{listings}
+\newcommand{\lil}[1]{\lstinline{#1}}
+\newcommand{\dummycommand}{\end{lstlisting}}
+
+
+
+\title{generate\_swmm\_inp}
+\subtitle{Manual for the QGIS plugin version 0.15}
+\author{Jannik Schilling \\ email: \href{mailto:jannik.schilling@posteo.de}{jannik.schilling@posteo.de}}
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Introduction}
+SWMM is an open-source model and software by the US EPA for the simulation rainfall-runoff and routing in water bodies, sewer systems and wastewater infrastructures. To set up a new SWMM model, objects such as nodes, links and catchments can either be drawn via SWMM´s graphical user interface (GUI) or specified in a plain text file in ".inp" format ("input file"). The plugin "generate\_swmm\_input" provides tools for the conversion of geodata in QGIS into input files for SWMM (and vice versa). \\
+This documentation is a "work in progress". If you find any mistakes or you miss explanations for certain tools,  layers, ... please write an issue on GitHub or an email to the author.
+
+\section{Installation}
+\textbf{The plugin:} "generate\_swmm\_inp" can be installed within QGIS from official QGIS plugin repository. The latest experimental version of the plugin will be available on GitHub and can be installed from a zip file after download. \\
+\\
+\textbf{Missing Python packages:} The plugin needs the Python packages "pandas" and "openpyxl". If they are not already installed, the tools will raise errors, when running. To install missing packages, various instructions can be found online. Here are some examples...
+\begin{itemize}
+	\item Windows:
+	\begin{itemize}
+		\item until QGIS version 3.18: Open the OSGeo4W shell and run \colorbox{mygray}{\lil{py3_env}}. 
+		\\Then run \colorbox{mygray}{\lil{python -m pip install openpyxl}} (and likewise "pandas" if needed).
+		\\If you have had an "advanced install" of QGIS within osgeo4w-setup, you can simply open osgeo4w-setup again, search for the packages and use the checkbox to install them.
+		\item for QGIS version 3.20 and later: 
+		Open the OSGeo4W shell and directly run\\
+		\colorbox{mygray}{\lil{python -m pip install openpyxl}}.
+	\end{itemize}
+	\item Linux: open the terminal and install via pip: 
+	\colorbox{mygray}{\lil{python -m pip install openpyxl}} (and likewise "pandas" if needed).
+\end{itemize} 
+\textbf{SWMM:} To run the models, SWMM has to be installed. Alternatively you can use the "swmmr" package for R or packages such as "pyswmm" for Python. \\
+
+\section{Hints for this documentation}
+Two different types of tables will appear in the documentation. The first type shows the column names and attributes which are used in shapefiles and .xlsx files. Such a table will look like this:\\
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+... & ... & ... & \\
+... & ... & ... & \\
+\hline
+\end{tabular}
+\\
+\\
+The second type shows examples of how tables in the .xlsx files have to be organised. Such a table will look like this:\\
+\\
+\begin{tabular}{|p{1.7cm}|p{1.7cm}|P{1.7cm}|P{1.7cm}|P{1.7cm}|}
+\hline 
+\textbf{1st col.} & \textbf{2nd col.} & \textbf{3rd col.} & \textbf{4th col.} & \textbf{5th col.}\\ 
+\hline 
+some & random & data & ... &...\\
+\hline
+... & ... & ...& .. &...\\
+\hline
+\end{tabular}
+
+\chapter{The tools}
+\section{1\textunderscore GenerateDefaultData}
+The first tool will give you a default data set to see the data structure needed for the export and conversion into a input file later on. You have to chose a folder, in which all data will be saved.  To date shapefiles are provided for the main infrastructures:
+\begin{itemize}
+	\setlength\itemsep{0pt}
+    \item junctions (SWMM\_junctions.shp)
+    \item conduits (SWMM\_conduits.shp)
+    \item subcatchments (SWMM\_subcatchments.shp)
+    \item storages (SWMM\_storages.shp)
+    \item outfalls (SWMM\_outfalls.shp)
+    \item pumps (SWMM\_pumps.shp)
+    \item weirs (SWMM\_weirs.shp)
+    \item outlets (SWMM\_outlets.shp)
+    \item orifices (SWMM\_orifices.shp)
+    \item dividers (SWMM\_dividers.shp)
+\end{itemize}
+Further data is provided in tables and can be edited there:
+\begin{itemize}
+	\setlength\itemsep{0pt}
+    \item curves (gisswmm\_curves.xlsx)
+    \item inflows (gisswmm\_inflows.xlsx)
+    \item options (gisswmm\_options.xlsx)
+    \item patterns (gisswmm\_patterns.xlsx)
+    \item quality (gisswmm\_quality.xlsx)
+    \item timeseries (gisswmm\_timeseries.xlsx)
+    \item transects (gisswmm\_transects.xlsx)
+\end{itemize}
+
+\section{2\textunderscore GenerateSwmmInpFile}
+With the second tool, you can convert shapefiles and tables into input files. The default data serve as a template for your own model, because column names have to be matching in order to identify the correct information for the input file. Actions for the user interface:
+\begin{enumerate}
+	\setlength\itemsep{0pt}
+	\item Select the layers and files you want to have in your SWMM model
+	\item Choose a location and name fot the resulting input file (".inp")
+\end{enumerate}
+
+
+\section{3\textunderscore ImportInpFile}
+The third tool allows you to import input files into QGIS. All sections (if already implemented) of the input file will be connverted into shapefiles and tables. Actions for the user interface:
+\begin{enumerate}
+	\setlength\itemsep{0pt}
+	\item Choose the input file (".inp")
+	\item Choose the (expected) CRS of the data in the input file
+	\item Optional: choose a prefix to specify the name of the resulting files. For example, if the prefix is set to "20210101", then the name of the junctions file will be "20210101\_SWMM\_junctions". Try to avoid any characters here, which could cause trouble with file systems (e.g. ".", "," , "/"... )
+	\item Select a folder to save the resulting files in. Creating and chosing a new, empty folder for the import is recommended.
+\end{enumerate}
+
+
+\chapter{Field names and column names in geodata and tables}
+
+\section{Geodata}
+In the current version of the plugin, the main file type for geodata are shapefiles. This limits the length of the field names in the attribute to 10 characters. Hence, in some cases, the field names required for the tools differ from those used in the graphical user interface (GUI) in SWMM. For example, the rate of seepage loss into the surrounding soil of a conduit can be defined with the field "Seepage" in the conduits layer, which refers to "Seepage Loss Rate" in the SWMM GUI. %reference to table
+
+
+\subsection{Nodes}
+\textsc{layer type}: point \\
+Four types of nodes can be added to a SWMM-file:
+junctions, storage units, dividers or outfalls. Inflows into any kind of nodes can be are defined in the 'Inflows' table. Treatment of pollutatants is not implemented yet.
+\subsubsection{Junctions}
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+Elevation & float & Invert El. & \\ 
+MaxDepth & float & Max. Depth & \\ 
+InitDepth & float & Initial Depth & \\
+SurDepth & float & Surcharge Depth &  \\
+Aponded & float & Ponded Area & \\
+\hline
+\end{tabular}
+\\
+
+\subsubsection{Storage units}
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+Elevation & float & Invert El. & \\ 
+MaxDepth & float & Max. Depth & \\ 
+InitDepth & float & Initial Depth & \\
+SurDepth & float & Surcharge Depth & \\
+Type & string & Storage Curve & 'FUNCTIONAL' or 'TABULAR' \\
+Curve & string & Curve Name & for TABULAR storage curves; the names of the curves have to be matching with those in the storage curves table\\
+\cline{4-4}
+Coeff & float & Coefficient &  \multirow{3}{=}{for FUNCTIONAL curves}\\
+Exponent & float & Exponent &  \\
+Constant & float & Constant &  \\
+\cline{4-4}
+Fevap & float & Evap. Factor & \\
+Psi & float & Suction Head &  for seepage loss; inches or mm\\
+Ksat & float & Conductivity &  for seepage loss; in/h or mm/h\\
+IMD & float & Initial Deficit &  for seepage loss; difference between porosity and moisture content\\
+\hline
+\end{tabular}
+\\
+\subsubsection{Dividers}
+\textsc{Description}: If the routing option (see options section) is set to 'Steady Flow' or 'Kinematic Wave', flow dividers divert inflows in a certain way, prescribed by the user with the attribute "Type". With the 'Dynamic wave' routing model, dividers are treatet as junctions. \\
+\textsc{Changes}: \textcolor{red}{"CutoffFlow" was renamed in version 0.15, before: "CutOffFlow"} \\
+\\
+\begin{tabular}{p{1.9cm}|p{1.1cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+Elevation & float & Invert El. & \\ 
+DivertLink & string & Outlet Node&  \\ 
+MaxDepth & float & Max. Depth & \\
+InitDepth & float & Initial Depth & \\
+SurDepth & float & Surcharge Depth& \\
+Aponded & float & Ponded Area& \\
+Type & string & Type & 'CUTOFF', 'TABULAR', 'WEIR' or 'OVERFLOW'\\
+CutoffFlow & float & Cutoff Flow & if Type is 'CUTOFF'\\
+Curve & float & Curve Name & if Type is 'TABULAR'; the names of the curves have to be matching with those in the divider curves table\\
+\cline{4-4}
+WeirMinFlo & float & Outlet Offset & \multirow{3}{=}{if Type is 'WEIR'}\\
+WeirMaxDep & float & Initial Flow& \\
+WeirCoeff & float & Maximum Flow& \\
+\hline
+\end{tabular}
+
+\subsubsection{Outfalls}
+\textsc{Description}:\\
+\textsc{Changes}: \textcolor{red}{"FixedStage" and "Curve\_TS" were added in version 0.15 instead of "Data" to enable different types of boundary conditions} \\
+\begin{tabular}{p{1.9cm}|p{1.1cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+Elevation & float & Invert El. & \\ 
+FlapGate & string & Tide Gate & 'YES' or 'NO'\\
+RouteTo & string & Route To& Subcatchment outflow ist routed onto; leave blank if not applicable\\
+Type & string & Type & 'FREE','NORMAL','FIXED','TIDAL' or 'TIMESERIES'\\
+FixedStage & float & Fixed Stage & for outfalls with FIXED type\\
+Curve\_TS & string & Curve Name or Series Name & for TIDAL type: the name of the tidal curve has to be matching with the name in the curves table; for TIMESERIES type: the name of the time series has to be matching with then name in the time series table  \\
+\hline
+\end{tabular}
+
+\newpage
+\subsection{Links}
+\textsc{layer type}: line \\
+Links are represented as line layers in QGIS. These can be conduits, pumps, weirs, orifices or outlets. 
+\subsubsection{Conduits}
+\textsc{Changes}: 
+
+\textcolor{red}{"Kentry" was renamed in version 0.14, before: "Inlet"}
+
+\textcolor{red}{"Kexit" was renamed in version 0.14, before: "Outlet"}
+
+\textcolor{red}{"Kavg" was renamed in version 0.14, before: "Average"}\\
+\textsc{Description}: \\
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+FromNode & string & Inlet Node & \\ 
+ToNode & string & Outlet Node&  \\ 
+Length & float & Length & \\
+Roughness & float & Roughness & \\
+InOffset & float & Inlet Offset & \\
+OutOffset & float & Outlet Offset & \\
+InitFlow & float & Initial Flow& \\
+MaxFlow & float & Maximum Flow& \\
+\end{tabular}
+\\
+\\
+\textit{Data for cross sections (XSECTIONS):}
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+Shape & string & Shape & \\
+\cline{3-3}
+Geom1 & float &\multirow{4}{=}{see SWMM Documentation}& for most of the Shapes this is the 'Max. Depth' \\
+Geom2 & float &  & \\
+Geom3 & float &  & \\
+Geom4 & float &  & \\
+\cline{3-3}
+Barrels & float & Number of Barrels& \\
+Shp\textunderscore Trnsct & string & - & Transect name for IRREGULAR cross sections or shape curve name for CUSTOM cross sections\\
+Culvert & float & Culvert Code& \\
+\end{tabular}
+\\
+\\
+\textit{Data for LOSSES:}
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+Kentry & float & Entry Loss Coeff. & \\
+Kexit & float & Entry Loss Coeff. & \\
+Kavg & float & Avg. Loss Coeff. & \\
+FlapGate & String & Flap Gate & can be 'YES' or 'NO'\\
+Seepage & float & Seepage Loss Rate& \\
+\hline
+\end{tabular}
+
+\subsubsection{Pumps}
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+FromNode & string & Inlet Node & \\ 
+ToNode & string & Outlet Node&  \\ 
+PumpCurve & string & Pump Curve & has to be matching with the curve name in the pump curves table; set an asterisk ('*') here for ideal pump \\
+Status & string & Initial Status & 'ON' or 'OFF' \\
+Startup & float & Startup Depth& \\
+Shutoff & float & Shutoff Depth & \\
+\hline
+\end{tabular}
+
+\newpage
+\subsubsection{Weirs}
+\textsc{Changes}:
+
+\textcolor{red}{"CoeffCurve" was renamed in version 0.15, before: "Coeff\_Curv"}
+
+\textcolor{red}{"RoadWidth" was renamed in version 0.15, before: "Roadwidth"}
+
+\textcolor{red}{"RoadSurf" was renamed in version 0.15, before: "Roadsurf"}
+\\
+\textsc{Description}: \\
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+FromNode & string & Inlet Node & \\ 
+ToNode & string & Outlet Node&  \\ 
+Type & string & Type & 'TRANSVERSE', 'SIDEFLOW', 'V-NOTCH', 'TRAPEZIODAL' or 'ROADWAY' \\
+Height & float & Height & \\
+Length & float & Length & \\
+SideSlope & float & Side Slope& Slope (width-to-height) of TRAPEZIODAL weir side walls\\
+CrestHeigh & float & Inlet Offset & \\
+Qcoeff & float & Discharge Coeff. & \\
+FlapGate & string & Flap Gate & 'YES' or 'NO' \\
+EndContrac & int & End Contractions & 0, 1 or 2\\
+EndCoeff & float & End Coeff. & For TRAPEZIODAL weirs\\
+Surcharge & string & Can Surcharge & 'YES' or 'NO'\\
+CoeffCurve & float & Coeff. Curve & the name of the curve has to be matching to the name in the table for weir curves\\
+\cline{4-4}
+RoadWidth & float & Road Width & \multirow{2}{=}{For ROADWAY weir types}\\
+RoadSurf & float & Road Surface & \\
+\hline
+\end{tabular}
+
+\subsubsection{Orifices}
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+FromNode & string & Inlet Node & \\ 
+ToNode & string & Outlet Node&  \\ 
+Type & string & Type & 'SIDE' or 'BOTTOM'\\
+Shape & string & Shape & 'CIRCULAR' or 'RECT\_ClOSED'\\
+Height & float & Heigth & in ft or meter\\
+Width & float &  Width & in ft or meter \\
+InOffset & float & Inlet Offset & \\
+Qcoeff & float & Discharge Coeff. & \\
+FlapGate & string & Flap Gate & 'YES' or 'NO'\\
+CloseTime & float & Time to Open/Close  & in hours\\
+\hline
+\end{tabular}
+
+\newpage
+\subsubsection{Outlets}
+\textsc{Changes}: \textcolor{red}{"RateCurve" was renamed in version 0.15, before: "Rate\_Curve"} \\
+\textsc{Description}: \\
+\\
+\begin{tabular}{p{2cm}|p{1.3cm}|P{3cm}|P{7.7cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+FromNode & string & Inlet Node & \\ 
+ToNode & string & Outlet Node&  \\ 
+InOffset & float & Inlet Offset & \\
+FlapGate & string & Flap Gate & 'YES' or 'NO'\\
+RateCurve & string & Shape & 'FUNCTIONAL/DEPTH', 'TABULAR/DEPTH', 'FUNCTIONAL/HEAD' or 'TABULAR/HEAD' \\
+Qcoeff & float & Coefficient & for FUNCTIONAL curves\\
+Qexpon & float & Exponent & for FUNCTIONAL curves\\
+CurveName & float & Curve Name & for TABULAR curves; has to be matching with the name in the oulet curves table\\
+\hline
+\end{tabular}
+
+\newpage
+\subsection{Subcatchments}
+\textsc{layer type}: point / polygon\\
+\textsc{Changes}: \textcolor{red}{"InfMethod" was renamed in version 0.15, before: "kind"} \\
+\textsc{description}: Subcatchments can either be points or polygons. Each subcatchment has to have a unique name (attribute \emph{Name}). The required fields in the attribute table are: 
+\\
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+RainGage & string & Rain Gage & the name of the rain gage\\ 
+Outlet & string & Outlet & the name of the junction into which water of the subcatchment flows \\ 
+Area & float & Area & Area in hectares (or other unit defined in the options table)\\
+Imperv & float & \% Imperv &  \\
+Width & float & Width & \\
+Slope & float& \% Slope & \\
+CurbLen & float & Curb Length & Optional parameter needed only for buildup functions (quality)\\
+SnowPack & string & Snow Pack& for snow melt analysis only\\
+\end{tabular}
+\\
+\\
+\textit{Data for SUBAREAS:}
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+N\textunderscore Imperv & float & N-Imperv & \\ 
+N\textunderscore Perv & float & N-Perv & \\ 
+S\textunderscore Imperv & float & Dstore-Imperv & \\
+S\textunderscore Perv & float & Dstore-Perv &  \\
+PctZero & float & \% Zero-Imperv & \\
+RouteTo & float & Subarea Routing & \\
+PctRouted & float & Percent Routed& \\
+\end{tabular} 
+\\
+\\
+\textit{Data for INFILTRATION \footnote{When "InfMethod" is 'HORTON' or 'MODIFIED\textunderscore HORTON':
+\begin{itemize}
+	\setlength\itemsep{-1pt}
+	\item Param1 = Maximum infiltration rate (Max. Infil. Rate) in mm/h or in/h
+	\item Param2 = Minimum infiltration rate (Min. Infil. Rate) in mm/h or in/h
+	\item Param3 = Decay constant (Decay Const.) for the Horton curve in 1/h 
+	\item Param4 = Drying Time in days
+	\item Param5 = Maximum infiltration volume possible (Max. Infil. Vol.) in inches or mm; 0 if not applicable
+\end{itemize}
+When "InfMethod" is 'GREEN\textunderscore AMPT' or 'MODIFIED\textunderscore GREEN\textunderscore AMPT':
+\begin{itemize}
+	\setlength\itemsep{-1pt}
+	\item Param1 = Suction head in inches or mm
+	\item Param2 = Soil saturated hydraulic conductivity (in/h or mm/h).
+	\item Param3 = Initial deficit. This is the fraction of soil volume that is initially dry [0 to 1]
+	\item Param4 and Param5 will be ignored
+\end{itemize}
+When "InfMethod" is 'CURVE\textunderscore NUMBER':
+\begin{itemize}
+	\setlength\itemsep{-1pt}
+	\item Param1 = SCS curve number; see SWMM Manual for details
+	\item Param2 = Conductivity. According to the SWMM Manual this parameter is deprecated and will be ignored.
+	\item Param3 = Drying Time (number of days it takes a fully saturated soil to dry)
+	\item Param4 and Param5 will be ignored
+\end{itemize}}:}
+\\
+\begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
+Param1 & float &  & \\ 
+Param2 & float &  & \\ 
+Param3 & float &  & \\
+Param4 & float &  &  \\
+Param5 & float &  & \\
+InfMethod & string & Infiltration Method & 'HORTON', 'MODIFIED\textunderscore HORTON', 'GREEN\textunderscore AMPT', 'MODIFIED\textunderscore GREEN\textunderscore AMPT', 'CURVE\textunderscore NUMBER'; if empty then the infiltration method defined in the options table will be applied\\
+\hline
+\end{tabular} 
+
+\section{Tables}
+
+\subsection{Options}
+You may want to set the options already in your input file. To do so, you simply write them in a table with two columns: key and value. \newline
+
+
+\subsection{Curves}
+Any type of curves can be imported as a table in an xlsx file. Each curve type has to be in a seperate sheet/table named with the curve type. Different curves oft the same type are stored in the same table by using different names. Just like in the SWMM GUI, curves always consist of three columns: Name, a x-value and a y-value. More culomns can be added (e.g. for annotations), but only the first three columns are relevant for the import into SWMM. Rows beginning with a semicolon (";") will be ignored. Curve types are:
+\begin{itemize}
+	\setlength\itemsep{0pt}
+	\item Pump1
+	\item Pump2
+	\item Pump3
+	\item Pump4
+	\item Weir
+	\item Storage
+	\item Rating
+	\item Tidal
+	\item Control
+	\item Diversion
+	\item Shape
+\end{itemize}
+Example for a table of two storage curves (where "Depth" is the x-value and "Area" is the y-value) :\\
+\begin{tabular}{|p{1.7cm}|p{1.3cm}|P{1.3cm}|P{6cm}|}
+\hline 
+\textbf{Name} & \textbf{Depth} & \textbf{Area} & \textbf{Notes}\\ 
+\hline 
+StC\_1 & 0 & 3 & this is the first storage curve\\
+\hline 
+StC\_1 & 0.5 & 4 & \\
+\hline 
+StC\_1 & 1 & 4 & \\
+\hline 
+StC\_1 & 1.5 & 5 & \\
+\hline 
+; &  &  & this row will be ignored\\
+\hline 
+second\_StC & 0 & 10 & this is the second storage curve\\
+\hline 
+second\_StC & 1 & 10 & \\
+\hline 
+second\_StC & 2 & 11 & \\
+\hline 
+second\_StC & 3 & 11 & \\
+\hline 
+second\_StC & 4 & 12 & \\
+\hline 
+\end{tabular}
+
+\subsection{Timeseries}
+Time series are saved in a .xlsx file (any sheet name). For a normal time series you only fill the columns "Name", "Date" (optional), "Time" and "Value".\\
+\begin{tabular}{p{1.4cm}|p{1.9cm}|P{3cm}|P{7.7cm}}
+\hline 
+\textbf{Column in table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Time Series Name & \\
+Type & string & - & Can be empty. If you put "rain\_gage" here, the tool will try add a rain gage with the time series\\ 
+Date & date format & Date & \\ 
+Time & time format & Time & \\
+Value & float &  Value &  \\
+Format & string & - & Can be empty. If Type is "rain\_gage", then you can choose between "VOLUME" and "INTENSITY"\\
+\hline
+\end{tabular}
+\\
+Exemplary table for a rain gage and a normal time series:\\
+\begin{tabular}{|p{1.3cm}|p{1.6cm}|P{1.8cm}|P{1.6cm}|P{1.0cm}|P{1.6cm}|P{1.9cm}|}
+\hline 
+\textbf{Name} & \textbf{Type} & \textbf{Date} & \textbf{Time} & \textbf{Value} & \textbf{Format} & \textbf{Description}\\
+\hline
+TS\_1 & rain\_gage & 2021-01-02 & 00:00:00 &	0	& VOLUME	& RG\_1\\
+\hline
+TS\_1 &	rain\_gage & 2021-01-02 & 01:00:00 & 0.1	& VOLUME	& RG\_1\\
+\hline
+TS\_1 &	rain\_gage & 2021-01-02 & 02:00:00 &	0.5	& VOLUME	& RG\_1\\
+\hline
+TS\_1 & rain\_gage & 2021-01-02 & 03:00:00 &	0.6	& VOLUME	& RG\_1\\
+\hline
+TS\_1 &	rain\_gage & 2021-01-02 & 04:00:00 &	0.1	& VOLUME	& RG\_1\\
+\hline
+TS\_1 &	rain\_gage &	2021-01-02 & 05:00:00 &	0	& VOLUME	& RG\_1\\
+\hline
+; & & & & & &\\
+\hline
+TS\_2 &	 &	2021-01-02 & 01:00:00 &	0	& 	& \\
+\hline
+TS\_2 &  & 2021-01-02 & 01:30:00 &	0	& 	& \\
+\hline
+TS\_2 &	 & 2021-01-02 & 02:00:00 &	0	& 	& \\
+\hline
+TS\_2 &	 &	2021-01-02 & 02:30:00 &	0,2	& 	&\\
+\hline
+TS\_2 &	 &	2021-01-02 & 0:00:00 &	0,3	& 	& \\
+\hline
+\end{tabular}
+
+
+\subsection{Patterns}
+Patterns can be imported in an xlsx file, 
+where each pattern type is stored in a separate sheet named after the pattern type. Patterns of the same type are written in the same table. Each table consist of three columns: "Name", a Time\_Stamp column and "Factor". Pattern types are:
+\begin{itemize}
+	\setlength\itemsep{0pt}
+	\item HOURLY, where the Time\_Stamp column is called "Hour" (from 0:00 to 23:00)
+	\item DAILY, where the Time\_Stamp column is called "Day" (from Sunday to Saturday)
+	\item MONTHLY, where the Time\_Stamp column is called "Month" (from January to December)
+	\item WEEKEND, where the Time\_Stamp column is called "Hour" (from 12AM to 11PM)
+\end{itemize}
+For example, a table for a DAILY pattern will look like this:\\
+\\
+\begin{tabular}{|p{1.7cm}|p{2.4cm}|P{1.3cm}|}
+\hline 
+\textbf{Name} & \textbf{Day} & \textbf{Factor}\\ 
+\hline 
+p1 & Sun & 2.0 \\
+\hline 
+p1 & Mon & 1.6 \\
+\hline 
+p1 & Tue & 1.4 \\
+\hline 
+p1 & Wed & 1.8 \\
+\hline 
+p1 & Thu & 2.5 \\
+\hline 
+p1 & Fri & 2.0 \\
+\hline 
+p1 & Sat & 1.8 \\
+\hline 
+; &  &   \\
+\hline 
+p2 & Sun & 2.8 \\ 
+\hline 
+p2 & Mon & 2.7  \\
+\hline 
+... & ... & ... \\
+\hline
+\end{tabular}
+
+\subsection{Quality}
+Quality parameters can be imported with a .xlsx file with the four tables/sheets: 'POLLUTANTS', 'LANDUSES', 'COVERAGES', 'LOADINGS'. 
+
+\subsubsection{POLLUTANTS}
+\begin{tabular}{p{2cm}|p{1.3cm}|P{3cm}|P{7.7cm}}
+\hline 
+\textbf{Columns in table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+Units & string & Units & \\ 
+RainConcentr & float & Rain Concen. & \\ 
+GwConcentr & float & GW Concen. & \\ 
+IiConcentr & float & I\&i Concen & \\ 
+DecayCoeff & float & Decay Coeff & \\ 
+SnowOnly & string & Snow Only & 'YES' or 'NO' \\ 
+CoPollutant & string & Co-Pollutant & \\
+CoFraction & string & Co-Fraction & \\ 
+DwfConcentr & float & DWF Concen & \\
+InitConcetr & float & Init. Concen & \\ 
+\hline
+\end{tabular}
+
+
+
+\subsubsection{LANDUSES}
+This sheet sets up buildup and washoff functions for different landuses. Since one landuse can have more than one pollutant with individual functions for buildup and washoff, the have defined in different rows of this sheet (see exemplary table).\\
+\begin{tabular}{p{4.4cm}|p{1.3cm}|P{3cm}|P{5.3cm}}
+\hline 
+\textbf{Columns in table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Land Use Name & \\
+SweepingInterval & float & Interval & in days\\ 
+SweepingFractionAvailable & float & Availability & between 0 and 1\\ 
+LastSwept & float & Last Swept & in days\\ 
+Pollutant & string & - & \\ 
+BuildupFunction & string & Function & 'NONE', 'POW', 'EXP', 'SAT' or 'EXT' \\ 
+BuildupMax & float & Max. Buildup & kg per textit{Normalizer} (area or curb length)\\ 
+BuildupRateConstant & float & Rate Constant & \\
+BuildupExponent\textunderscore SatConst & float & Power/Sat. Constant & \\ 
+BuildupPerUnit & string & Normalizer & 'AREA' or 'CURB'\\
+WashoffFunction & string & Function & 'NONE', 'EXP', 'RC' or 'EMC'\\ 
+WashoffpCoefficient & float & Coefficient & \\ 
+WashoffExponenet & float & Exponent & \\ 
+WashoffCleaninfEfficiency & float & Cleaning Effic. & percent\\ 
+WashoffBmpEfficiency & float & BMP Effic. & percent\\ 
+\hline
+\end{tabular}
+
+
+
+\subsubsection{COVERAGES}
+This sheet refers to \textit{Land Uses} in the GUI of subcatchments.  As one subcatchment can have morge than one land use covering its area \footnote{the tool will not check if $\Sigma$ Percent > 100}, they are defined in the quality table. Example for one subcatchment with two land use types:\\
+\begin{tabular}{|p{5cm}|p{2cm}|P{3cm}|}
+\hline 
+\textbf{Subcatchment} & \textbf{Landuse} & \textbf{Percent}\\ 
+\hline
+SC1	& LU\_1 & 24.5 \\
+\hline
+SC1	& LU\_2 & 75.5 \\
+\hline
+\end{tabular}
+\subsubsection{LOADINGS}
+This sheet refers to \textit{Initial Buildup} in the GUI of subcatchments. As one subcatchment can have morge than one pollutants the initial buildup is defined in the quality table. Values in the column "InitialBuildup" are mass per area (e.g. kg/ha or lbs/ac). Example for two subcatchments with two pollutants:\\
+\begin{tabular}{|p{5cm}|p{2cm}|P{3cm}|}
+\hline 
+\textbf{Subcatchment} & \textbf{Pollutant} & \textbf{InitialBuildup}\\ 
+\hline
+SC1 & COD & 1\\
+\hline
+SC1 & TN & 0.6\\
+\hline
+SC2 & COD & 0.8\\
+\hline
+SC2 & TN & 0.4\\
+\hline
+\end{tabular}
+
+
+\newpage
+\subsection{Inflows}
+The .xlsx file for inflows contains two tables/sheets. One is for direct inflow (sheet name: "Direct") and one is for dry weather inflow (sheet name: "Dry\_Weather"). More than one constituent can have inflows to a node. 
+\subsubsection{Direct}
+\begin{tabular}{p{4cm}|p{1.3cm}|P{3cm}|P{5.7cm}}
+\hline 
+\textbf{Columns in table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & name of the Node\\
+Constituent & string & Constituent & 'FLOW' or name of the pollutant\\ 
+Baseline & float & Baseline & \\ 
+Baseline\_Pattern & string & Baseline Pattern & \\ 
+Time\_Series & float & Time Series & \\ 
+Scale\_Factor & float & Scale Factor & \\ 
+Type & string & Type & "MASS", "CONCEN"; applies, when Constituent is not FLOW\\ 
+Units\_Factor & float & Units Factor & \\ 
+\hline
+\end{tabular}
+
+\subsubsection{Dry\textunderscore Weather}
+\begin{tabular}{p{4cm}|p{1.3cm}|P{3cm}|P{5.7cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+Name & string & Name & \\
+Constituent & string & Constituent & \\ 
+Average\_Value & float & Average Value & \\ 
+\cline{3-3}
+Time\_Pattern1 & string & \multirow{4}{=}{Time Patterns} & \\  
+Time\_Pattern2 & string &  & \\ 
+Time\_Pattern3 & string &  & \\ 
+Time\_Pattern4 & string &  & \\ 
+\hline
+\end{tabular}
+
+
+\subsection{Transects}
+The .xlsx file for transects ("IRREGULAR" cross-sections) contains two tables/sheets ("Data" and "XSections"):
+\subsubsection{Data}
+\begin{tabular}{p{4cm}|p{1.3cm}|P{3cm}|P{5.7cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+TransectName & string & Name & \\
+Station & float & Station & \\ 
+Elevation & float & Elevation & \\
+\hline
+\end{tabular}
+
+\subsubsection{XSections}
+\begin{tabular}{p{4cm}|p{1.3cm}|P{3cm}|P{5.7cm}}
+\hline 
+\textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
+\hline 
+TransectName & string & Name & \\
+RoughnessLeftBank & float & Left Bank & \\ 
+RoughnessRightBank & float & Right Bank & \\ 
+RoughnessChannel & float & Channel & \\ 
+BankStationLeft & float & Left& \\  
+BankStationRight& float & Right & \\ 
+ModifierStations & float & Stations & \\ 
+ModifierElevations& float & Elevations & \\ 
+ModifierMeander& float & Meander & \\ 
+\hline
+\end{tabular}
+								
+
+\end{document}
+
+
+
+
+
+

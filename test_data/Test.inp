@@ -64,7 +64,7 @@ S_1              0.023      0.15       2.0        3.0        0.0        OUTLET
 [INFILTRATION]
 ;;Subcatchment   Param1     Param2     Param3     Param4     Param5    
 ;;-------------- ---------- ---------- ---------- ---------- ----------
-S_1              60.955     29.969     0.25                            
+S_1              60.955     29.969     0.25       7          0         
 
 [JUNCTIONS]
 ;;Name           Elevation  MaxDepth   InitDepth  SurDepth   Aponded   
@@ -77,18 +77,18 @@ J_4              1.0        0.5        0.1        0.0        0.0
 [OUTFALLS]
 ;;Name           Elevation  Type       Stage Data       Gated    Route To        
 ;;-------------- ---------- ---------- ---------------- -------- ----------------
-Out_1            0.0        FREE                        NO                       
-Out_2            0.0        FREE                        NO                       
+Out_1            0.0        TIDAL      tdc_1            NO                       
+Out_2            0.0        FIXED      7                NO                       
 
 [DIVIDERS]
 ;;Name           Elevation  Diverted Link    Type       Parameters
 ;;-------------- ---------- ---------------- ---------- ----------
-J_5              0.74       C_6              CUTOFF     0.005      0.26       0.0        0          400       
+J_5              0.74       C_6              CUTOFF     0.005      0.26       0.0        0.0        400.0     
 
 [STORAGE]
 ;;Name           Elev.    MaxDepth   InitDepth  Shape      Curve Name/Params            N/A      Fevap    Psi      Ksat     IMD     
 ;;-------------- -------- ---------- ----------- ---------- ---------------------------- -------- --------          -------- --------
-St_1             0.0      2.0        0.9        TABULAR    StC_01                       0        0.0     
+St_1             0.0      2.0        0.9        TABULAR    StC_01                       0.0      0.0     
 
 [CONDUITS]
 ;;Name           From Node        To Node          Length     Roughness  InOffset   OutOffset  InitFlow   MaxFlow   
@@ -97,7 +97,7 @@ C_3              J_3              J_2              299.9009999452994 0.011      
 C_1              J_1              Out_1            149.59839662674491 0.015      *          *          0.0        0.0       
 C_4              J_4              J_5              199.3808096739656 0.015      *          *          0.0        0.0       
 C_5              J_5              St_1             198.48049966122002 0.015      *          *          0.0        0.0       
-C_6              J_5              J_2              400        0.01       3.5        *          0          0         
+C_6              J_5              J_2              400.0      0.01       3.5        *          0.0        0.0       
 
 [PUMPS]
 ;;Name           From Node        To Node          Pump Curve       Status   Sartup Shutoff 
@@ -121,7 +121,7 @@ C_3              CIRCULAR     0.2              0.0        0.0        0.0        
 C_1              CIRCULAR     0.5              0.0        0.0        0.0        1.0                  
 C_4              IRREGULAR    tr_1             0          0          0          1                    
 C_5              CIRCULAR     0.3              0.0        0.0        0.0        1.0                  
-C_6              CIRCULAR     1                0          0          0          1                    
+C_6              CIRCULAR     1.0              0.0        0.0        0.0        1.0                  
 W_1              RECT_OPEN    0.9              1.0        0.0        0.0       
 
 [TRANSECTS]
@@ -133,7 +133,7 @@ GR 2.29     1.0      2.22     2.0      2.15     3.0      2.09     4.0      2.01 
 GR 1.92     6.0      1.81     7.0      1.7      8.0      1.6      9.0      1.52     10.0    
 GR 1.45     11.0    
 ;
-NC 0.044    0.043    0.046   
+NC 0.044000000000000004 0.043    0.046   
 X1 tr_2              5        0.0      0.0      0.0      0.0      0.0      0.0      0.0     
 GR 6.0      1.0      5.5      1.5      4.0      2.0      5.8      2.5      6.2      3.0     
 
@@ -183,10 +183,16 @@ LU_1             N_Total          EXP        1          1          0          0
 LU_2             BOD              EXP        1          1          0          0         
 LU_2             N_Total          EXP        1          1          0          0         
 
+[INFLOWS]
+;;Node           Constituent      Time Series      Type     Mfactor  Sfactor  Baseline Pattern
+;;-------------- ---------------- ---------------- -------- -------- -------- -------- --------
+J_5              BOD              ""               CONCEN   1.0      1.0      3        dry_weather_hourly
+
 [DWF]
 ;;Node           Constituent      Baseline   Patterns  
 ;;-------------- ---------------- ---------- ----------
-J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly" ""
+J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly"
+J_5              FLOW             2          "" "" ""
 
 [CURVES]
 ;;Name           Type       X-Value    Y-Value   
@@ -228,6 +234,13 @@ StC_01                      1.9        13.8
 ;
 StC_02           Storage    0.0        0.2       
 StC_02                      0.5        1.0       
+;
+tdc_1            Tidal      1          0         
+tdc_1                       2          0         
+tdc_1                       3          0.3       
+tdc_1                       4          0.2       
+tdc_1                       5          0.2       
+tdc_1                       6          0         
 ;
 wc_1             Weir       1          0.2       
 wc_1                        2          0.3       
@@ -293,7 +306,7 @@ St_1             309655.930         5998297.446
 C_4              309337.410         5998182.080       
 C_4              309369.260         5998199.170       
 C_4              309389.850         5998220.920       
-C_6              309532.669         5998444.487       
+C_6              309532.670         5998444.490       
 
 [Polygons]
 ;;Subcatchment   X-Coord            Y-Coord           

@@ -39,7 +39,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer)
-
+from .g_s_various_functions import create_rename_error_message
 
 
 
@@ -235,7 +235,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         project_dir = os.path.dirname(inp_file_path)
 
         """initializing the input dictionary and error text"""
-        err_text = ''
         inp_dict = dict()
         inp_dict['junctions_df'] = pd.DataFrame()
         inp_dict['conduits_df'] = pd.DataFrame()
@@ -329,12 +328,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'options_df' in raw_data_dict.keys():
             from .g_s_various_functions import get_options_from_table
             inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
-
+            main_infiltration_method = inp_dict['options_dict']['INFILTRATION']
+        else:
+            #no main infiltration method given:
+            main_infiltration_method = None 
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
             from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
             from .g_s_various_functions import get_coords_from_geometry
-            subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'])
+            subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'],
+                                                                main_infiltration_method)
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
             inp_dict['subcatchments_df'] = subcatchments_df
             rg_x_mean, rg_y_mean = rg_position(inp_dict['polygons_dict']) # mean position of catchments for rain gage
@@ -366,6 +369,24 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'weirs_raw' in raw_data_dict.keys():
             from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
             from .g_s_various_functions import get_coords_from_geometry
+            if 'Coeff_Curv' in raw_data_dict['weirs_raw'].columns and 'CoeffCurve' not in raw_data_dict['weirs_raw'].columns:
+                raise QgsProcessingException(create_rename_error_message('Weirs Layer',
+                                            'Coeff_Curv',
+                                            'CoeffCurve',
+                                            'Weir Curve',
+                                            '0.15'))
+            if 'Roadwidth' in raw_data_dict['weirs_raw'].columns and 'RoadWidth' not in raw_data_dict['weirs_raw'].columns:
+                raise QgsProcessingException(create_rename_error_message('Weirs Layer',
+                                            'Roadwidth',
+                                            'RoadWidth',
+                                            'Road Width',
+                                            '0.15'))
+            if 'Roadsurf' in raw_data_dict['weirs_raw'].columns and 'RoadSurf' not in raw_data_dict['weirs_raw'].columns:
+                raise QgsProcessingException(create_rename_error_message('Weirs Layer',
+                                            'Roadsurf',
+                                            'RoadSurf',
+                                            'Road Surface',
+                                            '0.15'))
             weirs_df, xsections_df= get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
             weirs_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
             weirs_verts = {k: del_first_last_vt(v) for k,v in weirs_verts.items() if len(v) > 2} #first and last vertices are in nodes coordinates anyway
@@ -378,6 +399,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'outlets_raw' in raw_data_dict.keys():
             from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
             from .g_s_various_functions import get_coords_from_geometry
+            if 'Rate_Curve' in raw_data_dict['outlets_raw'].columns and 'RateCurve' not in raw_data_dict['outlets_raw'].columns:
+                raise QgsProcessingException(create_rename_error_message('Outlets Layer',
+                                            'Rate_Curve',
+                                            'RateCurve',
+                                            'Rating Curve',
+                                            '0.15'))
             inp_dict['outlets_df'] = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
             outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
             outlets_verts = {k: del_first_last_vt(v) for k,v in outlets_verts.items() if len(v) > 2}
@@ -413,9 +440,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['junctions_df'] = junctions_df
             all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
-            outfalls_df = raw_data_dict['outfalls_raw'].copy()
-            outfalls_df['RouteTo'] = outfalls_df['RouteTo'].fillna('')
-            outfalls_df['Data'] = outfalls_df['Data'].fillna('')
+            from .g_s_nodes import get_outfalls_from_shapefile
+            outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
             outfalls_df['X_Coord'],outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
             inp_dict['outfalls_df'] = outfalls_df
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
@@ -423,7 +449,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             storage_df = raw_data_dict['storages_raw'].copy()
             storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
             if 'Apond' in storage_df.columns and 'Coeff' not in storage_df.columns:
-                raise QgsProcessingException('Storages Layer: With version 0.14 the column name for the A-Value / Coefficient was renamed into "Coeff" (before: "Apond"')
+                raise QgsProcessingException(create_rename_error_message('Storages Layer',
+                                            'Apond',
+                                            'Coeff',
+                                            'A-Value / Coefficient',
+                                            '0.14'))
             # Empty linestrings will be ignored:"            
             storage_df['Curve'] = storage_df['Curve'].fillna('')
             storage_df['Coeff'] = storage_df['Coeff'].fillna('')
@@ -437,7 +467,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'dividers_raw' in raw_data_dict.keys():
             dividers_df = raw_data_dict['dividers_raw'].copy()
             dividers_df['X_Coord'],dividers_df['Y_Coord'] = get_coords_from_geometry(dividers_df)
-            dividers_df['CutOffFlow'] = dividers_df['CutOffFlow'].fillna('')
+            if 'CutOffFlow' in dividers_df.columns and 'CutoffFlow' not in dividers_df.columns:
+                raise QgsProcessingException(create_rename_error_message('Dividers Layer',
+                                            'CutOffFlow',
+                                            'CutoffFlow',
+                                            'Cutoff Flow',
+                                            '0.15'))
+            dividers_df['CutoffFlow'] = dividers_df['CutoffFlow'].fillna('')
             dividers_df['Curve'] = dividers_df['Curve'].fillna('')
             dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
             dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
@@ -451,8 +487,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if len(all_nodes) > 0:
             if 'inflows' in raw_data_dict.keys():
                 from .g_s_various_functions import get_inflows_from_table
-                dwf_dict , inflow_dict, err_txt = get_inflows_from_table(raw_data_dict['inflows'],all_nodes)
-                err_text = err_text+err_txt
+                dwf_dict , inflow_dict = get_inflows_from_table(raw_data_dict['inflows'],all_nodes)
                 if len(inflow_dict) > 0:
                     inp_dict['inflow_dict'] = inflow_dict
                 if len(dwf_dict) > 0:
@@ -505,9 +540,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                   feedback)
         feedback.setProgress(98)
         
-        #err_file = open(os.path.join(project_dir,inp_file_name[:-4]+'_errors.txt'),'w')
-        #err_file.write(err_text)
-        #err_file.close()
         feedback.setProgressText(self.tr('input file saved in '+str(os.path.join(project_dir,inp_file_name))))
         return {}
         
