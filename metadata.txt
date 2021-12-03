@@ -20,9 +20,12 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.15 2021-11-21
+changelog= 0.15 2021-12-03
 	- fix subcatchment infiltration function
 	- adjust default data
+	- fix outlets bug
+	- fix inflows table
+	- rename columns to CamelCase
 
 
 # Tags are comma separated with spaces allowed

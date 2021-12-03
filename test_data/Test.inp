@@ -183,10 +183,16 @@ LU_1             N_Total          EXP        1          1          0          0
 LU_2             BOD              EXP        1          1          0          0         
 LU_2             N_Total          EXP        1          1          0          0         
 
+[INFLOWS]
+;;Node           Constituent      Time Series      Type     Mfactor  Sfactor  Baseline Pattern
+;;-------------- ---------------- ---------------- -------- -------- -------- -------- --------
+J_5              BOD              ""               CONCEN   1.0      1.0      3        dry_weather_hourly
+
 [DWF]
 ;;Node           Constituent      Baseline   Patterns  
 ;;-------------- ---------------- ---------- ----------
-J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly" ""
+J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly"
+J_5              FLOW             2          "" "" ""
 
 [CURVES]
 ;;Name           Type       X-Value    Y-Value   
