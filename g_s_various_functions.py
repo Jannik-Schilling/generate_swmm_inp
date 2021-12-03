@@ -166,7 +166,7 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                'Constituent':inflow['Constituent'],
                'Time_Series':inflow['Time_Series'],
                'Type':inflow['Type'],
-               'Mfactor':1,
+               'Mfactor':inflow['Units_Factor'],
                'Sfactor':inflow['Scale_Factor'],
                'Baseline':inflow['Baseline'],
                'Pattern':inflow['Baseline_Pattern']}
