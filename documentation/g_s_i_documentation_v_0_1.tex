@@ -4,6 +4,8 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{array}
+\usepackage[backend=bibtex,style=numeric]{biblatex} %Imports biblatex package
+\bibliography{docbib} 
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \usepackage[english]{babel}
 \usepackage{blindtext}
@@ -27,17 +29,18 @@
 
 \title{generate\_swmm\_inp}
 \subtitle{Manual for the QGIS plugin version 0.15}
-\author{Jannik Schilling \\ email: \href{mailto:jannik.schilling@posteo.de}{jannik.schilling@posteo.de}}
+\author{Jannik Schilling \\ \small {email: \href{mailto:jannik.schilling@posteo.de}{jannik.schilling@posteo.de}}}
 \begin{document}
 \maketitle
 \tableofcontents
 
-\chapter{Introduction}
-SWMM is an open-source model and software by the US EPA for the simulation rainfall-runoff and routing in water bodies, sewer systems and wastewater infrastructures. To set up a new SWMM model, objects such as nodes, links and catchments can either be drawn via SWMM´s graphical user interface (GUI) or specified in a plain text file in ".inp" format ("input file"). The plugin "generate\_swmm\_input" provides tools for the conversion of geodata in QGIS into input files for SWMM (and vice versa). \\
-This documentation is a "work in progress". If you find any mistakes or you miss explanations for certain tools,  layers, ... please write an issue on GitHub or an email to the author.
+\chapter{Introduction} \label{Introduction}
+SWMM is an open-source model and software by the US EPA for the simulation rainfall-runoff and routing in water bodies, sewer systems and wastewater infrastructures. An intruduction to the model itself and details about attributes used in SWMM can be found in the official manual \cite{rossmann2015}. \\
+For a new SWMM model, objects such as nodes, links and catchments can either be drawn via SWMM´s graphical user interface (GUI) or specified in a  plain text file in ".inp" format (\textit{input file}). The required data regarding sewer geometries and rivers systems are usually available as geodata (e.g. \textit{shapefiles}). However, a direct import function for such files is not available yet in SWMM. To fix this problem, the plugin "generate\_swmm\_input" enables the conversion of geodata in QGIS into \textit{input files} for SWMM. Additionally, the plugin provides a tool to import \textit{input files} from SWMM into QGIS. This allows you to use edit layers with the aid of the large toolbox of QGIS.\\
+This documentation explains how install the plugin and how to prepare the geodata in GIS. It is a "work in progress". If you find any mistakes or you miss explanations for certain tools,  layers, ... please write an issue on GitHub or an email to the author.
 
-\section{Installation}
-\textbf{The plugin:} "generate\_swmm\_inp" can be installed within QGIS from official QGIS plugin repository. The latest experimental version of the plugin will be available on GitHub and can be installed from a zip file after download. \\
+\section{Installation} \label{Installation}
+\textbf{The plugin:} "generate\_swmm\_inp" can be installed within QGIS from official QGIS plugin repository. The latest experimental version of the plugin will be available on GitHub \cite{schilling2021} and can be installed from a zip file after download. \\
 \\
 \textbf{Missing Python packages:} The plugin needs the Python packages "pandas" and "openpyxl". If they are not already installed, the tools will raise errors, when running. To install missing packages, various instructions can be found online. Here are some examples...
 \begin{itemize}
@@ -53,9 +56,10 @@ This documentation is a "work in progress". If you find any mistakes or you miss
 	\item Linux: open the terminal and install via pip: 
 	\colorbox{mygray}{\lil{python -m pip install openpyxl}} (and likewise "pandas" if needed).
 \end{itemize} 
-\textbf{SWMM:} To run the models, SWMM has to be installed. Alternatively you can use the "swmmr" package for R or packages such as "pyswmm" for Python. \\
+\textbf{SWMM:} To run the models, SWMM has to be installed. Alternatively you can use the "swmmr" package \cite{leutnant2019} for R or packages such as "pyswmm" \cite{mcdonell2020} for Python. \\
 
-\section{Hints for this documentation}
+\section{Hints for this documentation} \label{Hints}
+There have been several changes of attribute names from the plugin versions 0.13 to 0.15. These changes are highlighted in red in every section.\\
 Two different types of tables will appear in the documentation. The first type shows the column names and attributes which are used in shapefiles and .xlsx files. Such a table will look like this:\\
 \\
 \begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
@@ -80,8 +84,8 @@ some & random & data & ... &...\\
 \hline
 \end{tabular}
 
-\chapter{The tools}
-\section{1\textunderscore GenerateDefaultData}
+\chapter{The tools} \label{tools}
+\section{1\textunderscore GenerateDefaultData} \label{tool1}
 The first tool will give you a default data set to see the data structure needed for the export and conversion into a input file later on. You have to chose a folder, in which all data will be saved.  To date shapefiles are provided for the main infrastructures:
 \begin{itemize}
 	\setlength\itemsep{0pt}
@@ -108,7 +112,7 @@ Further data is provided in tables and can be edited there:
     \item transects (gisswmm\_transects.xlsx)
 \end{itemize}
 
-\section{2\textunderscore GenerateSwmmInpFile}
+\section{2\textunderscore GenerateSwmmInpFile} \label{tool2}
 With the second tool, you can convert shapefiles and tables into input files. The default data serve as a template for your own model, because column names have to be matching in order to identify the correct information for the input file. Actions for the user interface:
 \begin{enumerate}
 	\setlength\itemsep{0pt}
@@ -117,7 +121,7 @@ With the second tool, you can convert shapefiles and tables into input files. Th
 \end{enumerate}
 
 
-\section{3\textunderscore ImportInpFile}
+\section{3\textunderscore ImportInpFile} \label{tool3}
 The third tool allows you to import input files into QGIS. All sections (if already implemented) of the input file will be connverted into shapefiles and tables. Actions for the user interface:
 \begin{enumerate}
 	\setlength\itemsep{0pt}
@@ -128,17 +132,16 @@ The third tool allows you to import input files into QGIS. All sections (if alre
 \end{enumerate}
 
 
-\chapter{Field names and column names in geodata and tables}
+\chapter{Field names and column names in geodata and tables} \label{fieldnames}
 
-\section{Geodata}
-In the current version of the plugin, the main file type for geodata are shapefiles. This limits the length of the field names in the attribute to 10 characters. Hence, in some cases, the field names required for the tools differ from those used in the graphical user interface (GUI) in SWMM. For example, the rate of seepage loss into the surrounding soil of a conduit can be defined with the field "Seepage" in the conduits layer, which refers to "Seepage Loss Rate" in the SWMM GUI. %reference to table
+\section{Geodata} \label{geodata}
+In the current version of the plugin, the main file type for geodata are shapefiles. This limits the length of the field names in the attribute to 10 characters. Hence, in some cases, the field names required for the tools differ from those used in the graphical user interface (GUI) in SWMM. For example, the rate of seepage loss into the surrounding soil of a conduit can be defined with the field "Seepage" in the conduits layer (see section \ref{conduits}), which refers to "Seepage Loss Rate" in the SWMM GUI.
 
-
-\subsection{Nodes}
+\subsection{Nodes} \label{nodes}
 \textsc{layer type}: point \\
 Four types of nodes can be added to a SWMM-file:
 junctions, storage units, dividers or outfalls. Inflows into any kind of nodes can be are defined in the 'Inflows' table. Treatment of pollutatants is not implemented yet.
-\subsubsection{Junctions}
+\subsubsection{Junctions} 
 \begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
 \hline 
 \textbf{Name in attribute table} & \textbf{Data type} & \textbf{Name in SWMM GUI (5.1.015)} & \textbf{annotations}\\ 
@@ -193,8 +196,8 @@ InitDepth & float & Initial Depth & \\
 SurDepth & float & Surcharge Depth& \\
 Aponded & float & Ponded Area& \\
 Type & string & Type & 'CUTOFF', 'TABULAR', 'WEIR' or 'OVERFLOW'\\
-CutoffFlow & float & Cutoff Flow & if Type is 'CUTOFF'\\
-Curve & float & Curve Name & if Type is 'TABULAR'; the names of the curves have to be matching with those in the divider curves table\\
+CutoffFlow & float & Cutoff Flow & if Type is CUTOFF\\
+Curve & float & Curve Name & if Type is TABULAR; the names of the curves have to be matching with those in the divider curves table\\
 \cline{4-4}
 WeirMinFlo & float & Outlet Offset & \multirow{3}{=}{if Type is 'WEIR'}\\
 WeirMaxDep & float & Initial Flow& \\
@@ -223,7 +226,7 @@ Curve\_TS & string & Curve Name or Series Name & for TIDAL type: the name of the
 \subsection{Links}
 \textsc{layer type}: line \\
 Links are represented as line layers in QGIS. These can be conduits, pumps, weirs, orifices or outlets. 
-\subsubsection{Conduits}
+\subsubsection{Conduits}\label{conduits}
 \textsc{Changes}: 
 
 \textcolor{red}{"Kentry" was renamed in version 0.14, before: "Inlet"}
@@ -252,9 +255,9 @@ MaxFlow & float & Maximum Flow& \\
 \textit{Data for cross sections (XSECTIONS):}
 \\
 \begin{tabular}{p{1.7cm}|p{1.3cm}|P{3cm}|P{8cm}}
-Shape & string & Shape & \\
+Shape & string & Shape & See SWMM manual \cite{rossmann2015} for shape types\\
 \cline{3-3}
-Geom1 & float &\multirow{4}{=}{see SWMM Documentation}& for most of the Shapes this is the 'Max. Depth' \\
+Geom1 & float &  & for most of the shapes this is the 'Max. Depth' \\
 Geom2 & float &  & \\
 Geom3 & float &  & \\
 Geom4 & float &  & \\
@@ -423,8 +426,8 @@ When "InfMethod" is 'GREEN\textunderscore AMPT' or 'MODIFIED\textunderscore GREE
 When "InfMethod" is 'CURVE\textunderscore NUMBER':
 \begin{itemize}
 	\setlength\itemsep{-1pt}
-	\item Param1 = SCS curve number; see SWMM Manual for details
-	\item Param2 = Conductivity. According to the SWMM Manual this parameter is deprecated and will be ignored.
+	\item Param1 = SCS curve number; see SWMM Manual \cite{rossmann2015} for details
+	\item Param2 = Conductivity. According to the SWMM Manual \cite{rossmann2015} this parameter is deprecated and will be ignored.
 	\item Param3 = Drying Time (number of days it takes a fully saturated soil to dry)
 	\item Param4 and Param5 will be ignored
 \end{itemize}}:}
@@ -665,7 +668,7 @@ Name & string & Name & name of the Node\\
 Constituent & string & Constituent & 'FLOW' or name of the pollutant\\ 
 Baseline & float & Baseline & \\ 
 Baseline\_Pattern & string & Baseline Pattern & \\ 
-Time\_Series & float & Time Series & \\ 
+Time\_Series & string & Time Series & \\ 
 Scale\_Factor & float & Scale Factor & \\ 
 Type & string & Type & "MASS", "CONCEN"; applies, when Constituent is not FLOW\\ 
 Units\_Factor & float & Units Factor & \\ 
@@ -690,7 +693,7 @@ Time\_Pattern4 & string &  & \\
 
 
 \subsection{Transects}
-The .xlsx file for transects ("IRREGULAR" cross-sections) contains two tables/sheets ("Data" and "XSections"):
+The .xlsx file for transects (for IRREGULAR cross-sections) contains two tables/sheets ("Data" and "XSections"):
 \subsubsection{Data}
 \begin{tabular}{p{4cm}|p{1.3cm}|P{3cm}|P{5.7cm}}
 \hline 
@@ -718,8 +721,9 @@ ModifierElevations& float & Elevations & \\
 ModifierMeander& float & Meander & \\ 
 \hline
 \end{tabular}
-								
-
+					
+					
+\printbibliography %Prints bibliography		
 \end{document}
 
 
