@@ -326,7 +326,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         
         """options"""
         if 'options_df' in raw_data_dict.keys():
-            from .g_s_various_functions import get_options_from_table
+            from .g_s_options import get_options_from_table
             inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
             main_infiltration_method = inp_dict['options_dict']['INFILTRATION']
         else:

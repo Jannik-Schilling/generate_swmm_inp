@@ -336,7 +336,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OPTIONS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating options file ...'))
             feedback.setProgress(8)
-            from .g_s_various_functions import convert_options_format_for_import
+            from .g_s_options import convert_options_format_for_import
             df_options = build_df_for_section('OPTIONS',dict_all_raw_vals)
             dict_options = {k:v for k,v in zip(df_options['Option'],df_options['Value'])}
             df_options_converted = convert_options_format_for_import(dict_options)

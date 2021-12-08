@@ -204,67 +204,7 @@ def get_inflows_from_table(inflows_raw,all_nodes):
                 dwf_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
     return dwf_dict, inflow_dict
     
-    
-def get_options_from_table(options_df): 
-    """
-    converts file_options_df to dict and 
-    converts datetime formats to string
-    :param pd.DataFrame options_df
-    """
-    from datetime import datetime, time
-    options_dict = {k:v for k,v in zip(options_df['Option'],options_df['Value'])}
-    if type(options_dict['START_DATE']) is datetime:
-        options_dict['START_DATE'] = options_dict['START_DATE'].strftime('%m/%d/%Y')
-    if type(options_dict['REPORT_START_DATE']) is datetime:
-        options_dict['REPORT_START_DATE'] = options_dict['REPORT_START_DATE'].strftime('%m/%d/%Y')
-    if type(options_dict['END_DATE']) is datetime:
-        options_dict['END_DATE'] = options_dict['END_DATE'].strftime('%m/%d/%Y')
-    if type(options_dict['SWEEP_START']) is datetime:
-        options_dict['SWEEP_START'] = options_dict['SWEEP_START'].strftime('%m/%d')
-    if type(options_dict['SWEEP_END']) is datetime:
-        options_dict['SWEEP_END'] = options_dict['SWEEP_END'].strftime('%m/%d')
-    if type(options_dict['START_TIME']) in [datetime, time]:
-        options_dict['START_TIME'] = options_dict['START_TIME'].strftime('%H:%M:%S')
-    if type(options_dict['REPORT_START_TIME']) in [datetime, time]:
-        options_dict['REPORT_START_TIME'] = options_dict['REPORT_START_TIME'].strftime('%H:%M:%S')
-    if type(options_dict['END_TIME']) in [datetime, time]:
-        options_dict['END_TIME'] = options_dict['END_TIME'].strftime('%H:%M:%S')
-    if type(options_dict['REPORT_STEP']) in [datetime, time]:
-        options_dict['REPORT_STEP'] = options_dict['REPORT_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['WET_STEP']) in [datetime, time]:
-        options_dict['WET_STEP'] = options_dict['WET_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['DRY_STEP']) in [datetime, time]:
-        options_dict['DRY_STEP'] = options_dict['DRY_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['ROUTING_STEP']) in [datetime, time]:
-        options_dict['ROUTING_STEP'] = options_dict['ROUTING_STEP'].strftime('%H:%M:%S')
-    if type(options_dict['RULE_STEP']) in [datetime, time]:
-        options_dict['RULE_STEP'] = options_dict['RULE_STEP'].strftime('%H:%M:%S')
-    return options_dict
-    
-def convert_options_format_for_import(dict_options):
-    '''
-    converts formats in dict_options for the options file
-    :param dict dict_options
-    '''
-    from datetime import datetime
-    dict_options['START_DATE'] = datetime.strptime(dict_options['START_DATE'],'%m/%d/%Y').date()
-    dict_options['REPORT_START_DATE'] = datetime.strptime(dict_options['REPORT_START_DATE'],'%m/%d/%Y').date()
-    dict_options['END_DATE'] = datetime.strptime(dict_options['END_DATE'],'%m/%d/%Y').date()
-    dict_options['SWEEP_START'] = datetime.strptime(dict_options['SWEEP_START'],'%m/%d').date()
-    dict_options['SWEEP_END'] = datetime.strptime(dict_options['SWEEP_END'],'%m/%d').date()
-    dict_options['START_TIME'] = datetime.strptime(dict_options['START_TIME'],'%H:%M:%S').time()
-    dict_options['REPORT_START_TIME'] = datetime.strptime(dict_options['REPORT_START_TIME'],'%H:%M:%S').time()
-    dict_options['END_TIME'] = datetime.strptime(dict_options['END_TIME'],'%H:%M:%S').time()
-    dict_options['REPORT_STEP'] = datetime.strptime(dict_options['REPORT_STEP'],'%H:%M:%S').time()
-    dict_options['WET_STEP'] = datetime.strptime(dict_options['WET_STEP'],'%H:%M:%S').time()
-    dict_options['DRY_STEP'] = datetime.strptime(dict_options['DRY_STEP'],'%H:%M:%S').time()
-    dict_options['ROUTING_STEP'] = datetime.strptime(dict_options['ROUTING_STEP'],'%H:%M:%S').time()
-    dict_options['RULE_STEP'] = datetime.strptime(dict_options['RULE_STEP'],'%H:%M:%S').time()
-    df_options = pd.DataFrame()
-    df_options['Option'] = dict_options.keys()
-    df_options['Value'] = dict_options.values()
-    return df_options
-    
+
     
 ## errors and feedback
 def create_rename_error_message(l_name,c_n_old,c_n_new,swmm_attr,p_version):
