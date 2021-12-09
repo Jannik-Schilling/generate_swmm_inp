@@ -7,6 +7,7 @@ Created on Wed May 12 15:56:10 2021
 
 import pandas as pd
 from qgis.core import QgsProcessingException
+from .g_s_various_functions import create_rename_error_message
 
 def get_conduits_from_shapefile(conduits_raw):
     """
