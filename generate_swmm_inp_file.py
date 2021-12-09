@@ -325,13 +325,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr('preparing data for input file'))
         
         """options"""
+        main_infiltration_method = None 
         if 'options_df' in raw_data_dict.keys():
-            from .g_s_various_functions import get_options_from_table
+            from .g_s_options import get_options_from_table
             inp_dict['options_dict'] = get_options_from_table(raw_data_dict['options_df'].copy())
-            main_infiltration_method = inp_dict['options_dict']['INFILTRATION']
-        else:
-            #no main infiltration method given:
-            main_infiltration_method = None 
+            if 'INFILTRATION' in inp_dict['options_dict'].keys():
+                main_infiltration_method = inp_dict['options_dict']['INFILTRATION']            
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
             from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
