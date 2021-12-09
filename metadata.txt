@@ -20,7 +20,7 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.15 2021-12-03
+changelog= 0.16 2021-12-09
 	- fix options
 	- update documentation
 	- fix exceptions
