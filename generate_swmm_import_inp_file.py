@@ -790,12 +790,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
                 tr_endp = tr_startp[1:]+[len(transects_list)]
                 def get_transects_data(tr_i):
-                    tr_roughness = tr_i[0][1:]
+                    tr_roughness = [float(x) for x in tr_i[0][1:]]
                     tr_name = tr_i[1][1]
                     #tr_count = tr_i[1][2]
-                    tr_bankstat_left = tr_i[1][3]
-                    tr_bankstat_right = tr_i[1][4]
-                    tr_modifier = tr_i[1][7:10]
+                    tr_bankstat_left = float(tr_i[1][3])
+                    tr_bankstat_right = float(tr_i[1][4])
+                    tr_modifier = [float(x) for x in tr_i[1][7:10]]
                     tr_data = [tr_name]+tr_roughness+[tr_bankstat_left]+[tr_bankstat_right]+tr_modifier
                     return tr_data
                     
@@ -816,6 +816,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_tr_vals_df = all_tr_vals_df[['TransectName',
                                                  'Station',
                                                  'Elevation']] # order of columns according to swmm interface
+                all_tr_vals_df['Station'] = [float(x) for x in all_tr_vals_df['Station']]
+                all_tr_vals_df['Elevation'] = [float(x) for x in all_tr_vals_df['Elevation']]
                 all_tr_dats_df = build_df_from_vals_list(all_tr_dats, transects_columns)
                 all_tr_dats_df = all_tr_dats_df[['TransectName',
                                  'RoughnessLeftBank',
