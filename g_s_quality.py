@@ -44,12 +44,18 @@ def get_quality_params_from_table(quality_raw_dict, subcatchments_df = None):
                                    'WashoffBmpEfficiency']]
         if q_p == 'COVERAGES':
             coverages_df = q_df_raw[q_df_raw['Subcatchment']!=';']
+            coverages_df = coverages_df[['Subcatchment',
+                                         'Landuse',
+                                         'Percent']]
             if subcatchments_df is not None: 
                 coverages_df = coverages_df[coverages_df['Subcatchment'].isin(subcatchments_df['Name'])]
             else:
                 coverages_df = coverages_df[coverages_df['Subcatchment'].isin([])] # if no subcatchments, delete all coverages data
         if q_p == 'LOADINGS':
             loadings_df = q_df_raw
+            loadings_df = loadings_df[['Subcatchment',
+                                         'Pollutant',
+                                         'InitialBuildup']]
     return {'POLLUTANTS':pollutants_df,
             'LANDUSES':landuses_df,
             'BUILDUP':buildup_df,
