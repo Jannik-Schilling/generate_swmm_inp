@@ -20,8 +20,11 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.17 2021-01-01
-	- fix transects data types
+changelog= 0.17 2021-12-15
+	- fix transects data type
+	- fix missing buildup and washoff functions
+	- fix geometry None-type error
+	- fix for time steps over 24h
 
 
 # Tags are comma separated with spaces allowed

@@ -9,13 +9,13 @@ import pandas as pd
 from datetime import datetime, time
 from qgis.core import QgsProcessingException
 
-def adjust_options_dtypes(opt_key, opt_val, opt_source):
+def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback = None):
     """
     converts datetime formats to string and vice versa
     :param str opt_key
     :param any opt_val
-    :param str opt_source
-    """
+    :param str opt_source: 'table' (source is the options table) or 'input' (source is the SWMM input file)
+    """        
     def_options_dtypes ={'START_DATE':[[datetime],'%m/%d/%Y'],
                         'REPORT_START_DATE':[[datetime],'%m/%d/%Y'],
                         'END_DATE':[[datetime],'%m/%d/%Y'],
@@ -74,7 +74,11 @@ def adjust_options_dtypes(opt_key, opt_val, opt_source):
             opt_val= datetime.strptime(opt_val, d_struct).date()
         if d_type_def[0] == time:
             d_struct = def_options_dtypes[opt_key][1]
-            opt_val= datetime.strptime(opt_val, d_struct).time()
+            if opt_key in ['REPORT_STEP','WET_STEP','DRY_STEP'] and int(opt_val.split(':')[0]) > 23:
+                feedback.reportError('Warning: '+str(opt_key)+ ' was more than 24h. To avoid time format errors in Python, this value was set to 01:00:00')
+                opt_val =  datetime.strptime('01:00:00', d_struct).time()
+            else:
+                opt_val= datetime.strptime(opt_val, d_struct).time()
         if d_type_def[0] == int:
             opt_val = float(opt_val)
     return opt_val
@@ -90,12 +94,13 @@ def get_options_from_table(options_df):
     options_dict = {k:adjust_options_dtypes(k,v,'table') for k,v in zip(options_df['Option'],options_df['Value'])}
     return options_dict
     
-def convert_options_format_for_import(dict_options):
+def convert_options_format_for_import(dict_options, feedback):
     '''
     converts formats in dict_options for the options file
     :param dict dict_options
+    :param QgsProcessingFeedback feedback
     '''
-    dict_options = {k:adjust_options_dtypes(k,v,'input') for k,v in dict_options.items()}
+    dict_options = {k:adjust_options_dtypes(k,v,'input',feedback) for k,v in dict_options.items()}
     df_options = pd.DataFrame()
     df_options['Option'] = dict_options.keys()
     df_options['Value'] = dict_options.values()

@@ -7,7 +7,8 @@ Created on Wed May 12 16:42:33 2021
 import pandas as pd
 import os
 import numpy as np
-from qgis.core import (NULL)
+from qgis.core import (NULL,
+                       QgsProcessingException)
 
 def read_shapefiles_direct(file_outfalls,
                        file_storages,
@@ -39,6 +40,10 @@ def read_shapefiles_direct(file_outfalls,
     def load_shapefile_to_df(vlayer):
         """reads shapefile attributes and geometries"""
         cols = [f.name() for f in vlayer.fields()]
+        # check for null geometries
+        if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
+            name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
+            raise QgsProcessingException('Failed to load layer: missing geometries in '+vlayer.name()+': '+', '.join(name_missing_geom))
         datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
