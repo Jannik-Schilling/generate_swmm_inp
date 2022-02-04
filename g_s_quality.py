@@ -9,7 +9,7 @@ import numpy as np
 
 def fill_landuse_params(df,pollutant_names,landuses_names,b_w):
     '''
-    fills buildup or washoff data frames
+    fills buildup or washoff data frames if missing
     '''
     missing = []
     for l_n in landuses_names:
@@ -18,9 +18,12 @@ def fill_landuse_params(df,pollutant_names,landuses_names,b_w):
             missing = missing + [[l_n,p_n,'NONE',0,0,0,'AREA'] for p_n in pollutant_names if p_n not in df_sub['Pollutant'].to_list()]
         if b_w == 'w':
             missing = missing + [[l_n,p_n,'NONE',0,0,0,0] for p_n in pollutant_names if p_n not in df_sub['Pollutant'].to_list()]
-    missing_df = pd.DataFrame(missing)
-    missing_df.columns = df.columns
-    return missing_df
+    if len (missing) == 0:
+        pass #returns None
+    else:
+        missing_df = pd.DataFrame(missing)
+        missing_df.columns = df.columns
+        return missing_df
     
 def get_quality_params_from_table(quality_raw_dict, subcatchments_df = None):
     """generates a dictionary with quality data from an excel file"""
