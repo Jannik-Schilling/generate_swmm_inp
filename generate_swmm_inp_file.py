@@ -39,9 +39,9 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer)
-from .g_s_various_functions import create_rename_error_message
-
-
+from .g_s_various_functions import check_columns, get_coords_from_geometry
+from .g_s_defaults import def_sections_dict, def_curve_types
+from .g_s_read_data import read_data_from_table_direct, read_shapefiles_direct
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
@@ -244,7 +244,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """ reading shapefiles"""
         feedback.setProgressText(self.tr('Reading shapfiles'))
         feedback.setProgress(5)
-        from .g_s_read_data import read_shapefiles_direct
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
         file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
         file_subcatchments = self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)
@@ -279,13 +278,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
 
         
-        from .g_s_read_data import  read_data_from_table_direct
+        
         """options table"""
         if file_options != '': #check if parameter is given as a string
             raw_data_dict['options_df'] = read_data_from_table_direct(file_options)
         """curves table"""
         if file_curves != '':
-            from .g_s_defaults import def_curve_types
             raw_data_dict['curves'] = {}
             for curve_type in def_curve_types:
                 curve_df = read_data_from_table_direct(file_curves,
@@ -336,7 +334,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'subcatchments_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
             from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
-            from .g_s_various_functions import get_coords_from_geometry
             subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'],
                                                                 main_infiltration_method)
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
@@ -347,7 +344,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """conduits"""
         if 'conduits_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[CONDUITS] section'))
-            from .g_s_various_functions import get_coords_from_geometry
             from .g_s_links import get_conduits_from_shapefile, del_first_last_vt
             conduits_df, xsections_df, losses_df =  get_conduits_from_shapefile(raw_data_dict['conduits_raw'].copy())
             conduits_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
@@ -361,7 +357,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'pumps_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[PUMPS] section'))
             from .g_s_links import get_pumps_from_shapefile, del_first_last_vt
-            from .g_s_various_functions import get_coords_from_geometry
             pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'].copy())
             pumps_verts = get_coords_from_geometry(raw_data_dict['pumps_raw'].copy())
             pumps_verts = {k: del_first_last_vt(v) for k,v in pumps_verts.items() if len(v) > 2}
@@ -372,25 +367,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'weirs_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[WEIRS] section'))
             from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
-            from .g_s_various_functions import get_coords_from_geometry
-            if 'Coeff_Curv' in raw_data_dict['weirs_raw'].columns and 'CoeffCurve' not in raw_data_dict['weirs_raw'].columns:
-                raise QgsProcessingException(create_rename_error_message('Weirs Layer',
-                                            'Coeff_Curv',
-                                            'CoeffCurve',
-                                            'Weir Curve',
-                                            '0.15'))
-            if 'Roadwidth' in raw_data_dict['weirs_raw'].columns and 'RoadWidth' not in raw_data_dict['weirs_raw'].columns:
-                raise QgsProcessingException(create_rename_error_message('Weirs Layer',
-                                            'Roadwidth',
-                                            'RoadWidth',
-                                            'Road Width',
-                                            '0.15'))
-            if 'Roadsurf' in raw_data_dict['weirs_raw'].columns and 'RoadSurf' not in raw_data_dict['weirs_raw'].columns:
-                raise QgsProcessingException(create_rename_error_message('Weirs Layer',
-                                            'Roadsurf',
-                                            'RoadSurf',
-                                            'Road Surface',
-                                            '0.15'))
             weirs_df, xsections_df= get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
             weirs_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
             weirs_verts = {k: del_first_last_vt(v) for k,v in weirs_verts.items() if len(v) > 2} #first and last vertices are in nodes coordinates anyway
@@ -403,13 +379,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'outlets_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OUTLETS] section'))
             from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
-            from .g_s_various_functions import get_coords_from_geometry
-            if 'Rate_Curve' in raw_data_dict['outlets_raw'].columns and 'RateCurve' not in raw_data_dict['outlets_raw'].columns:
-                raise QgsProcessingException(create_rename_error_message('Outlets Layer',
-                                            'Rate_Curve',
-                                            'RateCurve',
-                                            'Rating Curve',
-                                            '0.15'))
             inp_dict['outlets_df'] = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
             outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
             outlets_verts = {k: del_first_last_vt(v) for k,v in outlets_verts.items() if len(v) > 2}
@@ -439,7 +408,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
 
         """nodes (junctions, outfalls, orifices)"""
-        from .g_s_various_functions import get_coords_from_geometry
         all_nodes = list()
         if 'junctions_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[JUNCTIONS] section'))
@@ -457,13 +425,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'storages_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[STORAGES] section'))
             storage_df = raw_data_dict['storages_raw'].copy()
+            # check columns
+            storages_cols = list(def_sections_dict['STORAGE'].keys())
+            storages_layer_name = 'Storages Layer'
+            check_columns(storages_layer_name,
+                          storages_cols,
+                          storage_df.keys())
+            
             storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
-            if 'Apond' in storage_df.columns and 'Coeff' not in storage_df.columns:
-                raise QgsProcessingException(create_rename_error_message('Storages Layer',
-                                            'Apond',
-                                            'Coeff',
-                                            'A-Value / Coefficient',
-                                            '0.14'))
             # Empty linestrings will be ignored:"            
             storage_df['Curve'] = storage_df['Curve'].fillna('')
             storage_df['Coeff'] = storage_df['Coeff'].fillna('')
@@ -478,12 +447,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[DIVIDERS] section'))
             dividers_df = raw_data_dict['dividers_raw'].copy()
             dividers_df['X_Coord'],dividers_df['Y_Coord'] = get_coords_from_geometry(dividers_df)
-            if 'CutOffFlow' in dividers_df.columns and 'CutoffFlow' not in dividers_df.columns:
-                raise QgsProcessingException(create_rename_error_message('Dividers Layer',
-                                            'CutOffFlow',
-                                            'CutoffFlow',
-                                            'Cutoff Flow',
-                                            '0.15'))
+            # check columns
+            dividers_cols = list(def_sections_dict['DIVIDERS'].keys())
+            dividers_layer_name = 'Dividers Layer'
+            check_columns(dividers_layer_name,
+                          dividers_cols,
+                          dividers_df.keys())
+                          
             dividers_df['CutoffFlow'] = dividers_df['CutoffFlow'].fillna('')
             dividers_df['Curve'] = dividers_df['Curve'].fillna('')
             dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
