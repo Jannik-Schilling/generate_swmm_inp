@@ -7,7 +7,8 @@ Created on Wed May 12 15:56:10 2021
 
 import pandas as pd
 from qgis.core import QgsProcessingException
-from .g_s_various_functions import create_rename_error_message
+#from .g_s_various_functions import create_rename_error_message
+from .g_s_defaults import def_sections_dict
 
 def get_conduits_from_shapefile(conduits_raw):
     """
@@ -15,6 +16,7 @@ def get_conduits_from_shapefile(conduits_raw):
     removes columns which are not needed, replaces empty values with '' or '*' 
     :param pd.DataFrame conduits_raw
     """
+    #conduits_cols = def_sections_dict['CONDUITS'].keys()
     conduits_df = conduits_raw[['Name',
                                'FromNode',
                                'ToNode',
@@ -28,6 +30,7 @@ def get_conduits_from_shapefile(conduits_raw):
     conduits_df['InOffset'] = conduits_df['InOffset'].fillna('*')
     conduits_df['OutOffset'] = conduits_df['OutOffset'].fillna('*')
     
+    #xsections_cols = def_sections_dict['XSECTIONS'].keys()
     xsections_df = conduits_raw[['Name',
                                 'Shape',
                                 'Geom1',
@@ -43,24 +46,24 @@ def get_conduits_from_shapefile(conduits_raw):
         else:
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
-    if 'Inlet' in conduits_raw.columns and 'Kentry' not in conduits_raw.columns:
-        raise QgsProcessingException(create_rename_error_message('Conduits Layer',
-                                            'Inlet',
-                                            'Kentry',
-                                            'Entry Loss Coeff.',
-                                            '0.14'))
-    if 'Outlet' in conduits_raw.columns and 'Kexit' not in conduits_raw.columns:
-        raise QgsProcessingException(create_rename_error_message('Conduits Layer',
-                                            'Outlet',
-                                            'Kexit',
-                                            'Exit Loss Coeff.',
-                                            '0.14'))
-    if 'Averge' in conduits_raw.columns and 'Kavg' not in conduits_raw.columns:
-        raise QgsProcessingException(create_rename_error_message('Conduits Layer',
-                                            'Average',
-                                            'Kavg',
-                                            'Avg. Loss Coeff.',
-                                            '0.14'))
+    # if 'Inlet' in conduits_raw.columns and 'Kentry' not in conduits_raw.columns:
+        # raise QgsProcessingException(create_rename_error_message('Conduits Layer',
+                                            # 'Inlet',
+                                            # 'Kentry',
+                                            # 'Entry Loss Coeff.',
+                                            # '0.14'))
+    # if 'Outlet' in conduits_raw.columns and 'Kexit' not in conduits_raw.columns:
+        # raise QgsProcessingException(create_rename_error_message('Conduits Layer',
+                                            # 'Outlet',
+                                            # 'Kexit',
+                                            # 'Exit Loss Coeff.',
+                                            # '0.14'))
+    # if 'Averge' in conduits_raw.columns and 'Kavg' not in conduits_raw.columns:
+        # raise QgsProcessingException(create_rename_error_message('Conduits Layer',
+                                            # 'Average',
+                                            # 'Kavg',
+                                            # 'Avg. Loss Coeff.',
+                                            # '0.14'))
     losses_df = conduits_raw[['Name',
                               'Kentry',
                               'Kexit',
@@ -79,27 +82,28 @@ def del_first_last_vt(link):
     :param list link
     """
     return link[1:-1]
-
-pumps_columns = pd.DataFrame([['Name',True,''],
- ['FromNode',True,''],
- ['ToNode',True,''], 
- ['PumpCurve',False,'*'], 
- ['Status',False,'OFF'], 
- ['Startup',False,1.75], 
- ['Shutoff',False,0.75]] 
-    , columns =['col_name','oblig','default']) 
+ 
 
 def get_pumps_from_shapefile(pumps_raw):
     """prepares pumps data for writing an input file"""
-    from .g_s_various_functions import check_columns
-    pumps_df = check_columns(pumps_raw.copy(), pumps_columns)
+    #from .g_s_various_functions import check_columns
+    pumps_df = pumps_raw[['Name',
+                          'FromNode',
+                          'ToNode',
+                          'PumpCurve',
+                          'Status',
+                          'Startup',
+                          'Shutoff']].copy()
+    pumps_df['PumpCurve'] = pumps_df['PumpCurve'].fillna('*')
+    pumps_df['Status'] = pumps_df['Status'].fillna('ON')
+    pumps_df['Startup'] = pumps_df['Startup'].fillna('0')
+    pumps_df['Shutoff'] = pumps_df['Shutoff'].fillna('0')
     pumps_df = pumps_df.reset_index(drop=True)
     return pumps_df
 
 
 
 def get_weirs_from_shapefile(weirs_raw):
-    #from .g_s_defaults import def_sections_dict
     """prepares weirs data for writing an input file"""
     weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
                                          'Length':'Geom2',
