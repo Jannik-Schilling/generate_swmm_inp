@@ -6,7 +6,7 @@ Created on Mon May 17 14:45:10 2021
 """
 import numpy as np
 import pandas as pd
-from qgis.core import QgsWkbTypes
+from qgis.core import QgsWkbTypes, QgsProcessingException
 
 ## geometry functions
 def get_coords_from_geometry(df):
@@ -53,18 +53,15 @@ def get_point_from_x_y(sr):
     geom = QgsGeometry.fromWkt('POINT('+str(x_coord)+' '+str(y_coord)+')')
     return [sr['Name'],geom]
 
-def check_columns(x_df, col_df):
+def check_columns(swmm_data_file, cols_expected, cols_in_df):
     """checks if all columns are in a dataframe"""
-    cols_oblig =  col_df[col_df['oblig'] == True]
-    cols_volunt = col_df[col_df['oblig'] == False]
-    if not all(np.isin(cols_oblig['col_name'],x_df.columns)):
-        return 'Error: obligatory columns missing'
-    for check_col in cols_volunt['col_name']:
-        if np.isin(check_col, x_df.columns):
-            pass 
-        else:
-            x_df[check_col] = cols_volunt.loc[cols_volunt['col_name']==check_col,'default'].values[0]
-    return x_df
+    missing_cols = [x for x in cols_expected if x not in cols_in_df]
+    if len(missing_cols) == 0:
+        pass
+    else:
+        err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
+        raise QgsProcessingException(err_message)
+    
 
 ## functions for data in tables
 def get_curves_from_table(curves_raw, name_col):

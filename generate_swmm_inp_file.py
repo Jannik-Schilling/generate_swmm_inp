@@ -362,8 +362,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[PUMPS] section'))
             from .g_s_links import get_pumps_from_shapefile, del_first_last_vt
             from .g_s_various_functions import get_coords_from_geometry
-            pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'])
-            pumps_verts = get_coords_from_geometry(pumps_df)
+            pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'].copy())
+            pumps_verts = get_coords_from_geometry(raw_data_dict['pumps_raw'].copy())
             pumps_verts = {k: del_first_last_vt(v) for k,v in pumps_verts.items() if len(v) > 2}
             inp_dict['vertices_dict'].update(pumps_verts)
             inp_dict['pumps_df'] = pumps_df
