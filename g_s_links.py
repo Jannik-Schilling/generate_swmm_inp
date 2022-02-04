@@ -119,8 +119,14 @@ def get_orifices_from_shapefile(orifices_raw):
     prepares orifices data for writing an input file
     param: pd.DataFrame orifices_raw
     """
-    orifices_cols = list(def_sections_dict['ORIFICES'].keys())
+    # check if columns exist
+    orifices_cols = list(def_sections_dict['ORIFICES'].keys())              
     all_orifices_cols = orifices_cols+['Height','Width','Shape']
+    orifices_layer_name = 'Orifices Layer'
+    check_columns(orifices_layer_name,
+                  all_orifices_cols,
+                  orifices_raw.keys())
+                                
     orifices_df = orifices_raw.copy()
     orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')
     orifices_df = orifices_df[orifices_cols]
@@ -147,6 +153,16 @@ def get_outlets_from_shapefile(outlets_raw):
             return outl_row['Qcoeff']
         else:
             return outl_row['CurveName']
+            
+    # check columns
+    outlets_cols = list(def_sections_dict['OUTLETS'].keys())
+    outlets_layer_name = 'Outlets Layer'
+    check_columns(outlets_layer_name,
+                  outlets_cols,
+                  outlets_raw.keys())
+                  
+    outlets_raw['Qcoeff'] = outlets_raw['Qcoeff'].fillna(1)
+    outlets_raw['CurveName'] = outlets_raw['CurveName'].fillna('*')
     outlets_raw['QCurve'] = [get_outl_curve(outlets_raw.loc[i]) for i in outlets_raw.index] 
     outlets_df = outlets_raw[['Name', 
                              'FromNode',
@@ -157,8 +173,8 @@ def get_outlets_from_shapefile(outlets_raw):
                              'Qexpon', 
                              'FlapGate']]
     return outlets_df 
-    
-# transects_raw = raw_data_dict['transects'].copy()
+
+
 def get_transects_from_table(transects_raw):
     """writes strings for transects"""
     tr_data = transects_raw['Data']
