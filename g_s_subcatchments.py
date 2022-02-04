@@ -8,19 +8,23 @@ Created on Wed May 12 15:48:56 2021
 import pandas as pd
 import numpy as np
 from qgis.core import QgsProcessingException
-from .g_s_various_functions import create_rename_error_message
+from .g_s_various_functions import check_columns
+from .g_s_defaults import def_sections_dict
 
 #subcatchments_df = raw_data_dict['subcatchments_raw']
 def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method):
     '''
     reads subcatchment shapefile
     '''
-    if 'kind' in subcatchments_df.columns and 'InfMethod' not in subcatchments_df.columns:
-        raise QgsProcessingException(create_rename_error_message('Subcatchments Layer',
-                                            'kind',
-                                            'InfMethod',
-                                            'infiltration method',
-                                            '0.15'))
+    # check if all columns exist
+    subc_cols = list(def_sections_dict['SUBCATCHMENTS'].keys())
+    suba_cols = list(def_sections_dict['SUBAREAS'].keys())
+    all_sub_cols = subc_cols+suba_cols+['InfMethod']
+    sub_layer_name = 'Subcatchments Layer'
+    check_columns(sub_layer_name,
+                  all_sub_cols,
+                  subcatchments_df.keys())
+
     def rename_for_infiltation(subc_row, main_infiltration_method):
         """selects and renames different columns according to the columns 'InfMethod'"""
         infiltr_method = subc_row['InfMethod']
@@ -113,27 +117,3 @@ def rg_position(polyg_dict):
     x_mean = np.mean(all_yx['x'])+10
     y_mean = np.mean(all_yx['y'])+10
     return x_mean, y_mean
-    
-#actually not in use... but this could be used to check if all columns exist:
-# subcatchment_columns = pd.DataFrame([['Name',True,''],#Name
- # ['RainGage',False,'Gage1'],
- # ['Outlet',True,''], #Name of Junction
- # ['Area',True,''], # Area
- # ['Imperv',False,100], #Imperviousness
- # ['Width',True,''],    
- # ['Slope',True,''], 
- # ['CurbLen',False,0], 
- # ['SnowPack',False,''], 
- # ['N_Imperv',False,'0.1'], #Mannings-N for impervious area
- # ['N_Perv',False,'0.01'], # Mannings-N for pervious area
- # ['S_Imperv',False,'0.05'], #depth of depression storage on impervious area [mm]
- # ['S_Perv',False,'0.05'], #depth of depression storage on pervious area [mm]
- # ['PctZero',False,'25'], #percent of impervious area with no depression storage
- # ['RouteTo',False,'OUTLET'], #internal routing between pervious an impervious subarea #'OUTLET','IMPERVIOUS','PERVIOUS'
- # ['PctRouted',False,100],#percent of routed between subareas
- # ['Param1',False,3],
- # ['Param2',False,0.5],
- # ['Param3',False,4],
- # ['Param4',False,''],
- # ['Param5',False,'']]
-    # , columns =['col_name','oblig','default']) 
