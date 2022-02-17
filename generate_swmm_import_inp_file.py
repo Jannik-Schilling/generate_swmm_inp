@@ -255,7 +255,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 df = build_df_from_vals_list(dict_raw[section_name], col_names)
             return df
 
-
         def adjust_line_length(ts_line, pos, line_length , insert_val=[np.nan]):
             """
             adds insert_val at pos in line lengt is not line length
@@ -268,7 +267,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(ts_line) < line_length:
                 ts_line[pos:pos] = insert_val
                 return ts_line
-            elif len(ts_line) == line_length:
+            else:
                 return ts_line
 
         def del_kw_from_list(data_list, kw, pos):
@@ -957,7 +956,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
             all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
             all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
-            all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()]
+            all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
+            all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill missing Methods
             all_infiltr = build_df_from_vals_list(all_infiltr, list(def_sections_dict['INFILTRATION'].keys()))
             all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
                                                                                         all_subareas, 
