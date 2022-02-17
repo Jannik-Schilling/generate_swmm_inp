@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.17
+version=0.18
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,12 +20,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.17 2022-02-04
-	- fix transects data type
-	- fix missing buildup and washoff functions
-	- fix geometry None-type error
-	- fix for time steps over 24h
-	- update documentation
+changelog= 0.18 2022-02-04
+	- new feature geodata format selection in tool 3
+
 
 
 # Tags are comma separated with spaces allowed

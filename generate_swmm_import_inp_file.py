@@ -37,6 +37,7 @@ from qgis.core import (NULL,
                        QgsProcessingContext,
                        QgsProcessingException,
                        QgsProcessingParameterFile,
+                       QgsProcessingParameterEnum,
                        QgsProcessingParameterString,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterCrs,
@@ -45,6 +46,7 @@ from qgis.core import (NULL,
                        QgsVectorFileWriter)
 from qgis.PyQt.QtCore import QVariant, QCoreApplication
 import shutil
+from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict
 pluginPath = os.path.dirname(__file__)
 
 
@@ -53,6 +55,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
     generates shapefiles and tables from a swmm input file
     """
     INP_FILE = 'INP_FILE'
+    GEODATA_DRIVER = 'GEODATA_DRIVER'
     SAVE_FOLDER = 'SAVE_FOLDER'
     PREFIX = 'PREFIX'
     DATA_CRS = 'DATA_CRS'
@@ -67,6 +70,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 name = self.INP_FILE,
                 description = self.tr('SWMM input file to import'),
                 extension = 'inp'
+            )
+        )
+        
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.GEODATA_DRIVER,
+                self.tr("Which format should be used for geodata"),
+                def_ogr_driver_names,
+                defaultValue=[0]
             )
         )
         
@@ -125,6 +137,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         crs_result = str(crs_result.authid())
         default_data_path = os.path.join(pluginPath,'test_data','swmm_data')
         files_list = [f for f in os.listdir(default_data_path) if f.endswith('qml')]
+        geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
+        geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
+        geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+        
         
         try:
             for f in files_list:
@@ -134,9 +150,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(1)
         except:
             raise QgsProcessingException(self.tr('Could not add default files to chosen folder'))
-
-        '''defaults for all sections'''
-        from .g_s_defaults import def_sections_dict
         
         '''reading input text file'''
         feedback.setProgressText(self.tr('reading inp ...'))
@@ -573,10 +586,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
             data_df.apply(lambda x: create_feature_from_df(x, pr), axis =1)
             vector_layer.updateExtents() 
             QgsVectorFileWriter.writeAsVectorFormat(vector_layer,
-                                                    os.path.join(folder_save,layer_name+'.shp'),
+                                                    os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
                                                     'utf-8',
                                                     vector_layer.crs(),
-                                                    driverName='ESRI Shapefile')
+                                                    driverName=geodata_driver_name)
             return vector_layer
 
         def replace_nan_null(data):
@@ -609,7 +622,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             :param str layer_name
             :param str style_file: file name of the qml file
             """
-            layer_filename = layer_name+'.shp'
+            layer_filename = layer_name+'.'+geodata_driver_extension
             vlayer = QgsVectorLayer(os.path.join(folder_save, layer_filename), layer_name, "ogr")
             vlayer.loadNamedStyle(os.path.join(folder_save,style_file))
             context.temporaryLayerStore().addMapLayer(vlayer)

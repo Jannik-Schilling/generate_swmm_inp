@@ -239,9 +239,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['junctions_df'] = pd.DataFrame()
         inp_dict['conduits_df'] = pd.DataFrame()
         inp_dict['storage_df'] = pd.DataFrame()
+        inp_dict['xsections_df'] = pd.DataFrame()
         inp_dict['vertices_dict'] = {}
 
-        """ reading shapefiles"""
+        """ reading geodata"""
         feedback.setProgressText(self.tr('Reading shapfiles'))
         feedback.setProgress(5)
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
