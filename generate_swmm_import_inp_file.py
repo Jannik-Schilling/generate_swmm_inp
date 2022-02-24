@@ -52,7 +52,7 @@ pluginPath = os.path.dirname(__file__)
 
 class ImportInpFile (QgsProcessingAlgorithm):
     """
-    generates shapefiles and tables from a swmm input file
+    generates geodata and tables from a swmm input file
     """
     INP_FILE = 'INP_FILE'
     GEODATA_DRIVER = 'GEODATA_DRIVER'
@@ -110,7 +110,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
     def shortHelpString(self):
         return self.tr(""" The tool imports a swmm inp file and saves the data in a folder selected by the user (temporary folders won´t work!).\n 
         You can add a prefix to the files. Try to aviod characters which could cause trouble with file systems (e.g. '.',',','\','/') \n
-        The layers (shapefiles) are added to the QGIS project.\n
+        The layers (e.g geopackages, shapefiles) are added to the QGIS project.\n
         If the tool fails to load the layers, please check the selected CRS and try again.\n
         """)
 
@@ -544,7 +544,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             
             
             
-        """ shapefiles  """
+        """ geodata (e.g. shapefiles)  """
         def create_feature_from_df(df, pr):
             """
             creates a QgsFeature from data in df
@@ -636,7 +636,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         """junctions section """
         if 'JUNCTIONS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating junctions shapefile ...'))
+            feedback.setProgressText(self.tr('generating junctions file ...'))
             feedback.setProgress(40)
             all_junctions = build_df_for_section('JUNCTIONS',dict_all_raw_vals)
             all_junctions = all_junctions.join(all_geoms, on = 'Name')
@@ -649,7 +649,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             
         """storages section """
         if 'STORAGE' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating storages shapefile ...'))
+            feedback.setProgressText(self.tr('generating storages file ...'))
             feedback.setProgress(45)
             dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',[6,7,8]) for x in dict_all_raw_vals['STORAGE'].copy()]
             dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'FUNCTIONAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
@@ -667,7 +667,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         """ outfalls section """
         if 'OUTFALLS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating outfalls shapefile ...'))
+            feedback.setProgressText(self.tr('generating outfalls file ...'))
             feedback.setProgress(50)
             dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
             dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'NORMAL',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
@@ -686,7 +686,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         """ dividers section """
         if 'DIVIDERS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating dividers shapefile ...'))
+            feedback.setProgressText(self.tr('generating dividers file ...'))
             feedback.setProgress(51)
             divider_raw = dict_all_raw_vals['DIVIDERS'].copy()
             divider_raw = [insert_nan_after_kw(x,3,'OVERFLOW',[4,5,6,7,8]) for x in divider_raw]
@@ -754,7 +754,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         """conduits section """
         if 'CONDUITS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating conduits shapefile ...'))
+            feedback.setProgressText(self.tr('generating conduits file ...'))
             feedback.setProgress(65)
             #losses
             if 'LOSSES' in dict_all_raw_vals.keys():
@@ -857,7 +857,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 return outl_list_i+[np.nan]
         if 'OUTLETS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating outlets shapefile ...'))
+            feedback.setProgressText(self.tr('generating outlets file ...'))
             feedback.setProgress(75)
             dict_all_raw_vals['OUTLETS'] = [adjust_outlets_list(i) for i in dict_all_raw_vals['OUTLETS']]
             all_outlets = build_df_for_section('OUTLETS', dict_all_raw_vals)
@@ -873,7 +873,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         """pumps section """
         if 'PUMPS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating pumps shapefile ...'))
+            feedback.setProgressText(self.tr('generating pumps file ...'))
             feedback.setProgress(80)
             all_pumps = build_df_for_section('PUMPS', dict_all_raw_vals)
             all_pumps = all_pumps.applymap(replace_nan_null)
@@ -888,7 +888,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         """weirs section"""
         if 'WEIRS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating weirs shapefile ...'))
+            feedback.setProgressText(self.tr('generating weirs file ...'))
             feedback.setProgress(82)
             all_weirs= build_df_for_section('WEIRS', dict_all_raw_vals)
             all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
@@ -909,7 +909,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             
         """ORIFICES section"""
         if 'ORIFICES' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating orifices shapefile ...'))
+            feedback.setProgressText(self.tr('generating orifices file ...'))
             feedback.setProgress(85)
             all_orifices = build_df_for_section('ORIFICES', dict_all_raw_vals)
             all_orifices = all_orifices.join(all_xsections.set_index('Name'), on = 'Name')
@@ -951,7 +951,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         """subcatchments section """
         if 'SUBCATCHMENTS' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating subcatchments shapefile ...'))
+            feedback.setProgressText(self.tr('generating subcatchments file ...'))
             feedback.setProgress(90)
             from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
             all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)

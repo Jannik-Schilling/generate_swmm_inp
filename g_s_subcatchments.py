@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from qgis.core import QgsProcessingException
 from .g_s_various_functions import check_columns
-from .g_s_defaults import def_sections_dict
+from .g_s_defaults import def_sections_dict, def_infiltr_dtypes
 
 #subcatchments_df = raw_data_dict['subcatchments_raw']
 def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method):
@@ -65,7 +65,7 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
     return(subcatchments_df)
 
 def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all_infiltr, main_infiltration_method):
-    infiltr_dtypes = {'InfMethod':'String',
+    def_infiltr_dtypes = {'InfMethod':'String',
                       'SuctHead':'Double',
                       'Conductiv':'Double',
                       'InitDef':'Double',
@@ -83,7 +83,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                'Param2':'Conductiv',
                                'Param3':'InitDef'})
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
-            cols_not_in_infilt =[k for k in infiltr_dtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in def_infiltr_dtypes.keys() if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] in ['HORTON','MODIFIED_HORTON']:

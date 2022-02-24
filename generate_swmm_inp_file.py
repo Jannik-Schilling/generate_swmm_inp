@@ -45,7 +45,7 @@ from .g_s_read_data import read_data_from_table_direct, read_shapefiles_direct
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
-    generates a swmm input file from shapefiles and tables
+    generates a swmm input file from geodata and tables
     """
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
     FILE_CONDUITS = 'FILE_CONDUITS'
@@ -544,8 +544,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         return {}
         
     def shortHelpString(self):
-        return self.tr(""" The tool combines all swmm data (shapefiles and xlsx-files) in a selected folder to write a swmm input file.\n
-        File names and column names have to be the same as in the default data set.
+        return self.tr(""" With this tool you can write a swmm input file based on QGIS layers (and supplementary data in .xslx files).\n
+        The column names within attribute tables have to be the same as in the default data set.
         Proposed workflow:\n
         1) load default data with the first tool.\n
         2) copy all files to a new folder and edit the data set.\n
