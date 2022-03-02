@@ -228,7 +228,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 ))
 
 
-    def processAlgorithm(self, parameters, context, feedback):      
+    def processAlgorithm(self, parameters, context, feedback):  
         """input file name and path"""
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
@@ -320,7 +320,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                                                                               sheet = transects_param)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(25)
-
+        
         feedback.setProgressText(self.tr('preparing data for input file:'))
         
         """options"""
