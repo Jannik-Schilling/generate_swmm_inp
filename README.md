@@ -45,7 +45,9 @@ If you start from scratch, a useful tool to create a network from a line layer i
 ...dirctly in SWMM or with the help of scripts in R or python (see below). There migth be several errors in th model at first -> return to step 2.
 
 ### 5 Import existing inp files (for future edits)
-You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended.
+You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended. You can choose a prefix (e.g. "v2") which will be added and the data format (.shp, .gpkg, .gml, .kml, .geojson).
+
+Some formats seem to have problems with certain coordinate reference systems. GPKG and SHP worked fine so far
 
 ## Further useful packages
 Python:
