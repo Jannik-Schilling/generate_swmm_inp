@@ -80,55 +80,55 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
 
 
         """ conduits """
-        conduits = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_conduits.shp'), 'SWMM_conduits', "ogr")
+        conduits = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_conduits.gpkg'), 'SWMM_conduits', "ogr")
         conduits.loadNamedStyle(os.path.join(data_save_folder,'style_conduits.qml'))
         context.temporaryLayerStore().addMapLayer(conduits)
         context.addLayerToLoadOnCompletion(conduits.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ junctions """
-        junctions = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_junctions.shp'), 'SWMM_junctions', "ogr")
+        junctions = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_junctions.gpkg'), 'SWMM_junctions', "ogr")
         junctions.loadNamedStyle(os.path.join(data_save_folder,'style_junctions.qml'))
         context.temporaryLayerStore().addMapLayer(junctions)
         context.addLayerToLoadOnCompletion(junctions.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ outfalls """
-        outfalls = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_outfalls.shp'), 'SWMM_outfalls', "ogr")
+        outfalls = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_outfalls.gpkg'), 'SWMM_outfalls', "ogr")
         outfalls.loadNamedStyle(os.path.join(data_save_folder,'style_outfalls.qml'))
         context.temporaryLayerStore().addMapLayer(outfalls)
         context.addLayerToLoadOnCompletion(outfalls.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ pumps """
-        pumps = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_pumps.shp'), 'SWMM_pumps', "ogr")
+        pumps = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_pumps.gpkg'), 'SWMM_pumps', "ogr")
         pumps.loadNamedStyle(os.path.join(data_save_folder,'style_pumps.qml'))
         context.temporaryLayerStore().addMapLayer(pumps)
         context.addLayerToLoadOnCompletion(pumps.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ storages """
-        storages = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_storages.shp'), 'SWMM_storages', "ogr")
+        storages = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_storages.gpkg'), 'SWMM_storages', "ogr")
         storages.loadNamedStyle(os.path.join(data_save_folder,'style_storages.qml'))
         context.temporaryLayerStore().addMapLayer(storages)
         context.addLayerToLoadOnCompletion(storages.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ subcatchments """
-        subcatchments = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_subcatchments.shp'), 'SWMM_subcatchments', "ogr")
+        subcatchments = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_subcatchments.gpkg'), 'SWMM_subcatchments', "ogr")
         subcatchments.loadNamedStyle(os.path.join(data_save_folder,'style_catchments.qml'))
         context.temporaryLayerStore().addMapLayer(subcatchments)
         context.addLayerToLoadOnCompletion(subcatchments.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ weirs """
-        weirs = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_weirs.shp'), 'SWMM_weirs', "ogr")
+        weirs = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_weirs.gpkg'), 'SWMM_weirs', "ogr")
         weirs.loadNamedStyle(os.path.join(data_save_folder,'style_regulators.qml'))
         context.temporaryLayerStore().addMapLayer(weirs)
         context.addLayerToLoadOnCompletion(weirs.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ outlets """
-        outlets = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_outlets.shp'), 'SWMM_outlets', "ogr")
+        outlets = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_outlets.gpkg'), 'SWMM_outlets', "ogr")
         outlets.loadNamedStyle(os.path.join(data_save_folder,'style_regulators.qml'))
         context.temporaryLayerStore().addMapLayer(outlets)
         context.addLayerToLoadOnCompletion(outlets.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
 
         """ dividers """
-        dividers = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_dividers.shp'), 'SWMM_dividers', "ogr")
+        dividers = QgsVectorLayer(os.path.join(data_save_folder, 'SWMM_dividers.gpkg'), 'SWMM_dividers', "ogr")
         dividers.loadNamedStyle(os.path.join(data_save_folder,'style_dividers.qml'))
         context.temporaryLayerStore().addMapLayer(dividers)
         context.addLayerToLoadOnCompletion(dividers.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
@@ -140,7 +140,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
     def shortHelpString(self):
         return self.tr(""" The tool generates default swmm data in a folder selected by the user.\n
         Choosing a folder name such as \"swmm_data\" is recommended.\n
-        The default layers (shapefiles) are added to the QGIS project.\n
+        The default layers (geopackages) are added to the QGIS project.\n
         You can now edit layers and tables in the folder to create your first inp file with the second tool.
         """)
 

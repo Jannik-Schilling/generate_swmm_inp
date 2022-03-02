@@ -45,7 +45,7 @@ from .g_s_read_data import read_data_from_table_direct, read_shapefiles_direct
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
-    generates a swmm input file from shapefiles and tables
+    generates a swmm input file from geodata and tables
     """
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
     FILE_CONDUITS = 'FILE_CONDUITS'
@@ -228,7 +228,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 ))
 
 
-    def processAlgorithm(self, parameters, context, feedback):      
+    def processAlgorithm(self, parameters, context, feedback):  
         """input file name and path"""
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
@@ -239,9 +239,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['junctions_df'] = pd.DataFrame()
         inp_dict['conduits_df'] = pd.DataFrame()
         inp_dict['storage_df'] = pd.DataFrame()
+        inp_dict['xsections_df'] = pd.DataFrame()
         inp_dict['vertices_dict'] = {}
 
-        """ reading shapefiles"""
+        """ reading geodata"""
         feedback.setProgressText(self.tr('Reading shapfiles'))
         feedback.setProgress(5)
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
@@ -319,7 +320,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                                                                                               sheet = transects_param)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(25)
-
+        
         feedback.setProgressText(self.tr('preparing data for input file:'))
         
         """options"""
@@ -412,11 +413,22 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'junctions_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[JUNCTIONS] section'))
             junctions_df = raw_data_dict['junctions_raw'].copy()
+            # check columns
+            junctions_cols = list(def_sections_dict['JUNCTIONS'].keys())
+            junctions_layer_name = 'Junctions Layer'
+            check_columns(junctions_layer_name,
+                          junctions_cols,
+                          junctions_df.keys())
             junctions_df['X_Coord'],junctions_df['Y_Coord'] = get_coords_from_geometry(junctions_df)
             inp_dict['junctions_df'] = junctions_df
             all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OUTFALLS] section'))
+            outfalls_cols = list(def_sections_dict['OUTFALLS'].keys())
+            outfalls_layer_name = 'Outfalls Layer'
+            check_columns(outfalls_layer_name,
+                          outfalls_cols,
+                          raw_data_dict['outfalls_raw'].keys())
             from .g_s_nodes import get_outfalls_from_shapefile
             outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
             outfalls_df['X_Coord'],outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
@@ -532,8 +544,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         return {}
         
     def shortHelpString(self):
-        return self.tr(""" The tool combines all swmm data (shapefiles and xlsx-files) in a selected folder to write a swmm input file.\n
-        File names and column names have to be the same as in the default data set.
+        return self.tr(""" With this tool you can write a swmm input file based on QGIS layers (and supplementary data in .xslx files).\n
+        The column names within attribute tables have to be the same as in the default data set.
         Proposed workflow:\n
         1) load default data with the first tool.\n
         2) copy all files to a new folder and edit the data set.\n

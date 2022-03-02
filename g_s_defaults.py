@@ -227,3 +227,13 @@ def_sections_dict={'TITLE':None,
          'SYMBOLS':['Name','X_Coord','Y_Coord'],
          'TAGS': None}
                 
+                
+                
+def_ogr_driver_dict = {'ESRI Shapefile':'shp',
+                        'GPKG':'gpkg',
+                        'GML':'gml', 
+                        'GeoJSON':'geojson',
+                        'KML':'kml'}
+                        
+def_ogr_driver_names = list(def_ogr_driver_dict.keys())
+    
