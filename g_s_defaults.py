@@ -225,6 +225,10 @@ def_sections_dict={'TITLE':None,
          'VERTICES':['Name','X_Coord','Y_Coord'],
          'Polygons':['Name','X_Coord','Y_Coord'],
          'SYMBOLS':['Name','X_Coord','Y_Coord'],
+         'LABELS':None,
+         'BACKDROP':None,
+         'PROFILES':None,
+         'MAP':None,
          'TAGS': None}
                 
                 
