@@ -20,8 +20,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.18 2022-02-04
-	- new feature geodata format selection in tool 3
+changelog= 0.19 2022-03-30
+	- fix quoted strings
+	- improve import of non utf8 files
 
 
 
