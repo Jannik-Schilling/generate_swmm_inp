@@ -154,8 +154,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
         '''reading input text file'''
         feedback.setProgressText(self.tr('reading inp ...'))
         feedback.setProgress(3)
-        with open(readfile) as f:
-            inp_text = f.readlines()
+        #with open(readfile) as f:
+        #    inp_text = f.readlines()
+            
+        encodings = ['utf-8', 'windows-1250', 'windows-1252'] # add more
+        for e in encodings:
+            try:
+                with open(readfile, 'r' ,encoding=e) as f:
+                    inp_text = f.readlines()
+            except UnicodeDecodeError:
+                print('got unicode error with %s , trying different encoding' % e)
+            else:
+                print('opening the file with encoding:  %s ' % e)
+                break
 
         inp_text = [x for x in inp_text if x != '\n']
         inp_text = [x for x in inp_text if x != '\s']
@@ -188,21 +199,31 @@ class ImportInpFile (QgsProcessingAlgorithm):
             finds quoted text and cocatenates text strings if 
             they have been separated by whitespace or other separators
             """
-            #find start position of quoted elements
-            quoted_elms = [i for i, x in enumerate(text_line) if x.startswith('"')]
-            if len(quoted_elms) > 0:
-                for q_e in quoted_elms:
-                    #find end position of quoted elements
-                    quoted_elms_end = [i for i, x in enumerate(text_line[q_e:]) if x.endswith('"')]
-                    if quoted_elms_end[0] == 0:
-                        # quoted element ends with quotation
-                        pass
-                    else:
-                        # has been separated
-                        concat_elems = text_line[q_e:q_e+quoted_elms_end[0]+1]
-                        cocatenated_elems = ' '.join(concat_elems)
-                        text_line[q_e:q_e+quoted_elms_end[0]+1] = [cocatenated_elems]
-            return text_line
+            if any([x.startswith('"') for x in text_line]): #any quoted elements
+                text_line_new = []
+                i = 0 
+                quoted_elem = 0 # set not quoted
+                for t_l in text_line:
+                    if quoted_elem == 0: #is not quoted
+                        text_line_new = text_line_new + [[t_l]]
+                        if t_l.startswith('"'):
+                            quoted_elem = 1 # set quoted
+                            if len(t_l) > 1 and t_l.endswith('"'): # t_l is not '"' and fully quoted (e.g. '"test"')
+                                quoted_elem = 0 # set not quoted again
+                                i += 1            
+                        else:
+                            i += 1
+                    else: #is quoted and has been separated
+                        text_line_new[i] = text_line_new[i]+[t_l]
+                        if t_l.endswith('"'):
+                            quoted_elem = 0 # set not quoted again
+                            i += 1
+                        else:
+                            pass #keep quoted and i
+                text_line_new = [' '.join(x) for x in text_line_new] # concatenate strings
+            else:
+                text_line_new = text_line
+            return text_line_new
             
         def extract_section_vals_from_text(text_limits):
             """
