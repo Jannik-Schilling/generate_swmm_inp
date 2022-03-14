@@ -509,7 +509,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
             from .g_s_various_functions import get_timeseries_from_table, get_raingages_from_timeseries
             inp_dict['timeseries_dict'] = get_timeseries_from_table(raw_data_dict['timeseries'],
-                                                                 name_col='Name')
+                                                                 name_col='Name',
+                                                                 feedback = feedback)
             """rain gages"""
             inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'],feedback)
             if 'rg_pos' in inp_dict.keys():

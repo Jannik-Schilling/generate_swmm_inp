@@ -100,19 +100,22 @@ def get_patterns_from_table(patterns_raw, name_col):
     return(pattern_dict)
     
     
-def get_timeseries_from_table(ts_raw, name_col):
+def get_timeseries_from_table(ts_raw, name_col,feedback):
     """generates a timeseries dict for the input file from tables (ts_raw)"""
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
+    if not 'File_Name' in ts_raw.columns:
+        feedback.setProgressText('No external file is used in time series')
     if ts_raw.empty:
         pass
     else:
         for i in ts_raw[name_col].unique():
             ts_df = ts_raw[ts_raw[name_col] == i]
-            if not all(pd.isna(ts_df['File_Name'])): # external time series
-                ts_df['Date'] = 'FILE'
-                ts_df['Time'] = ts_df['File_Name']
-                ts_df['Value'] = ''
+            if 'File_Name' in ts_raw.columns:
+                if not all(pd.isna(ts_df['File_Name'])): # external time series
+                    ts_df['Date'] = 'FILE'
+                    ts_df['Time'] = ts_df['File_Name']
+                    ts_df['Value'] = ''
             else:
                 try:
                     ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
