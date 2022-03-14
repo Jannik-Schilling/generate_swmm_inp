@@ -280,12 +280,26 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 df = build_df_from_vals_list(dict_raw[section_name], col_names)
             return df
+            
+        def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
+            """
+            adds np.nan after keyword (kw)
+            :param list df_line
+            :param int kw_position: expected position of keyword
+            :param str kw: Keyword
+            :param list insert_positions: position at which np.nan should be insertet
+            :return: list
+            """
+            if df_line[kw_position] == kw:
+                for i_p in insert_positions:
+                    df_line.insert(i_p,np.nan)
+            return df_line
 
         def adjust_line_length(ts_line, pos, line_length , insert_val=[np.nan]):
             """
             adds insert_val at pos in line lengt is not line length
             :param list ts_line
-            :param int pos: position in the list
+            :param int pos: position in the list for the fill
             :param int line_length: expected line length
             :param list insert_val: values to insert at pos if the list is too short
             :return: list
@@ -359,13 +373,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     return [date_conversion(x) for x in col]
                 if col_types[col.name] =='Time':
                     def time_conversion(x):
-                        try:
-                            return  datetime.strptime(str(x), '%H:%M:%S').time()
-                        except:
+                        if pd.isna(x):
+                            return x
+                        else:
                             try:
-                                return datetime.strptime(str(x), '%H:%M').time()
+                                return  datetime.strptime(str(x), '%H:%M:%S').time()
                             except:
-                                return datetime.strptime(str(x), '%H').time()
+                                try:
+                                    return datetime.strptime(str(x), '%H:%M').time()
+                                except:
+                                    return datetime.strptime(str(x), '%H').time()
                     return [time_conversion(x) for x in col]
             df = df.apply(col_conversion, axis = 0)
             return df
@@ -547,12 +564,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'Time':'Time',
             'Value':'Double',
             'Format':'String',
+            'File_Name':'String',
             'Description':'String'
             }
         if 'TIMESERIES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating timeseries file ...'))
             feedback.setProgress(30)
             all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
+            # for external File
+            all_time_series = [insert_nan_after_kw(x,2,'FILE',[3,4]) for x in all_time_series]
+            all_time_series = [del_kw_from_list(x, 'FILE', 2) for x in all_time_series]
             all_time_series = build_df_from_vals_list(all_time_series,def_sections_dict['TIMESERIES'])
             all_time_series.insert(1,'Type',np.nan)
             all_time_series['Format'] = np.nan
@@ -627,19 +648,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 return data
         
-        def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
-            """
-            adds np.nan after keyword (kw)
-            :param list df_line
-            :param int kw_position: expected position of keyword
-            :param str kw: Keyword
-            :param list insert_positions: position at which np.nan should be insertet
-            :return: list
-            """
-            if df_line[kw_position] == kw:
-                for i_p in insert_positions:
-                    df_line.insert(i_p,np.nan)
-            return df_line
+        
         
         def add_layer_on_completion(folder_save, layer_name, style_file):
             """
