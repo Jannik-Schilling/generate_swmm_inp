@@ -472,6 +472,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'Pump2': ['Name','Depth','Flow'],
             'Pump3': ['Name','Head','Flow'],
             'Pump4': ['Name','Depth','Flow'],
+            'Pump5':['Name','Head','Flow'],
             'Storage': ['Name','Depth','Area'],
             'Rating': ['Name','Head/Depth','Outflow'],
             'Tidal':['Name','Hour_of_Day','Stage'],
