@@ -511,7 +511,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['timeseries_dict'] = get_timeseries_from_table(raw_data_dict['timeseries'],
                                                                  name_col='Name')
             """rain gages"""
-            inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'])
+            inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'],feedback)
             if 'rg_pos' in inp_dict.keys():
                 pass
             else:
