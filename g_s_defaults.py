@@ -238,7 +238,6 @@ def_ogr_driver_dict = {'ESRI Shapefile':'shp',
                         'GPKG':'gpkg',
                         'GML':'gml', 
                         'GeoJSON':'geojson',
-                        'KML':'kml'}
-                        
+                        'KML':'kml'}                    
 def_ogr_driver_names = list(def_ogr_driver_dict.keys())
     

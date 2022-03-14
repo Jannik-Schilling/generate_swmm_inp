@@ -225,19 +225,24 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 text_line_new = text_line
             return text_line_new
             
-        def extract_section_vals_from_text(text_limits):
+        descriptions_dict = {}
+        def extract_section_vals_from_text(text_limits, section_key):
             """
             extracts sections from inp_text
             :param dict text_limits: line numbers at beginning and end sections
             :return: list
-            """
+            """                
             section_text = inp_text[text_limits[0]+1:text_limits[1]]
+            section_len = len(section_text)
+            # ugly but it works fast to extract descriptions:
+            descriptions_list = [[section_text[i+1].split()[0],x[1:]] for i,x in enumerate(section_text) if x.startswith(';') and len(x)>1 and (i+1)<=section_len]
+            descriptions_dict[section_key] = pd.DataFrame(descriptions_list, columns =['Name','Description'])
             section_text = [x.strip() for x in section_text if not x.startswith(';')] #delete comments and "headers"
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             return section_vals_clean
 
-        dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k]) for k in dict_search.keys()}
+        dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k], k) for k in dict_search.keys()}
 
         def build_df_from_vals_list(section_vals, col_names):
             """
