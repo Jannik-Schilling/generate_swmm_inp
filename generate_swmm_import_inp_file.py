@@ -153,10 +153,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         '''reading input text file'''
         feedback.setProgressText(self.tr('reading inp ...'))
-        feedback.setProgress(3)
-        #with open(readfile) as f:
-        #    inp_text = f.readlines()
-            
+        feedback.setProgress(3)            
         encodings = ['utf-8', 'windows-1250', 'windows-1252'] # add more
         for e in encodings:
             try:
@@ -172,6 +169,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         inp_text = [x for x in inp_text if x != '\s']
         inp_text = [x for x in inp_text if not x.startswith(';;')]
         inp_text = [x.replace('\n','') for x in inp_text]
+        inp_text = [x.strip() for x in inp_text if x != '\s']
 
         section_list_brackets = ['['+k+']' for k in def_sections_dict.keys()]
         section_list_brackets = [sect for sect in section_list_brackets if sect in inp_text] #remove section which are not available
@@ -225,7 +223,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 text_line_new = text_line
             return text_line_new
             
-        descriptions_dict = {}
+        #descriptions_dict = {}
         def extract_section_vals_from_text(text_limits, section_key):
             """
             extracts sections from inp_text
@@ -235,9 +233,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
             section_text = inp_text[text_limits[0]+1:text_limits[1]]
             section_len = len(section_text)
             # ugly but it works fast to extract descriptions:
-            descriptions_list = [[section_text[i+1].split()[0],x[1:]] for i,x in enumerate(section_text) if x.startswith(';') and len(x)>1 and (i+1)<=section_len]
-            descriptions_dict[section_key] = pd.DataFrame(descriptions_list, columns =['Name','Description'])
-            section_text = [x.strip() for x in section_text if not x.startswith(';')] #delete comments and "headers"
+            #descriptions_list = [[section_text[i+1].split()[0],x[1:]] for i,x in enumerate(section_text) if x.startswith(';') and len(x)>1 and (i+1)<=section_len]
+            #descriptions_dict[section_key] = pd.DataFrame(descriptions_list, columns =['Name','Description'])
+            section_text = [x for x in section_text if not x.startswith(';')] #delete comments and "headers"
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             return section_vals_clean
@@ -507,10 +505,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'CURVES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating curves file ...'))
             feedback.setProgress(22)
-            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in curve_cols_dict.keys()}
-            upper_keys = [i.upper() for i in curve_cols_dict.keys()] # if curve types are in upper case
-            curve_type_dict_upper= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in upper_keys}
-            curve_type_dict.update(curve_type_dict_upper)
+            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1].capitalize() in curve_cols_dict.keys()}
             occuring_curve_types = list(set(curve_type_dict.values()))
             all_curves = [del_kw_from_list(l, occuring_curve_types, 1) for l in dict_all_raw_vals['CURVES'].copy()]
             all_curves = build_df_from_vals_list(all_curves, def_sections_dict['CURVES'])
