@@ -141,7 +141,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         
-        
         try:
             for f in files_list:
                 f2 = os.path.join(default_data_path,f)
@@ -380,7 +379,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                                 try:
                                     return datetime.strptime(str(x), '%H:%M').time()
                                 except:
-                                    return datetime.strptime(str(x), '%H').time()
+                                    try:
+                                        datetime.strptime(str(x), '%H').time()
+                                    except:
+                                        return x #when over 48 h
                     return [time_conversion(x) for x in col]
             df = df.apply(col_conversion, axis = 0)
             return df
