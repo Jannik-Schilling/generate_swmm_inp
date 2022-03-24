@@ -59,7 +59,7 @@ def get_storages_from_geodata(storages_raw):
     storage_df['Psi'] = storage_df['Psi'].fillna('')
     storage_df['Ksat'] = storage_df['Ksat'].fillna('')
     storage_df['IMD'] = storage_df['IMD'].fillna('')
-    storage_df = storage_df.drop(columns=all_st_type_cols)
+    storage_df = storage_df.drop(columns=st_types_needed)
     return storage_df
 
 
