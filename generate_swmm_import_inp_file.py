@@ -684,16 +684,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STORAGE' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating storages file ...'))
             feedback.setProgress(45)
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',[6,7,8]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'FUNCTIONAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'PYRAMIDAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'PARABOLIC',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'CONICAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'CYLINDRICAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
-
-            # if no seepage loss is defined:
-            dict_all_raw_vals['STORAGE'] = [adjust_line_length(x,11,14,[np.nan,np.nan,np.nan]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
+            from .g_s_nodes import get_storages_from_inp
+            st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
+            all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
             all_storages = all_storages.join(all_geoms, on = 'Name')
             all_storages = all_storages.applymap(replace_nan_null)
             storages_layer_name = 'SWMM_storages'

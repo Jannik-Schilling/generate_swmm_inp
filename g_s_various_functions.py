@@ -100,7 +100,7 @@ def get_patterns_from_table(patterns_raw, name_col):
     return(pattern_dict)
     
     
-def get_timeseries_from_table(ts_raw, name_col,feedback):
+def get_timeseries_from_table(ts_raw, name_col, feedback):
     """generates a timeseries dict for the input file from tables (ts_raw)"""
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
@@ -213,9 +213,10 @@ def get_inflows_from_table(inflows_raw,all_nodes):
 ## errors and feedback
 
 
-def check_columns(swmm_data_file, cols_expected, cols_in_df):
+def check_columns(swmm_data_file, cols_expected, cols_in_df, conditionals = {}):
     """checks if all columns are in a dataframe"""
-    missing_cols = [x for x in cols_expected if x not in cols_in_df]
+    if len(conditionals) == 0:
+        missing_cols = [x for x in cols_expected if x not in cols_in_df]
     if len(missing_cols) == 0:
         pass
     else:
