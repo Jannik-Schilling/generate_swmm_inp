@@ -66,6 +66,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     FILE_INFLOWS = 'FILE_INFLOWS'
     FILE_QUALITY = 'FILE_QUALITY'
     FILE_TRANSECTS = 'FILE_TRANSECTS'
+    FILE_STREETS = 'FILE_STREETS'
     
     
     
@@ -226,6 +227,15 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 'xlsx',
                 optional = True
                 ))
+                
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.FILE_STREETS,
+                self.tr('Streets and Inlets table file'),
+                QgsProcessingParameterFile.File,
+                'xlsx',
+                optional = True
+                ))
 
 
     def processAlgorithm(self, parameters, context, feedback):  
@@ -277,7 +287,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_inflows = self.parameterAsString(parameters, self.FILE_INFLOWS, context)
         file_quality = self.parameterAsString(parameters, self.FILE_QUALITY, context)
         file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
-
+        file_streets = self.parameterAsString(parameters, self.FILE_STREETS, context)
         
         
         """options table"""
@@ -318,6 +328,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 for transects_param in['Data', 'XSections']:
                     raw_data_dict['transects'][transects_param] = read_data_from_table_direct(file_transects,
                                                                                               sheet = transects_param)
+                                                                                              
+        """streets table"""
+        if file_streets != '':
+                raw_data_dict['streets'] = {}
+                for streets_param in['STREETS', 'INLETS', 'INLET_USAGE']:
+                    raw_data_dict['streets'][streets_param] = read_data_from_table_direct(file_streets,
+                                                                                              sheet = streets_param)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(25)
         
@@ -436,23 +453,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
         if 'storages_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[STORAGES] section'))
-            storage_df = raw_data_dict['storages_raw'].copy()
-            # check columns
-            storages_cols = list(def_sections_dict['STORAGE'].keys())
-            storages_layer_name = 'Storages Layer'
-            check_columns(storages_layer_name,
-                          storages_cols,
-                          storage_df.keys())
-            
-            storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
-            # Empty linestrings will be ignored:"            
-            storage_df['Curve'] = storage_df['Curve'].fillna('')
-            storage_df['Coeff'] = storage_df['Coeff'].fillna('')
-            storage_df['Exponent'] = storage_df['Exponent'].fillna('')
-            storage_df['Constant'] = storage_df['Constant'].fillna('')
-            storage_df['Psi'] = storage_df['Psi'].fillna('')
-            storage_df['Ksat'] = storage_df['Ksat'].fillna('')
-            storage_df['IMD'] = storage_df['IMD'].fillna('')
+            from .g_s_nodes import get_storages_from_geodata
+            storage_df = get_storages_from_geodata(raw_data_dict['storages_raw'].copy())
             inp_dict['storage_df'] = storage_df
             all_nodes = all_nodes+storage_df['Name'].tolist()
         if 'dividers_raw' in raw_data_dict.keys():
@@ -487,7 +489,19 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 if len(dwf_dict) > 0:
                     inp_dict['dwf_dict'] = dwf_dict
         feedback.setProgress(55)
-
+        
+        """Streets and inlets"""
+        if 'streets' in raw_data_dict.keys():
+            feedback.setProgressText(self.tr('[STREETS] and [INLETS] section'))
+            from .g_s_links import get_street_from_tables
+            streets_df , inlets_df, inlet_usage_df = get_street_from_tables(raw_data_dict['streets']) #all nodes all conduits?
+            if len(streets_df) > 0:
+                inp_dict['streets_df'] = streets_df
+            if len(inlets_df) > 0:
+                inp_dict['inlets_df'] = inlets_df
+            if len(inlet_usage_df) > 0:
+                inp_dict['inlet_usage_df'] = inlet_usage_df
+            
         """Curves"""
         if 'curves' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[CURVES] section'))
@@ -509,9 +523,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
             from .g_s_various_functions import get_timeseries_from_table, get_raingages_from_timeseries
             inp_dict['timeseries_dict'] = get_timeseries_from_table(raw_data_dict['timeseries'],
-                                                                 name_col='Name')
+                                                                 name_col='Name',
+                                                                 feedback = feedback)
             """rain gages"""
-            inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'])
+            inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'],feedback)
             if 'rg_pos' in inp_dict.keys():
                 pass
             else:

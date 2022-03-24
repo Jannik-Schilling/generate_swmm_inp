@@ -6,6 +6,7 @@ Created on Wed May 12 15:56:10 2021
 """
 
 import pandas as pd
+import numpy as np
 from qgis.core import QgsProcessingException
 from .g_s_defaults import def_sections_dict
 from .g_s_various_functions import check_columns
@@ -33,11 +34,12 @@ def get_conduits_from_shapefile(conduits_raw):
     
     xsections_df = conduits_raw[xsections_cols].copy()
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
-    if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM'):
+    if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM') or any(xsections_df['Shape'] == 'STREET'):
         if 'Shp_Trnsct' not in conduits_raw.columns:
-            raise QgsProcessingException('Column "Shp_Trnsct is missing for IRREGULAR or CUSTOM Shape')
+            raise QgsProcessingException('Column "Shp_Trnsct is missing for IRREGULAR, CUSTOM or STREET Shape')
         else:
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
+            xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
 
     losses_df = conduits_raw[losses_cols].copy()
@@ -46,6 +48,66 @@ def get_conduits_from_shapefile(conduits_raw):
     losses_df['Kexit'] = losses_df['Kexit'].fillna('0')
     losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
+
+
+# Inlets
+inl_types_def = {'GRATE':['Length',
+                          'Width',
+                          'Shape'],
+            'CUSTOM':['Shape'],
+            'CURB':['Length',
+                    'Heigth',
+                    'Shape'],
+            'SLOTTED':['Length',
+                       'Width'],
+            'DROP_GRATE':['Length',
+                       'Width',
+                       'Shape'],
+            'DROP_CURB':['Length',
+                          'Heigth']}
+all_inl_type_cols = ['Length','Width', 'Heigth' ,'Shape', 'OpenFract','SplashVel']
+
+def get_street_from_tables(streets_inlets_raw):
+    streets_df = streets_inlets_raw['STREETS']
+    inlets_usage_df = streets_inlets_raw['INLET_USAGE']
+    #inlets
+    inlets_raw = streets_inlets_raw['INLETS']
+    inlets_df = inlets_raw.copy()
+    def inl_type_adjustment(inl_row):
+        in_type_i = inl_row['Type']
+        cols_needed_i = inl_types_def[in_type_i]
+        if len(cols_needed_i) == 1: #curve
+            return inl_row[cols_needed_i[0]], '', '' ,'', ''
+        elif len(cols_needed_i) == 2: #Drop curb or slotted
+            return inl_row[cols_needed_i[0]], inl_row[cols_needed_i[1]], '', '', ''
+        else:
+            if inl_row[cols_needed_i[2]] == 'GENERIC':
+                return inl_row[cols_needed_i[0]], inl_row[cols_needed_i[1]], inl_row[cols_needed_i[2]],inl_row['OpenFract'],inl_row['SplashVel']
+            else:
+                return inl_row[cols_needed_i[0]], inl_row[cols_needed_i[1]], inl_row[cols_needed_i[2]], '',''
+    inlets_df[['Shape1','Shape2','Shape3','Shape4','Shape5']] = [inl_type_adjustment(inlets_df.loc[i]) for i in inlets_df.index]
+    inlets_df = inlets_df.drop(columns=all_inl_type_cols)
+    return streets_df, inlets_df, inlets_usage_df
+
+
+
+def get_inlet_from_inp(inlets_raw_line):
+    init_elems = inlets_raw_line[:2]
+    inl_type_i = inlets_raw_line[1]
+    inl_cols_i = inl_types_def[inl_type_i]
+    inl_vals_i = {col:inlets_raw_line[2+i] for i,col in enumerate(inl_cols_i)}
+    inl_missing = {col_0:np.nan for col_0 in all_inl_type_cols if col_0 not in inl_vals_i.keys()}
+    inl_vals_i.update(inl_missing)
+    # adjustment for generec shapes
+    if inl_vals_i['Shape'] == 'GENERIC':
+        inl_vals_i['OpenFract'] = inlets_raw_line[5]
+        inl_vals_i['OpenFract'] = inlets_raw_line[6]
+    type_elems = [inl_vals_i[t_c] for t_c in all_inl_type_cols]
+    # resulting line
+    inl_line_adjusted = init_elems+type_elems
+    return(inl_line_adjusted)
+
+
 
 def del_first_last_vt(link):
     """

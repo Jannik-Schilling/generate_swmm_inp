@@ -141,7 +141,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         
-        
         try:
             for f in files_list:
                 f2 = os.path.join(default_data_path,f)
@@ -153,14 +152,23 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         '''reading input text file'''
         feedback.setProgressText(self.tr('reading inp ...'))
-        feedback.setProgress(3)
-        with open(readfile) as f:
-            inp_text = f.readlines()
+        feedback.setProgress(3)            
+        encodings = ['utf-8', 'windows-1250', 'windows-1252'] # add more
+        for e in encodings:
+            try:
+                with open(readfile, 'r' ,encoding=e) as f:
+                    inp_text = f.readlines()
+            except UnicodeDecodeError:
+                print('got unicode error with %s , trying different encoding' % e)
+            else:
+                print('opening the file with encoding:  %s ' % e)
+                break
 
         inp_text = [x for x in inp_text if x != '\n']
         inp_text = [x for x in inp_text if x != '\s']
         inp_text = [x for x in inp_text if not x.startswith(';;')]
         inp_text = [x.replace('\n','') for x in inp_text]
+        inp_text = [x.strip() for x in inp_text if x != '\s']
 
         section_list_brackets = ['['+k+']' for k in def_sections_dict.keys()]
         section_list_brackets = [sect for sect in section_list_brackets if sect in inp_text] #remove section which are not available
@@ -188,35 +196,50 @@ class ImportInpFile (QgsProcessingAlgorithm):
             finds quoted text and cocatenates text strings if 
             they have been separated by whitespace or other separators
             """
-            #find start position of quoted elements
-            quoted_elms = [i for i, x in enumerate(text_line) if x.startswith('"')]
-            if len(quoted_elms) > 0:
-                for q_e in quoted_elms:
-                    #find end position of quoted elements
-                    quoted_elms_end = [i for i, x in enumerate(text_line[q_e:]) if x.endswith('"')]
-                    if quoted_elms_end[0] == 0:
-                        # quoted element ends with quotation
-                        pass
-                    else:
-                        # has been separated
-                        concat_elems = text_line[q_e:q_e+quoted_elms_end[0]+1]
-                        cocatenated_elems = ' '.join(concat_elems)
-                        text_line[q_e:q_e+quoted_elms_end[0]+1] = [cocatenated_elems]
-            return text_line
+            if any([x.startswith('"') for x in text_line]): #any quoted elements
+                text_line_new = []
+                i = 0 
+                quoted_elem = 0 # set not quoted
+                for t_l in text_line:
+                    if quoted_elem == 0: #is not quoted
+                        text_line_new = text_line_new + [[t_l]]
+                        if t_l.startswith('"'):
+                            quoted_elem = 1 # set quoted
+                            if len(t_l) > 1 and t_l.endswith('"'): # t_l is not '"' and fully quoted (e.g. '"test"')
+                                quoted_elem = 0 # set not quoted again
+                                i += 1            
+                        else:
+                            i += 1
+                    else: #is quoted and has been separated
+                        text_line_new[i] = text_line_new[i]+[t_l]
+                        if t_l.endswith('"'):
+                            quoted_elem = 0 # set not quoted again
+                            i += 1
+                        else:
+                            pass #keep quoted and i
+                text_line_new = [' '.join(x) for x in text_line_new] # concatenate strings
+            else:
+                text_line_new = text_line
+            return text_line_new
             
-        def extract_section_vals_from_text(text_limits):
+        #descriptions_dict = {}
+        def extract_section_vals_from_text(text_limits, section_key):
             """
             extracts sections from inp_text
             :param dict text_limits: line numbers at beginning and end sections
             :return: list
-            """
+            """                
             section_text = inp_text[text_limits[0]+1:text_limits[1]]
-            section_text = [x.strip() for x in section_text if not x.startswith(';')] #delete comments and "headers"
+            section_len = len(section_text)
+            # ugly but it works fast to extract descriptions:
+            #descriptions_list = [[section_text[i+1].split()[0],x[1:]] for i,x in enumerate(section_text) if x.startswith(';') and len(x)>1 and (i+1)<=section_len]
+            #descriptions_dict[section_key] = pd.DataFrame(descriptions_list, columns =['Name','Description'])
+            section_text = [x for x in section_text if not x.startswith(';')] #delete comments and "headers"
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             return section_vals_clean
 
-        dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k]) for k in dict_search.keys()}
+        dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k], k) for k in dict_search.keys()}
 
         def build_df_from_vals_list(section_vals, col_names):
             """
@@ -254,12 +277,26 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 df = build_df_from_vals_list(dict_raw[section_name], col_names)
             return df
+            
+        def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
+            """
+            adds np.nan after keyword (kw)
+            :param list df_line
+            :param int kw_position: expected position of keyword
+            :param str kw: Keyword
+            :param list insert_positions: position at which np.nan should be insertet
+            :return: list
+            """
+            if df_line[kw_position] == kw:
+                for i_p in insert_positions:
+                    df_line.insert(i_p,np.nan)
+            return df_line
 
         def adjust_line_length(ts_line, pos, line_length , insert_val=[np.nan]):
             """
             adds insert_val at pos in line lengt is not line length
             :param list ts_line
-            :param int pos: position in the list
+            :param int pos: position in the list for the fill
             :param int line_length: expected line length
             :param list insert_val: values to insert at pos if the list is too short
             :return: list
@@ -333,13 +370,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     return [date_conversion(x) for x in col]
                 if col_types[col.name] =='Time':
                     def time_conversion(x):
-                        try:
-                            return  datetime.strptime(str(x), '%H:%M:%S').time()
-                        except:
+                        if pd.isna(x):
+                            return x
+                        else:
                             try:
-                                return datetime.strptime(str(x), '%H:%M').time()
+                                return  datetime.strptime(str(x), '%H:%M:%S').time()
                             except:
-                                return datetime.strptime(str(x), '%H').time()
+                                try:
+                                    return datetime.strptime(str(x), '%H:%M').time()
+                                except:
+                                    try:
+                                        datetime.strptime(str(x), '%H').time()
+                                    except:
+                                        return x #when over 48 h
                     return [time_conversion(x) for x in col]
             df = df.apply(col_conversion, axis = 0)
             return df
@@ -451,6 +494,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'Pump2': ['Name','Depth','Flow'],
             'Pump3': ['Name','Head','Flow'],
             'Pump4': ['Name','Depth','Flow'],
+            'Pump5':['Name','Head','Flow'],
             'Storage': ['Name','Depth','Area'],
             'Rating': ['Name','Head/Depth','Outflow'],
             'Tidal':['Name','Hour_of_Day','Stage'],
@@ -463,10 +507,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'CURVES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating curves file ...'))
             feedback.setProgress(22)
-            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in curve_cols_dict.keys()}
-            upper_keys = [i.upper() for i in curve_cols_dict.keys()] # if curve types are in upper case
-            curve_type_dict_upper= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1] in upper_keys}
-            curve_type_dict.update(curve_type_dict_upper)
+            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1].capitalize() in curve_cols_dict.keys()}
             occuring_curve_types = list(set(curve_type_dict.values()))
             all_curves = [del_kw_from_list(l, occuring_curve_types, 1) for l in dict_all_raw_vals['CURVES'].copy()]
             all_curves = build_df_from_vals_list(all_curves, def_sections_dict['CURVES'])
@@ -520,12 +561,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'Time':'Time',
             'Value':'Double',
             'Format':'String',
+            'File_Name':'String',
             'Description':'String'
             }
         if 'TIMESERIES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating timeseries file ...'))
             feedback.setProgress(30)
             all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
+            # for external File
+            all_time_series = [insert_nan_after_kw(x,2,'FILE',[3,4]) for x in all_time_series]
+            all_time_series = [del_kw_from_list(x, 'FILE', 2) for x in all_time_series]
             all_time_series = build_df_from_vals_list(all_time_series,def_sections_dict['TIMESERIES'])
             all_time_series.insert(1,'Type',np.nan)
             all_time_series['Format'] = np.nan
@@ -542,6 +587,35 @@ class ImportInpFile (QgsProcessingAlgorithm):
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_to_excel({'Table1':all_time_series},'gisswmm_timeseries.xlsx',result_prefix)
             
+        
+        """streets and inlets section"""
+        if 'STREETS' in dict_all_raw_vals.keys() or 'INLETS' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('generating streets and inlets file ...'))
+            feedback.setProgress(35)
+            street_data = {}
+            if 'STREETS' in dict_all_raw_vals.keys():
+                if len(dict_all_raw_vals['STREETS']) == 0:
+                    street_data['STREETS'] = build_df_from_vals_list([], list(def_sections_dict['STREETS'].keys()))
+                else:
+                    street_data['STREETS'] = build_df_from_vals_list(dict_all_raw_vals['STREETS'], list(def_sections_dict['STREETS'].keys()))
+            else:
+                street_data['STREETS'] = build_df_from_vals_list([], list(def_sections_dict['STREETS'].keys()))
+            
+            if 'INLETS' in dict_all_raw_vals.keys():
+                from .g_s_links import get_inlet_from_inp
+                inl_list = [get_inlet_from_inp(inl_line) for inl_line in dict_all_raw_vals['INLETS']]
+                street_data['INLETS'] = build_df_from_vals_list(inl_list, list(def_sections_dict['INLETS'].keys()))
+            else:
+                street_data['INLETS'] = build_df_from_vals_list([], list(def_sections_dict['INLETS'].keys()))
+                
+            if 'INLET_USAGE' in dict_all_raw_vals.keys():
+                if len(dict_all_raw_vals['INLET_USAGE']) == 0:
+                    street_data['INLET_USAGE'] = build_df_from_vals_list([], list(def_sections_dict['INLET_USAGE'].keys()))
+                else:
+                    street_data['INLET_USAGE'] = build_df_from_vals_list(dict_all_raw_vals['INLET_USAGE'], list(def_sections_dict['INLET_USAGE'].keys()))
+            else:
+                street_data['INLET_USAGE'] = build_df_from_vals_list([], list(def_sections_dict['INLET_USAGE'].keys()))
+            dict_to_excel(street_data,'gisswmm_streets.xlsx',result_prefix)
             
             
         """ geodata (e.g. shapefiles)  """
@@ -600,19 +674,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 return data
         
-        def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
-            """
-            adds np.nan after keyword (kw)
-            :param list df_line
-            :param int kw_position: expected position of keyword
-            :param str kw: Keyword
-            :param list insert_positions: position at which np.nan should be insertet
-            :return: list
-            """
-            if df_line[kw_position] == kw:
-                for i_p in insert_positions:
-                    df_line.insert(i_p,np.nan)
-            return df_line
+        
         
         def add_layer_on_completion(folder_save, layer_name, style_file):
             """
@@ -651,11 +713,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STORAGE' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating storages file ...'))
             feedback.setProgress(45)
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',[6,7,8]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'FUNCTIONAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            # if no seepage loss is defined:
-            dict_all_raw_vals['STORAGE'] = [adjust_line_length(x,11,14,[np.nan,np.nan,np.nan]) for x in dict_all_raw_vals['STORAGE'].copy()]
-            all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
+            from .g_s_nodes import get_storages_from_inp
+            st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
+            all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
             all_storages = all_storages.join(all_geoms, on = 'Name')
             all_storages = all_storages.applymap(replace_nan_null)
             storages_layer_name = 'SWMM_storages'
@@ -744,12 +804,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
         """cross-sections"""
         if 'XSECTIONS' in dict_all_raw_vals.keys():
             all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
-            all_xsections['Shp_Trnsct'] = np.nan # For CUSTOM or IRREGULAR Shapes
-            if any(all_xsections['Shape'] == 'IRREGULAR') or any(all_xsections['Shape'] == 'CUSTOM'):
-                all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR','Geom1']
-                all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1'] = np.nan
-                all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM','Geom2']
-                all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
+            all_xsections['Shp_Trnsct'] = np.nan # For CUSTOM, IRREGULAR and STREET Shapes
+            if any(all_xsections['Shape'] == 'STREET'):
+                feedback.setProgressText(self.tr('Warning: import of streets data is not implemented yet'))
+            all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'STREET','Geom1']
+            all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Geom1'] = np.nan
+            all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR','Geom1']
+            all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1'] = np.nan
+            all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM','Geom2']
+            all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
             all_xsections = all_xsections.applymap(replace_nan_null)
 
         """conduits section """

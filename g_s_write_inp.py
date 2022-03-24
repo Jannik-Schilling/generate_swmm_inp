@@ -186,10 +186,9 @@ def write_inp(inp_file_name,
                         str(stor['MaxDepth'])+'    '+
                         str(stor['InitDepth'])+'    '+
                         str(stor['Type'])+'    '+
-                        str(stor['Curve'])+'    '+
-                        str(stor['Coeff'])+'    '+
-                        str(stor['Exponent'])+'    '+
-                        str(stor['Constant'])+'    '+
+                        str(stor['Shape1'])+'    '+
+                        str(stor['Shape2'])+'    '+
+                        str(stor['Shape3'])+'    '+
                         str(stor['SurDepth'])+'    '+
                         str(stor['Fevap'])+'    '+
                         str(stor['Psi'])+'    '+
@@ -294,7 +293,32 @@ def write_inp(inp_file_name,
             file1.write('\n')
         file1.write('\n')
 
+    ## streets
+    if 'streets_df' in inp_dict.keys():
+        feedback.setProgressText('writing [STREETS]...')
+        streets_df = inp_dict['streets_df']
+        file1.write('[STREETS]\n')
+        file1.write(streets_df.to_string(header = False, index = False))
+        file1.write('\n')
+        file1.write('\n')
         
+    ## inlets
+    if 'inlets_df' in inp_dict.keys():
+        feedback.setProgressText('writing [INLETS]...')
+        inlets_df = inp_dict['inlets_df']
+        file1.write('[INLETS]\n')
+        file1.write(inlets_df.to_string(header = False, index = False))
+        file1.write('\n')
+        file1.write('\n')
+        
+    if 'inlet_usage_df' in inp_dict.keys():
+        feedback.setProgressText('writing [INLET_USAGE]...')
+        inlet_usage_df = inp_dict['inlet_usage_df']
+        file1.write('[INLET_USAGE]\n')
+        file1.write(inlet_usage_df.to_string(header = False, index = False))
+        file1.write('\n')
+        file1.write('\n')
+
         
     ## losses
     if 'losses_df' in inp_dict.keys():

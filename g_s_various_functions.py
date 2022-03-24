@@ -100,22 +100,31 @@ def get_patterns_from_table(patterns_raw, name_col):
     return(pattern_dict)
     
     
-def get_timeseries_from_table(ts_raw, name_col):
+def get_timeseries_from_table(ts_raw, name_col, feedback):
     """generates a timeseries dict for the input file from tables (ts_raw)"""
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
+    if not 'File_Name' in ts_raw.columns:
+        feedback.setProgressText('No external file is used in time series')
     if ts_raw.empty:
         pass
     else:
         for i in ts_raw[name_col].unique():
             ts_df = ts_raw[ts_raw[name_col] == i]
-            ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
-            try:
-                ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
-            except:
-                #temp_time = [datetime.strptime(t,'%H:%M:%S') for t in ts_df['Time']]
-                #ts_df['Time']= [t.strftime('%H:%M:%S') for t in temp_time]
-                ts_df['Time'] = [str(t) for t in ts_df['Time']]
+            if 'File_Name' in ts_raw.columns:
+                if not all(pd.isna(ts_df['File_Name'])): # external time series
+                    ts_df['Date'] = 'FILE'
+                    ts_df['Time'] = ts_df['File_Name']
+                    ts_df['Value'] = ''
+            else:
+                try:
+                    ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
+                except:
+                    ts_df['Date'] = [str(t) for t in ts_df['Date']]
+                try:
+                    ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
+                except:
+                    ts_df['Time'] = [str(t) for t in ts_df['Time']]
             ts_description= ts_df['Description'].fillna('').unique()[0]
             ts_format= ts_df['Format'].fillna('').unique()[0]
             ts_type = ts_df['Type'].unique()[0]
@@ -128,7 +137,7 @@ def get_timeseries_from_table(ts_raw, name_col):
     
     
 
-def get_raingages_from_timeseries(ts_dict):
+def get_raingages_from_timeseries(ts_dict, feedback):
     """generates a raingages dict for the input file from timeseries dict"""
     from datetime import datetime
     rg_dict= {}
@@ -136,8 +145,12 @@ def get_raingages_from_timeseries(ts_dict):
     for rg in rg_list:
         rg_i = ts_dict[rg]
         rg_i['TimeSeries'] = rg_i['TimeSeries'].reset_index(drop=True)
-        timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M:%S')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M:%S')
-        rg_interval = str(timediff)[:-3]
+        if len(rg_i['TimeSeries']) == 1: #only one value or external time series
+            rg_interval = ('5') #set to ten minutes
+            feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
+        else:
+            timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M:%S')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M:%S')
+            rg_interval = str(timediff)[:-3]
         rg_dict[rg_i['Description']] = {'Name':rg_i['Description'],
                'Format':rg_i['Format'],
                'Interval': rg_interval,
