@@ -186,10 +186,9 @@ def write_inp(inp_file_name,
                         str(stor['MaxDepth'])+'    '+
                         str(stor['InitDepth'])+'    '+
                         str(stor['Type'])+'    '+
-                        str(stor['Curve'])+'    '+
-                        str(stor['Coeff'])+'    '+
-                        str(stor['Exponent'])+'    '+
-                        str(stor['Constant'])+'    '+
+                        str(stor['Shape1'])+'    '+
+                        str(stor['Shape2'])+'    '+
+                        str(stor['Shape3'])+'    '+
                         str(stor['SurDepth'])+'    '+
                         str(stor['Fevap'])+'    '+
                         str(stor['Psi'])+'    '+

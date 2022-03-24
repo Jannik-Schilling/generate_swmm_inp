@@ -213,10 +213,9 @@ def get_inflows_from_table(inflows_raw,all_nodes):
 ## errors and feedback
 
 
-def check_columns(swmm_data_file, cols_expected, cols_in_df, conditionals = {}):
+def check_columns(swmm_data_file, cols_expected, cols_in_df):
     """checks if all columns are in a dataframe"""
-    if len(conditionals) == 0:
-        missing_cols = [x for x in cols_expected if x not in cols_in_df]
+    missing_cols = [x for x in cols_expected if x not in cols_in_df]
     if len(missing_cols) == 0:
         pass
     else:

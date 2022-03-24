@@ -436,23 +436,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
         if 'storages_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[STORAGES] section'))
-            storage_df = raw_data_dict['storages_raw'].copy()
-            # check columns
-            storages_cols = list(def_sections_dict['STORAGE'].keys())
-            storages_layer_name = 'Storages Layer'
-            check_columns(storages_layer_name,
-                          storages_cols,
-                          storage_df.keys())
-            
-            storage_df['X_Coord'],storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
-            # Empty linestrings will be ignored:"            
-            storage_df['Curve'] = storage_df['Curve'].fillna('')
-            storage_df['Coeff'] = storage_df['Coeff'].fillna('')
-            storage_df['Exponent'] = storage_df['Exponent'].fillna('')
-            storage_df['Constant'] = storage_df['Constant'].fillna('')
-            storage_df['Psi'] = storage_df['Psi'].fillna('')
-            storage_df['Ksat'] = storage_df['Ksat'].fillna('')
-            storage_df['IMD'] = storage_df['IMD'].fillna('')
+            from .g_s_nodes import get_storages_from_geodata
+            storage_df = get_storages_from_geodata(raw_data_dict['storages_raw'].copy())
             inp_dict['storage_df'] = storage_df
             all_nodes = all_nodes+storage_df['Name'].tolist()
         if 'dividers_raw' in raw_data_dict.keys():
