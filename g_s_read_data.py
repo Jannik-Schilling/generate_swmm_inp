@@ -95,6 +95,10 @@ def read_data_from_table_direct(file, sheet=0):
                 data_df = pd.read_excel(file,sheet_name = sheet)
             elif str(sheet).upper() in pd.ExcelFile(file).sheet_names:
                 data_df = pd.read_excel(file,sheet_name = str(sheet).upper())
+            elif str(sheet).lower() in pd.ExcelFile(file).sheet_names:
+                data_df = pd.read_excel(file,sheet_name = str(sheet).lower())
+            elif str(sheet).capitalize() in pd.ExcelFile(file).sheet_names:
+                data_df = pd.read_excel(file,sheet_name = str(sheet).capitalize())
             else:
                 data_df = pd.DataFrame()
     if file_extension == '.csv':

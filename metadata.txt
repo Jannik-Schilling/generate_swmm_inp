@@ -23,6 +23,7 @@ hasProcessingProvider=yes
 changelog= 0.19 2022-03-30
 	- fix quoted strings
 	- improve import of non utf8 files
+	- update to swmm version 5.2
 
 
 

@@ -587,6 +587,35 @@ class ImportInpFile (QgsProcessingAlgorithm):
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_to_excel({'Table1':all_time_series},'gisswmm_timeseries.xlsx',result_prefix)
             
+        
+        """streets and inlets section"""
+        if 'STREETS' in dict_all_raw_vals.keys() or 'INLETS' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('generating streets and inlets file ...'))
+            feedback.setProgress(35)
+            street_data = {}
+            if 'STREETS' in dict_all_raw_vals.keys():
+                if len(dict_all_raw_vals['STREETS']) == 0:
+                    street_data['STREETS'] = build_df_from_vals_list([], list(def_sections_dict['STREETS'].keys()))
+                else:
+                    street_data['STREETS'] = build_df_from_vals_list(dict_all_raw_vals['STREETS'], list(def_sections_dict['STREETS'].keys()))
+            else:
+                street_data['STREETS'] = build_df_from_vals_list([], list(def_sections_dict['STREETS'].keys()))
+            
+            if 'INLETS' in dict_all_raw_vals.keys():
+                from .g_s_links import get_inlet_from_inp
+                inl_list = [get_inlet_from_inp(inl_line) for inl_line in dict_all_raw_vals['INLETS']]
+                street_data['INLETS'] = build_df_from_vals_list(inl_list, list(def_sections_dict['INLETS'].keys()))
+            else:
+                street_data['INLETS'] = build_df_from_vals_list([], list(def_sections_dict['INLETS'].keys()))
+                
+            if 'INLET_USAGE' in dict_all_raw_vals.keys():
+                if len(dict_all_raw_vals['INLET_USAGE']) == 0:
+                    street_data['INLET_USAGE'] = build_df_from_vals_list([], list(def_sections_dict['INLET_USAGE'].keys()))
+                else:
+                    street_data['INLET_USAGE'] = build_df_from_vals_list(dict_all_raw_vals['INLET_USAGE'], list(def_sections_dict['INLET_USAGE'].keys()))
+            else:
+                street_data['INLET_USAGE'] = build_df_from_vals_list([], list(def_sections_dict['INLET_USAGE'].keys()))
+            dict_to_excel(street_data,'gisswmm_streets.xlsx',result_prefix)
             
             
         """ geodata (e.g. shapefiles)  """
