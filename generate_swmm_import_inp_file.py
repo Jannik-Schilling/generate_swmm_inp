@@ -775,12 +775,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
         """cross-sections"""
         if 'XSECTIONS' in dict_all_raw_vals.keys():
             all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
-            all_xsections['Shp_Trnsct'] = np.nan # For CUSTOM or IRREGULAR Shapes
-            if any(all_xsections['Shape'] == 'IRREGULAR') or any(all_xsections['Shape'] == 'CUSTOM'):
-                all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR','Geom1']
-                all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1'] = np.nan
-                all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM','Geom2']
-                all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
+            all_xsections['Shp_Trnsct'] = np.nan # For CUSTOM, IRREGULAR and STREET Shapes
+            all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'STREET','Geom1']
+            all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Geom1'] = np.nan
+            all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR','Geom1']
+            all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1'] = np.nan
+            all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM','Geom2']
+            all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
+            print(all_xsections)
             all_xsections = all_xsections.applymap(replace_nan_null)
 
         """conduits section """
@@ -794,6 +796,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else: 
                 all_losses = build_df_from_vals_list([],list(def_sections_dict['LOSSES'].keys()))
             all_conduits = build_df_for_section('CONDUITS', dict_all_raw_vals)
+            print('conds')
+            print(all_conduits)
             all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
             all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
             all_conduits['FlapGate'] = all_conduits['FlapGate'].fillna('NO')
