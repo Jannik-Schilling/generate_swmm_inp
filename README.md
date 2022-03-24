@@ -1,5 +1,5 @@
 # ![icon](/icons/icon.png) generate_swmm_inp
-A QGIS plugin which provides tools to create a SWMM input file from layers in QGIS, and to import input files into QGIS. The documentation can be found [here](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf). The plugin was recently updated according to new functions in SWMM 5.2. Input files from SWMM 5.1.15 should still work. 
+A QGIS plugin which provides tools to create a SWMM input file from layers in QGIS, and to import input files into QGIS. The documentation can be found [here](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf). The plugin was recently updated according to new functions in SWMM 5.2. Input files from SWMM 5.1.15 will still work. 
 
 
 ## Recommended Workflow
