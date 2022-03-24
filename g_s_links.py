@@ -33,11 +33,12 @@ def get_conduits_from_shapefile(conduits_raw):
     
     xsections_df = conduits_raw[xsections_cols].copy()
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
-    if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM'):
+    if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM') or any(xsections_df['Shape'] == 'STREET'):
         if 'Shp_Trnsct' not in conduits_raw.columns:
-            raise QgsProcessingException('Column "Shp_Trnsct is missing for IRREGULAR or CUSTOM Shape')
+            raise QgsProcessingException('Column "Shp_Trnsct is missing for IRREGULAR, CUSTOM or STREET Shape')
         else:
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
+            xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
 
     losses_df = conduits_raw[losses_cols].copy()
