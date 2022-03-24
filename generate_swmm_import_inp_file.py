@@ -686,6 +686,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(45)
             dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'TABULAR',[6,7,8]) for x in dict_all_raw_vals['STORAGE'].copy()]
             dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'FUNCTIONAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'PYRAMIDAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'PARABOLIC',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'CONICAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
+            dict_all_raw_vals['STORAGE'] = [insert_nan_after_kw(x,4,'CYLINDRICAL',[5]) for x in dict_all_raw_vals['STORAGE'].copy()]
+
             # if no seepage loss is defined:
             dict_all_raw_vals['STORAGE'] = [adjust_line_length(x,11,14,[np.nan,np.nan,np.nan]) for x in dict_all_raw_vals['STORAGE'].copy()]
             all_storages = build_df_for_section('STORAGE',dict_all_raw_vals)
