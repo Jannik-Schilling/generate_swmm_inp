@@ -148,7 +148,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('style files saved to folder '+folder_save))
             feedback.setProgress(1)
         except:
-            raise QgsProcessingException(self.tr('Could not add default files to chosen folder'))
+            raise QgsProcessingException(self.tr('Could not add style files to chosen folder'))
         
         '''reading input text file'''
         feedback.setProgressText(self.tr('reading inp ...'))

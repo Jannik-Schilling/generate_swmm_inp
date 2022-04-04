@@ -1,20 +1,20 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis maxScale="0" simplifyMaxScale="1" styleCategories="AllStyleCategories" symbologyReferenceScale="-1" simplifyDrawingHints="0" version="3.22.0-Białowieża" simplifyLocal="1" readOnly="0" simplifyAlgorithm="0" labelsEnabled="0" hasScaleBasedVisibilityFlag="0" minScale="0" simplifyDrawingTol="1">
+<qgis maxScale="0" simplifyAlgorithm="0" symbologyReferenceScale="-1" version="3.22.4-Białowieża" simplifyLocal="1" simplifyDrawingHints="0" minScale="0" labelsEnabled="0" styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" simplifyDrawingTol="1" readOnly="0" simplifyMaxScale="1">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>1</Removable>
     <Searchable>1</Searchable>
     <Private>0</Private>
   </flags>
-  <temporal mode="0" accumulate="0" fixedDuration="0" enabled="0" endField="" startField="" durationField="" limitMode="0" startExpression="" durationUnit="min" endExpression="">
+  <temporal fixedDuration="0" mode="0" durationField="" enabled="0" startExpression="" endField="" durationUnit="min" startField="" endExpression="" accumulate="0" limitMode="0">
     <fixedRange>
       <start></start>
       <end></end>
     </fixedRange>
   </temporal>
-  <renderer-v2 type="singleSymbol" enableorderby="0" forceraster="0" symbollevels="0" referencescale="-1">
+  <renderer-v2 symbollevels="0" type="singleSymbol" forceraster="0" enableorderby="0" referencescale="-1">
     <symbols>
-      <symbol type="marker" alpha="1" force_rhr="0" name="0" clip_to_extent="1">
+      <symbol type="marker" alpha="1" force_rhr="0" clip_to_extent="1" name="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" value="" name="name"/>
@@ -22,7 +22,7 @@
             <Option type="QString" value="collection" name="type"/>
           </Option>
         </data_defined_properties>
-        <layer class="SimpleMarker" enabled="1" pass="0" locked="0">
+        <layer enabled="1" pass="0" locked="0" class="SimpleMarker">
           <Option type="Map">
             <Option type="QString" value="0" name="angle"/>
             <Option type="QString" value="square" name="cap_style"/>
@@ -66,7 +66,13 @@
           <data_defined_properties>
             <Option type="Map">
               <Option type="QString" value="" name="name"/>
-              <Option name="properties"/>
+              <Option type="Map" name="properties">
+                <Option type="Map" name="size">
+                  <Option type="bool" value="true" name="active"/>
+                  <Option type="QString" value="if( @map_scale> 6000 ,3.4*6000/@map_scale,3.4)" name="expression"/>
+                  <Option type="int" value="3" name="type"/>
+                </Option>
+              </Option>
               <Option type="QString" value="collection" name="type"/>
             </Option>
           </data_defined_properties>
@@ -90,10 +96,11 @@
   <featureBlendMode>0</featureBlendMode>
   <layerOpacity>1</layerOpacity>
   <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Histogram">
-    <DiagramCategory maxScaleDenominator="0" penAlpha="255" diagramOrientation="Up" lineSizeType="MM" spacingUnitScale="3x:0,0,0,0,0,0" direction="0" labelPlacementMethod="XHeight" spacing="5" lineSizeScale="3x:0,0,0,0,0,0" scaleBasedVisibility="0" backgroundColor="#ffffff" opacity="1" sizeType="MM" penWidth="0" barWidth="5" height="15" backgroundAlpha="255" enabled="0" spacingUnit="MM" rotationOffset="270" minimumSize="0" minScaleDenominator="0" penColor="#000000" scaleDependency="Area" showAxis="1" sizeScale="3x:0,0,0,0,0,0" width="15">
+    <DiagramCategory spacing="5" scaleBasedVisibility="0" backgroundColor="#ffffff" sizeType="MM" rotationOffset="270" minScaleDenominator="0" minimumSize="0" diagramOrientation="Up" showAxis="1" width="15" spacingUnitScale="3x:0,0,0,0,0,0" opacity="1" penWidth="0" backgroundAlpha="255" labelPlacementMethod="XHeight" direction="0" barWidth="5" penColor="#000000" lineSizeType="MM" penAlpha="255" height="15" scaleDependency="Area" lineSizeScale="3x:0,0,0,0,0,0" maxScaleDenominator="0" sizeScale="3x:0,0,0,0,0,0" enabled="0" spacingUnit="MM">
       <fontProperties description="Ubuntu,11,-1,5,50,0,0,0,0,0" style=""/>
+      <attribute color="#000000" field="" label=""/>
       <axisSymbol>
-        <symbol type="line" alpha="1" force_rhr="0" name="" clip_to_extent="1">
+        <symbol type="line" alpha="1" force_rhr="0" clip_to_extent="1" name="">
           <data_defined_properties>
             <Option type="Map">
               <Option type="QString" value="" name="name"/>
@@ -101,7 +108,7 @@
               <Option type="QString" value="collection" name="type"/>
             </Option>
           </data_defined_properties>
-          <layer class="SimpleLine" enabled="1" pass="0" locked="0">
+          <layer enabled="1" pass="0" locked="0" class="SimpleLine">
             <Option type="Map">
               <Option type="QString" value="0" name="align_dash_pattern"/>
               <Option type="QString" value="square" name="capstyle"/>
@@ -170,7 +177,7 @@
       </axisSymbol>
     </DiagramCategory>
   </SingleCategoryDiagramRenderer>
-  <DiagramLayerSettings linePlacementFlags="18" zIndex="0" showAll="1" placement="0" obstacle="0" priority="0" dist="0">
+  <DiagramLayerSettings zIndex="0" dist="0" placement="0" linePlacementFlags="18" obstacle="0" priority="0" showAll="1">
     <properties>
       <Option type="Map">
         <Option type="QString" value="" name="name"/>
@@ -183,9 +190,16 @@
     <activeChecks/>
     <checkConfiguration/>
   </geometryOptions>
-  <legend type="default-vector" showLabelLegend="0"/>
+  <legend showLabelLegend="0" type="default-vector"/>
   <referencedLayers/>
   <fieldConfiguration>
+    <field configurationFlags="None" name="fid">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
     <field configurationFlags="None" name="Name">
       <editWidget type="TextEdit">
         <config>
@@ -214,7 +228,7 @@
         </config>
       </editWidget>
     </field>
-    <field configurationFlags="None" name="CutOffFlow">
+    <field configurationFlags="None" name="CutoffFlow">
       <editWidget type="TextEdit">
         <config>
           <Option/>
@@ -279,85 +293,90 @@
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias index="0" name="" field="Name"/>
-    <alias index="1" name="" field="Elevation"/>
-    <alias index="2" name="" field="DivertLink"/>
-    <alias index="3" name="" field="Type"/>
-    <alias index="4" name="" field="CutOffFlow"/>
-    <alias index="5" name="" field="Curve"/>
-    <alias index="6" name="" field="WeirMinFlo"/>
-    <alias index="7" name="" field="WeirMaxDep"/>
-    <alias index="8" name="" field="WeirCoeff"/>
-    <alias index="9" name="" field="MaxDepth"/>
-    <alias index="10" name="" field="InitDepth"/>
-    <alias index="11" name="" field="SurDepth"/>
-    <alias index="12" name="" field="Aponded"/>
+    <alias field="fid" index="0" name=""/>
+    <alias field="Name" index="1" name=""/>
+    <alias field="Elevation" index="2" name=""/>
+    <alias field="DivertLink" index="3" name=""/>
+    <alias field="Type" index="4" name=""/>
+    <alias field="CutoffFlow" index="5" name=""/>
+    <alias field="Curve" index="6" name=""/>
+    <alias field="WeirMinFlo" index="7" name=""/>
+    <alias field="WeirMaxDep" index="8" name=""/>
+    <alias field="WeirCoeff" index="9" name=""/>
+    <alias field="MaxDepth" index="10" name=""/>
+    <alias field="InitDepth" index="11" name=""/>
+    <alias field="SurDepth" index="12" name=""/>
+    <alias field="Aponded" index="13" name=""/>
   </aliases>
   <defaults>
-    <default applyOnUpdate="0" field="Name" expression=""/>
-    <default applyOnUpdate="0" field="Elevation" expression=""/>
-    <default applyOnUpdate="0" field="DivertLink" expression=""/>
-    <default applyOnUpdate="0" field="Type" expression=""/>
-    <default applyOnUpdate="0" field="CutOffFlow" expression=""/>
-    <default applyOnUpdate="0" field="Curve" expression=""/>
-    <default applyOnUpdate="0" field="WeirMinFlo" expression=""/>
-    <default applyOnUpdate="0" field="WeirMaxDep" expression=""/>
-    <default applyOnUpdate="0" field="WeirCoeff" expression=""/>
-    <default applyOnUpdate="0" field="MaxDepth" expression=""/>
-    <default applyOnUpdate="0" field="InitDepth" expression=""/>
-    <default applyOnUpdate="0" field="SurDepth" expression=""/>
-    <default applyOnUpdate="0" field="Aponded" expression=""/>
+    <default expression="" field="fid" applyOnUpdate="0"/>
+    <default expression="" field="Name" applyOnUpdate="0"/>
+    <default expression="" field="Elevation" applyOnUpdate="0"/>
+    <default expression="" field="DivertLink" applyOnUpdate="0"/>
+    <default expression="" field="Type" applyOnUpdate="0"/>
+    <default expression="" field="CutoffFlow" applyOnUpdate="0"/>
+    <default expression="" field="Curve" applyOnUpdate="0"/>
+    <default expression="" field="WeirMinFlo" applyOnUpdate="0"/>
+    <default expression="" field="WeirMaxDep" applyOnUpdate="0"/>
+    <default expression="" field="WeirCoeff" applyOnUpdate="0"/>
+    <default expression="" field="MaxDepth" applyOnUpdate="0"/>
+    <default expression="" field="InitDepth" applyOnUpdate="0"/>
+    <default expression="" field="SurDepth" applyOnUpdate="0"/>
+    <default expression="" field="Aponded" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint notnull_strength="0" exp_strength="0" field="Name" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="Elevation" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="DivertLink" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="Type" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="CutOffFlow" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="Curve" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="WeirMinFlo" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="WeirMaxDep" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="WeirCoeff" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="MaxDepth" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="InitDepth" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="SurDepth" constraints="0" unique_strength="0"/>
-    <constraint notnull_strength="0" exp_strength="0" field="Aponded" constraints="0" unique_strength="0"/>
+    <constraint notnull_strength="1" unique_strength="1" field="fid" exp_strength="0" constraints="3"/>
+    <constraint notnull_strength="0" unique_strength="0" field="Name" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="Elevation" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="DivertLink" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="Type" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="CutoffFlow" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="Curve" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="WeirMinFlo" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="WeirMaxDep" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="WeirCoeff" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="MaxDepth" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="InitDepth" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="SurDepth" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" unique_strength="0" field="Aponded" exp_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" field="Name" desc=""/>
-    <constraint exp="" field="Elevation" desc=""/>
-    <constraint exp="" field="DivertLink" desc=""/>
-    <constraint exp="" field="Type" desc=""/>
-    <constraint exp="" field="CutOffFlow" desc=""/>
-    <constraint exp="" field="Curve" desc=""/>
-    <constraint exp="" field="WeirMinFlo" desc=""/>
-    <constraint exp="" field="WeirMaxDep" desc=""/>
-    <constraint exp="" field="WeirCoeff" desc=""/>
-    <constraint exp="" field="MaxDepth" desc=""/>
-    <constraint exp="" field="InitDepth" desc=""/>
-    <constraint exp="" field="SurDepth" desc=""/>
-    <constraint exp="" field="Aponded" desc=""/>
+    <constraint field="fid" desc="" exp=""/>
+    <constraint field="Name" desc="" exp=""/>
+    <constraint field="Elevation" desc="" exp=""/>
+    <constraint field="DivertLink" desc="" exp=""/>
+    <constraint field="Type" desc="" exp=""/>
+    <constraint field="CutoffFlow" desc="" exp=""/>
+    <constraint field="Curve" desc="" exp=""/>
+    <constraint field="WeirMinFlo" desc="" exp=""/>
+    <constraint field="WeirMaxDep" desc="" exp=""/>
+    <constraint field="WeirCoeff" desc="" exp=""/>
+    <constraint field="MaxDepth" desc="" exp=""/>
+    <constraint field="InitDepth" desc="" exp=""/>
+    <constraint field="SurDepth" desc="" exp=""/>
+    <constraint field="Aponded" desc="" exp=""/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
     <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
   </attributeactions>
-  <attributetableconfig sortOrder="0" actionWidgetStyle="dropDown" sortExpression="">
+  <attributetableconfig actionWidgetStyle="dropDown" sortExpression="" sortOrder="0">
     <columns>
-      <column type="field" hidden="0" name="Name" width="-1"/>
-      <column type="field" hidden="0" name="Elevation" width="-1"/>
-      <column type="field" hidden="0" name="DivertLink" width="-1"/>
-      <column type="field" hidden="0" name="Type" width="-1"/>
-      <column type="field" hidden="0" name="CutOffFlow" width="-1"/>
-      <column type="field" hidden="0" name="Curve" width="-1"/>
-      <column type="field" hidden="0" name="WeirMinFlo" width="-1"/>
-      <column type="field" hidden="0" name="WeirMaxDep" width="-1"/>
-      <column type="field" hidden="0" name="WeirCoeff" width="-1"/>
-      <column type="field" hidden="0" name="MaxDepth" width="-1"/>
-      <column type="field" hidden="0" name="InitDepth" width="-1"/>
-      <column type="field" hidden="0" name="SurDepth" width="-1"/>
-      <column type="field" hidden="0" name="Aponded" width="-1"/>
-      <column type="actions" hidden="1" width="-1"/>
+      <column width="-1" type="field" hidden="0" name="Name"/>
+      <column width="-1" type="field" hidden="0" name="Elevation"/>
+      <column width="-1" type="field" hidden="0" name="DivertLink"/>
+      <column width="-1" type="field" hidden="0" name="Type"/>
+      <column width="-1" type="field" hidden="0" name="Curve"/>
+      <column width="-1" type="field" hidden="0" name="WeirMinFlo"/>
+      <column width="-1" type="field" hidden="0" name="WeirMaxDep"/>
+      <column width="-1" type="field" hidden="0" name="WeirCoeff"/>
+      <column width="-1" type="field" hidden="0" name="MaxDepth"/>
+      <column width="-1" type="field" hidden="0" name="InitDepth"/>
+      <column width="-1" type="field" hidden="0" name="SurDepth"/>
+      <column width="-1" type="field" hidden="0" name="Aponded"/>
+      <column width="-1" type="field" hidden="0" name="fid"/>
+      <column width="-1" type="field" hidden="0" name="CutoffFlow"/>
+      <column width="-1" type="actions" hidden="1"/>
     </columns>
   </attributetableconfig>
   <conditionalstyles>
@@ -392,6 +411,7 @@ def my_form_open(dialog, layer, feature):
     <field name="Aponded" editable="1"/>
     <field name="Curve" editable="1"/>
     <field name="CutOffFlow" editable="1"/>
+    <field name="CutoffFlow" editable="1"/>
     <field name="DivertLink" editable="1"/>
     <field name="Elevation" editable="1"/>
     <field name="InitDepth" editable="1"/>
@@ -402,26 +422,30 @@ def my_form_open(dialog, layer, feature):
     <field name="WeirCoeff" editable="1"/>
     <field name="WeirMaxDep" editable="1"/>
     <field name="WeirMinFlo" editable="1"/>
+    <field name="fid" editable="1"/>
   </editable>
   <labelOnTop>
-    <field name="Aponded" labelOnTop="0"/>
-    <field name="Curve" labelOnTop="0"/>
-    <field name="CutOffFlow" labelOnTop="0"/>
-    <field name="DivertLink" labelOnTop="0"/>
-    <field name="Elevation" labelOnTop="0"/>
-    <field name="InitDepth" labelOnTop="0"/>
-    <field name="MaxDepth" labelOnTop="0"/>
-    <field name="Name" labelOnTop="0"/>
-    <field name="SurDepth" labelOnTop="0"/>
-    <field name="Type" labelOnTop="0"/>
-    <field name="WeirCoeff" labelOnTop="0"/>
-    <field name="WeirMaxDep" labelOnTop="0"/>
-    <field name="WeirMinFlo" labelOnTop="0"/>
+    <field labelOnTop="0" name="Aponded"/>
+    <field labelOnTop="0" name="Curve"/>
+    <field labelOnTop="0" name="CutOffFlow"/>
+    <field labelOnTop="0" name="CutoffFlow"/>
+    <field labelOnTop="0" name="DivertLink"/>
+    <field labelOnTop="0" name="Elevation"/>
+    <field labelOnTop="0" name="InitDepth"/>
+    <field labelOnTop="0" name="MaxDepth"/>
+    <field labelOnTop="0" name="Name"/>
+    <field labelOnTop="0" name="SurDepth"/>
+    <field labelOnTop="0" name="Type"/>
+    <field labelOnTop="0" name="WeirCoeff"/>
+    <field labelOnTop="0" name="WeirMaxDep"/>
+    <field labelOnTop="0" name="WeirMinFlo"/>
+    <field labelOnTop="0" name="fid"/>
   </labelOnTop>
   <reuseLastValue>
     <field reuseLastValue="0" name="Aponded"/>
     <field reuseLastValue="0" name="Curve"/>
     <field reuseLastValue="0" name="CutOffFlow"/>
+    <field reuseLastValue="0" name="CutoffFlow"/>
     <field reuseLastValue="0" name="DivertLink"/>
     <field reuseLastValue="0" name="Elevation"/>
     <field reuseLastValue="0" name="InitDepth"/>
@@ -432,6 +456,7 @@ def my_form_open(dialog, layer, feature):
     <field reuseLastValue="0" name="WeirCoeff"/>
     <field reuseLastValue="0" name="WeirMaxDep"/>
     <field reuseLastValue="0" name="WeirMinFlo"/>
+    <field reuseLastValue="0" name="fid"/>
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>

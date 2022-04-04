@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.19
+version=0.20
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -20,10 +20,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.19 2022-03-30
-	- fix quoted strings
-	- improve import of non utf8 files
-	- update to swmm version 5.2
+changelog= 0.20 2022-04
+
 
 
 
