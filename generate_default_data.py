@@ -78,6 +78,8 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
         data_save_folder = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
         swmm_version_num = self.parameterAsEnum(parameters, self.SWMM_VERSION, context)
+        if parameters['SWMM_FOLDER'] == 'TEMPORARY_OUTPUT':
+            raise QgsProcessingException('The default data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
 
         if not os.path.exists(data_save_folder):
             os.makedirs(data_save_folder)
@@ -89,7 +91,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             read_file = os.path.join(data_path,'Test_5_2.inp')
             
         alg_params = {
-            'DATA_CRS': QgsCoordinateReferenceSystem('EPSG:25833'),
+            'DATA_CRS': QgsCoordinateReferenceSystem('epsg:25833'),
             'GEODATA_DRIVER': 1,  # GPKG
             'INP_FILE': read_file,
             'PREFIX': '',
@@ -103,7 +105,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         return 'GenerateDefaultFolder'
 
     def shortHelpString(self):
-        return self.tr(""" The tool generates default swmm data in a folder selected by the user.\n
+        return self.tr(""" The tool generates default swmm data in a folder selected by the user \n
         Choosing a folder name such as \"swmm_data\" is recommended.\n
         The default layers (geopackages) are added to the QGIS project.\n
         You can now edit layers and tables in the folder to create your first inp file with the second tool.
