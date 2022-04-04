@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from .g_s_defaults import def_sections_dict
 from .g_s_various_functions import check_columns, get_coords_from_geometry
 
@@ -85,3 +86,62 @@ def get_storages_from_inp(st_raw_line):
     st_line_adjusted = init_elems+type_elems+sur_elems
     return(st_line_adjusted)
 
+
+
+def get_inflows_from_table(inflows_raw,all_nodes):
+    '''
+    generates a dict for direct inflow and
+    dry weather inflow from tables in "inflows_raw"
+    '''
+    def compose_infl_dict(inflow,i,inf_type):
+        if inf_type == 'Direct':
+            i_dict = {'Name':i,
+               'Constituent':inflow['Constituent'],
+               'Time_Series':inflow['Time_Series'],
+               'Type':inflow['Type'],
+               'Mfactor':inflow['Units_Factor'],
+               'Sfactor':inflow['Scale_Factor'],
+               'Baseline':inflow['Baseline'],
+               'Pattern':inflow['Baseline_Pattern']}
+        else:
+            i_dict = {'Name':i,
+                      'Constituent':inflow['Constituent'],
+                      'Baseline':inflow['Average_Value'],
+                      'Patterns':' '.join([inflow['Time_Pattern1'],
+                                           inflow['Time_Pattern2'],
+                                           inflow['Time_Pattern3'],
+                                           inflow['Time_Pattern4']])}
+        return i_dict
+    for inflow_type in ['Direct','Dry_Weather']:
+        # check if all columns exits
+        inflow_df = inflows_raw[inflow_type]
+        if inflow_type == 'Direct':
+            inflow_cols_needed = list(def_sections_dict['INFLOWS'])
+        if inflow_type == 'Dry_Weather':
+            inflow_cols_needed = list(def_sections_dict['DWF'])
+        table_name = inflow_type+' table'
+        check_columns(table_name,
+                      inflow_cols_needed,
+                      inflow_df.columns)
+        # delete inflows for nodes which do no exist
+        inflow_df = inflow_df[inflow_df['Name'] != ";"]
+        inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
+        inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
+        inflow_df = inflow_df.fillna('""')
+        if inflow_df.empty: 
+            #if no flow of the current inflow_type and existing nodes is given, return empty dicts
+            if inflow_type == 'Direct':
+                inflow_dict={}
+            else:
+                dwf_dict={}
+        else:
+            # prepare a dict with node names and constituents
+            a_l = inflow_df['Name'].tolist()
+            b_l = inflow_df['Constituent'].tolist()
+            inflow_df['temp'] = [str(a)+'    '+str(b) for a,b in zip(a_l, b_l)]
+            inflow_df.set_index(keys=['temp'], inplace=True)
+            if inflow_type == 'Direct':
+                inflow_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
+            else: 
+                dwf_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
+    return dwf_dict, inflow_dict

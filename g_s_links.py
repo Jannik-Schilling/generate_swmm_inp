@@ -144,7 +144,7 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_layer_name = 'Weirs Layer'
     check_columns(weirs_layer_name,
                   all_weirs_cols,
-                  weirs_raw.keys())
+                  weirs_raw.columns)
     
     weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
                                          'Length':'Geom2',
@@ -187,7 +187,7 @@ def get_orifices_from_shapefile(orifices_raw):
     orifices_layer_name = 'Orifices Layer'
     check_columns(orifices_layer_name,
                   all_orifices_cols,
-                  orifices_raw.keys())
+                  orifices_raw.columns)
                                 
     orifices_df = orifices_raw.copy()
     orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')

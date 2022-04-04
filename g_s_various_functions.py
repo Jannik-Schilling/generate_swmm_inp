@@ -116,15 +116,16 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                     ts_df['Date'] = 'FILE'
                     ts_df['Time'] = ts_df['File_Name']
                     ts_df['Value'] = ''
-            else:
-                try:
-                    ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
-                except:
-                    ts_df['Date'] = [str(t) for t in ts_df['Date']]
-                try:
-                    ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
-                except:
-                    ts_df['Time'] = [str(t) for t in ts_df['Time']]
+                else:
+                    print(ts_df['Date'])
+                    try:
+                        ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
+                    except:
+                        ts_df['Date'] = [str(t) for t in ts_df['Date']]
+                    try:
+                        ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
+                    except:
+                        ts_df['Time'] = [str(t) for t in ts_df['Time']]
             ts_description= ts_df['Description'].fillna('').unique()[0]
             ts_format= ts_df['Format'].fillna('').unique()[0]
             ts_type = ts_df['Type'].unique()[0]
@@ -159,62 +160,18 @@ def get_raingages_from_timeseries(ts_dict, feedback):
     return (rg_dict)
                
     
-def get_inflows_from_table(inflows_raw,all_nodes):
-    '''
-    generates a dict for direct inflow and
-    dry weather inflow from tables in "inflows_raw"
-    '''
-    def compose_infl_dict(inflow,i,inf_type):
-        if inf_type == 'Direct':
-            i_dict = {'Name':i,
-               'Constituent':inflow['Constituent'],
-               'Time_Series':inflow['Time_Series'],
-               'Type':inflow['Type'],
-               'Mfactor':inflow['Units_Factor'],
-               'Sfactor':inflow['Scale_Factor'],
-               'Baseline':inflow['Baseline'],
-               'Pattern':inflow['Baseline_Pattern']}
-        else:
-            i_dict = {'Name':i,
-                      'Constituent':inflow['Constituent'],
-                      'Baseline':inflow['Average_Value'],
-                      'Patterns':' '.join([inflow['Time_Pattern1'],
-                                           inflow['Time_Pattern2'],
-                                           inflow['Time_Pattern3'],
-                                           inflow['Time_Pattern4']])}
-        return i_dict
-    for inflow_type in ['Direct','Dry_Weather']:
-        # delete inflows for nodes which do no exist
-        inflow_df = inflows_raw[inflow_type]
-        inflow_df = inflow_df[inflow_df['Name'] != ";"]
-        inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
-        inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
-        inflow_df = inflow_df.fillna('""')
-        if inflow_df.empty: 
-            #if no flow of the current inflow_type and existing nodes is given, return empty dicts
-            if inflow_type == 'Direct':
-                inflow_dict={}
-            else:
-                dwf_dict={}
-        else:
-            # prepare a dict with node names and constituents
-            a_l = inflow_df['Name'].tolist()
-            b_l = inflow_df['Constituent'].tolist()
-            inflow_df['temp'] = [str(a)+'    '+str(b) for a,b in zip(a_l, b_l)]
-            inflow_df.set_index(keys=['temp'], inplace=True)
-            if inflow_type == 'Direct':
-                inflow_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
-            else: 
-                dwf_dict = {i:compose_infl_dict(inflow_df.loc[i,:],i,inflow_type)  for i in inflow_df.index}
-    return dwf_dict, inflow_dict
-    
 
-    
+
 ## errors and feedback
 
 
 def check_columns(swmm_data_file, cols_expected, cols_in_df):
-    """checks if all columns are in a dataframe"""
+    """
+    checks if all columns are in a dataframe
+    :param str swmm_data_file
+    :param list cols_expected
+    :param list cols_in_df
+    """
     missing_cols = [x for x in cols_expected if x not in cols_in_df]
     if len(missing_cols) == 0:
         pass
