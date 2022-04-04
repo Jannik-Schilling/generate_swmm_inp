@@ -41,7 +41,11 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
-
+    xsections_df['Geom2'] = xsections_df['Geom2'].fillna('')
+    xsections_df['Geom3'] = xsections_df['Geom3'].fillna('')
+    xsections_df['Geom4'] = xsections_df['Geom4'].fillna('')
+    xsections_df['Barrels'] = xsections_df['Barrels'].fillna('1')
+    
     losses_df = conduits_raw[losses_cols].copy()
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
@@ -70,6 +74,7 @@ all_inl_type_cols = ['Length','Width', 'Heigth' ,'Shape', 'OpenFract','SplashVel
 def get_street_from_tables(streets_inlets_raw):
     streets_df = streets_inlets_raw['STREETS']
     inlets_usage_df = streets_inlets_raw['INLET_USAGE']
+    inlets_usage_df['Placement'] = inlets_usage_df['Placement'].fillna('')# for automatic placement
     #inlets
     inlets_raw = streets_inlets_raw['INLETS']
     inlets_df = inlets_raw.copy()

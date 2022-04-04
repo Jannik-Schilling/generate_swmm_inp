@@ -117,7 +117,6 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                     ts_df['Time'] = ts_df['File_Name']
                     ts_df['Value'] = ''
                 else:
-                    print(ts_df['Date'])
                     try:
                         ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
                     except:
