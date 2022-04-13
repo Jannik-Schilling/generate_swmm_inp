@@ -113,10 +113,10 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         return 'GenerateDefaultFolder'
 
     def shortHelpString(self):
-        return self.tr(""" The tool generates default swmm data in a folder selected by the user \n
+        return self.tr(""" The tool generates a default swmm data set in a folder selected by the user. The documentation file for the plugin will be copied to the same folder\n
         Choosing a folder name such as \"swmm_data\" is recommended.\n
         The default layers (geopackages) are added to the QGIS project.\n
-        You can now edit layers and tables in the folder to create your first inp file with the second tool.
+        You can edit layers and tables in the folder to create your first inp file with the second tool.
         """)
 
     def displayName(self):
