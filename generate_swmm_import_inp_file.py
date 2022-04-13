@@ -140,7 +140,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-        
+        if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
+            raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
+            
         try:
             for f in files_list:
                 f2 = os.path.join(default_data_path,f)
