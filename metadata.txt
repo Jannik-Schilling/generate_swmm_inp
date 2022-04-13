@@ -23,6 +23,7 @@ hasProcessingProvider=yes
 changelog= 0.20 2022-04
 	- reduce files in plugin
 	- update style
+	- update default files
 	- add documentation to default files import
 	- update error message for missung modules 
 
