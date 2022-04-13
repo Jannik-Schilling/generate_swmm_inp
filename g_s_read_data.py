@@ -86,7 +86,7 @@ def read_shapefiles_direct(file_outfalls,
 def read_data_from_table_direct(file, sheet=0): 
     '''reads curves or other tables from excel or csv'''
     filename, file_extension = os.path.splitext(file)
-    if file_extension == '.xlsx':
+    if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
         if sheet == 0:
             data_df = pd.read_excel(file,sheet_name = sheet)
         else:

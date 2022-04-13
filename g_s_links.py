@@ -41,7 +41,11 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET','Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM','Shp_Trnsct']
-
+    xsections_df['Geom2'] = xsections_df['Geom2'].fillna('')
+    xsections_df['Geom3'] = xsections_df['Geom3'].fillna('')
+    xsections_df['Geom4'] = xsections_df['Geom4'].fillna('')
+    xsections_df['Barrels'] = xsections_df['Barrels'].fillna('1')
+    
     losses_df = conduits_raw[losses_cols].copy()
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
@@ -70,6 +74,7 @@ all_inl_type_cols = ['Length','Width', 'Heigth' ,'Shape', 'OpenFract','SplashVel
 def get_street_from_tables(streets_inlets_raw):
     streets_df = streets_inlets_raw['STREETS']
     inlets_usage_df = streets_inlets_raw['INLET_USAGE']
+    inlets_usage_df['Placement'] = inlets_usage_df['Placement'].fillna('')# for automatic placement
     #inlets
     inlets_raw = streets_inlets_raw['INLETS']
     inlets_df = inlets_raw.copy()
@@ -144,7 +149,7 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_layer_name = 'Weirs Layer'
     check_columns(weirs_layer_name,
                   all_weirs_cols,
-                  weirs_raw.keys())
+                  weirs_raw.columns)
     
     weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
                                          'Length':'Geom2',
@@ -187,7 +192,7 @@ def get_orifices_from_shapefile(orifices_raw):
     orifices_layer_name = 'Orifices Layer'
     check_columns(orifices_layer_name,
                   all_orifices_cols,
-                  orifices_raw.keys())
+                  orifices_raw.columns)
                                 
     orifices_df = orifices_raw.copy()
     orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')

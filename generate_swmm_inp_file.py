@@ -453,6 +453,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
         if 'storages_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[STORAGES] section'))
+            # check columns is performed within get_storages_from_geodata for different storage types
             from .g_s_nodes import get_storages_from_geodata
             storage_df = get_storages_from_geodata(raw_data_dict['storages_raw'].copy())
             inp_dict['storage_df'] = storage_df
@@ -482,7 +483,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if len(all_nodes) > 0:
             if 'inflows' in raw_data_dict.keys():
                 feedback.setProgressText(self.tr('[INFLOWS] section'))
-                from .g_s_various_functions import get_inflows_from_table
+                from .g_s_nodes import get_inflows_from_table
                 dwf_dict , inflow_dict = get_inflows_from_table(raw_data_dict['inflows'],all_nodes)
                 if len(inflow_dict) > 0:
                     inp_dict['inflow_dict'] = inflow_dict

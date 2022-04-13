@@ -172,7 +172,7 @@ def_sections_dict={'TITLE':None,
                       'Barrels':'Double',
                       'Culvert':'String'},
          'STREETS':{'Name':'String',
-                    'CurbWidth':'Double',
+                    'RoadWidth':'Double',
                     'CurbHeigth':'Double',
                     'CurbSlope':'Double',
                     'RoadRoughn':'Double',
@@ -271,6 +271,5 @@ def_ogr_driver_dict = {'ESRI Shapefile':'shp',
                         'GPKG':'gpkg',
                         'GML':'gml', 
                         'GeoJSON':'geojson',
-                        'KML':'kml'}                    
+                        'KML':'kml'}
 def_ogr_driver_names = list(def_ogr_driver_dict.keys())
-    
