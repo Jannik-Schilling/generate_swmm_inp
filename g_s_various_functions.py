@@ -149,8 +149,16 @@ def get_raingages_from_timeseries(ts_dict, feedback):
             rg_interval = ('5') #set to ten minutes
             feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
         else:
-            timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M:%S')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M:%S')
-            rg_interval = str(timediff)[:-3]
+            try:
+                timediff = rg_i['TimeSeries']['Time'][1]-rg_i['TimeSeries']['Time'][0]
+                rg_interval = str(timediff)[:-3]
+            except:
+                try:
+                    timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M:%S')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M:%S')
+                    rg_interval = str(timediff)[:-3]
+                except:
+                    rg_interval = ('5') #set to ten minutes
+                    feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
         rg_dict[rg_i['Description']] = {'Name':rg_i['Description'],
                'Format':rg_i['Format'],
                'Interval': rg_interval,
