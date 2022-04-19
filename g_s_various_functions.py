@@ -111,20 +111,19 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     else:
         for i in ts_raw[name_col].unique():
             ts_df = ts_raw[ts_raw[name_col] == i]
-            if 'File_Name' in ts_raw.columns:
-                if not all(pd.isna(ts_df['File_Name'])): # external time series
+            if 'File_Name' in ts_raw.columns and not all(pd.isna(ts_df['File_Name'])): # external time series
                     ts_df['Date'] = 'FILE'
                     ts_df['Time'] = ts_df['File_Name']
                     ts_df['Value'] = ''
-                else:
-                    try:
-                        ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
-                    except:
-                        ts_df['Date'] = [str(t) for t in ts_df['Date']]
-                    try:
-                        ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
-                    except:
-                        ts_df['Time'] = [str(t) for t in ts_df['Time']]
+            else:
+                try:
+                    ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
+                except:
+                    ts_df['Date'] = [str(t) for t in ts_df['Date']]
+                try:
+                    ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
+                except:
+                    ts_df['Time'] = [str(t) for t in ts_df['Time']]
             ts_description= ts_df['Description'].fillna('').unique()[0]
             ts_format= ts_df['Format'].fillna('').unique()[0]
             ts_type = ts_df['Type'].unique()[0]
