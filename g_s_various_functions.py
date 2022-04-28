@@ -6,7 +6,7 @@ Created on Mon May 17 14:45:10 2021
 """
 import numpy as np
 import pandas as pd
-from qgis.core import QgsWkbTypes, QgsProcessingException
+from qgis.core import QgsWkbTypes, QgsProcessingException, QgsEditorWidgetSetup
 
 ## geometry functions
 def get_coords_from_geometry(df):
@@ -121,7 +121,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 except:
                     ts_df['Date'] = [str(t) for t in ts_df['Date']]
                 try:
-                    ts_df['Time'] = [t.strftime('%H:%M:%S') for t in ts_df['Time']]
+                    ts_df['Time'] = [t.strftime('%H:%M') for t in ts_df['Time']]
                 except:
                     ts_df['Time'] = [str(t) for t in ts_df['Time']]
             ts_description= ts_df['Description'].fillna('').unique()[0]
@@ -153,7 +153,7 @@ def get_raingages_from_timeseries(ts_dict, feedback):
                 rg_interval = str(timediff)[:-3]
             except:
                 try:
-                    timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M:%S')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M:%S')
+                    timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
                     rg_interval = str(timediff)[:-3]
                 except:
                     rg_interval = ('5') #set to ten minutes
@@ -185,3 +185,11 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
         err_message = err_message+'. For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)
+        
+        
+# input widgets
+def field_to_value_map(layer, field, list_values):
+    config = {'map' : list_values}
+    widget_setup = QgsEditorWidgetSetup('ValueMap',config)
+    field_idx = layer.fields().indexFromName(field)
+    layer.setEditorWidgetSetup(field_idx, widget_setup)

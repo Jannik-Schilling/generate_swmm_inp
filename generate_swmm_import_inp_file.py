@@ -47,6 +47,7 @@ from qgis.core import (NULL,
 from qgis.PyQt.QtCore import QVariant, QCoreApplication
 import shutil
 from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict
+from .g_s_various_functions import field_to_value_map
 pluginPath = os.path.dirname(__file__)
 
 
@@ -481,21 +482,24 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('generating patterns file ...'))
             feedback.setProgress(16)
             all_patterns = build_df_for_section('PATTERNS',dict_all_raw_vals)
-            occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(['HOURLY','DAILY','MONTHLY','WEEKEND']),[0,1]].set_index(0)
-            occuring_patterns_types.columns = ["PatternType"]
-            all_patterns = all_patterns.fillna(np.nan)
-            all_patterns = all_patterns.replace({'HOURLY':np.nan,'DAILY':np.nan,'MONTHLY':np.nan,'WEEKEND':np.nan})
-            def adjust_patterns_df(pattern_row):
-                """
-                reorders a list of the patterns section for the input file
-                :param list pattern_row
-                :return: pd.DataFrame
-                """
-                pattern_adjusted = [[pattern_row[0],i] for i in pattern_row[1:] if pd.notna(i)]
-                return (pd.DataFrame(pattern_adjusted, columns = ['Name','Factor']))
-            all_patterns = pd.concat([adjust_patterns_df(all_patterns.loc[i,:]) for i in all_patterns.index])
-            all_patterns = all_patterns.join(occuring_patterns_types, on = 'Name')
-            all_patterns = {k:v.iloc[:,:-1] for k, v in all_patterns.groupby("PatternType")}
+            if len(all_patterns) == 0:
+                all_patterns = dict()
+            else:
+                occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(['HOURLY','DAILY','MONTHLY','WEEKEND']),[0,1]].set_index(0)
+                occuring_patterns_types.columns = ["PatternType"]
+                all_patterns = all_patterns.fillna(np.nan)
+                all_patterns = all_patterns.replace({'HOURLY':np.nan,'DAILY':np.nan,'MONTHLY':np.nan,'WEEKEND':np.nan})
+                def adjust_patterns_df(pattern_row):
+                    """
+                    reorders a list of the patterns section for the input file
+                    :param list pattern_row
+                    :return: pd.DataFrame
+                    """
+                    pattern_adjusted = [[pattern_row[0],i] for i in pattern_row[1:] if pd.notna(i)]
+                    return (pd.DataFrame(pattern_adjusted, columns = ['Name','Factor']))
+                all_patterns = pd.concat([adjust_patterns_df(all_patterns.loc[i,:]) for i in all_patterns.index])
+                all_patterns = all_patterns.join(occuring_patterns_types, on = 'Name')
+                all_patterns = {k:v.iloc[:,:-1] for k, v in all_patterns.groupby("PatternType")}
         else:
             all_patterns = dict()
         def add_pattern_timesteps(pattern_type):
@@ -724,16 +728,22 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         
         
-        def add_layer_on_completion(folder_save, layer_name, style_file):
+        def add_layer_on_completion(folder_save, layer_name, style_file, widget_setup = None):
             """
             adds the current layer on completen to canvas
             :param str folder_save
             :param str layer_name
             :param str style_file: file name of the qml file
+            :param dict widget_setup: definititons for field widgets
             """
             layer_filename = layer_name+'.'+geodata_driver_extension
             vlayer = QgsVectorLayer(os.path.join(folder_save, layer_filename), layer_name, "ogr")
             vlayer.loadNamedStyle(os.path.join(folder_save,style_file))
+            if widget_setup is None:
+                pass
+            else:
+                for k,v in widget_setup.items():
+                    field_to_value_map(vlayer, k, v)
             context.temporaryLayerStore().addMapLayer(vlayer)
             context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
             
@@ -893,7 +903,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
                                                      'LineString',
                                                      conduits_layer_name,
                                                      layer_fields = all_conduits_fields)
-            add_layer_on_completion(folder_save, conduits_layer_name, 'style_conduits.qml')
+            from .g_s_links import conduit_field_vals
+            add_layer_on_completion(folder_save,
+                                    conduits_layer_name,
+                                    'style_conduits.qml',
+                                    conduit_field_vals)
         
         
             # transects in hec2 format
