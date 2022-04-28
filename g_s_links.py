@@ -139,6 +139,7 @@ def get_pumps_from_shapefile(pumps_raw):
     pumps_df = pumps_df.reset_index(drop=True)
     return pumps_df
 
+pump_field_vals = {'Status':{'ON':'ON','OFF':'OFF'}}
 
 
 def get_weirs_from_shapefile(weirs_raw):
@@ -269,3 +270,31 @@ def get_transects_from_table(transects_raw):
         return tr_string
     transects_string_list = [write_transect_lines(x) for x in tr_data['TransectName']]
     return transects_string_list
+    
+    
+# link widgets
+conduit_field_vals = {'FlapGate':{'NO':'NO','YES':'YES'},
+                      'Shape':{'ARCH':'ARCH',
+                               'BASKETHANDLE':'BASKETHANDLE',
+                               'CATENARY':'CATENARY',
+                               'CIRCULAR':'CIRCULAR',
+                               'CUSTOM':'CUSTOM',
+                               'EGG':'EGG',
+                               'FILLED_CIRCULAR':'FILLED_CIRCULAR',
+                               'FORCE_MAIN':'FORCE_MAIN',
+                               'GOTHIC':'GOTHIC',
+                               'HORIZ_ELLIPSE':'HORIZ_ELLIPSE',
+                               'HORSESHOE':'HORSESHOE',
+                               'IRREGULAR':'IRREGULAR',
+                               'MODBASKETHANDLE':'MODBASKETHANDLE',
+                               'RECTANGULAR':'RECTANGULAR',
+                               'PARABOLIC':'PARABOLIC',
+                               'POWER':'POWER',
+                               'RECT_CLOSED':'RECT_CLOSED',
+                               'RECT_ROUND':'RECT_ROUND',
+                               'RECT_TRIANGULAR':'RECT_TRIANGULAR',
+                               'SEMICIRCULAR':'SEMICIRCULAR',
+                               'SEMIELLIPTICAL':'SEMIELLIPTICAL',
+                               'STREET':'STREET',
+                               'TRAPEZOIDAL':'TRAPEZOIDAL',
+                               'VERT_ELLIPSE':'VERT_ELLIPSE'}}

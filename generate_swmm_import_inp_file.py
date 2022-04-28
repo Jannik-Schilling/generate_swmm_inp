@@ -771,7 +771,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STORAGE' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating storages file ...'))
             feedback.setProgress(45)
-            from .g_s_nodes import get_storages_from_inp
+            from .g_s_nodes import get_storages_from_inp, storage_field_vals
             st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
             all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
             all_storages = all_storages.join(all_geoms, on = 'Name')
@@ -781,7 +781,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if result_prefix != '':
                 storages_layer_name = result_prefix+'_'+storages_layer_name
             storages_layer = create_layer_from_table(all_storages,'STORAGE','Point',storages_layer_name)
-            add_layer_on_completion(folder_save, storages_layer_name, 'style_storages.qml')
+            add_layer_on_completion(folder_save,
+                                    storages_layer_name,
+                                    'style_storages.qml',
+                                    storage_field_vals)
         
         """ outfalls section """
         if 'OUTFALLS' in dict_all_raw_vals.keys():
@@ -800,7 +803,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if result_prefix != '':
                 outfalls_layer_name = result_prefix+'_'+outfalls_layer_name
             outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point',outfalls_layer_name)
-            add_layer_on_completion(folder_save, outfalls_layer_name, 'style_outfalls.qml')
+            from .g_s_nodes import outfall_field_vals
+            add_layer_on_completion(folder_save,
+                                    outfalls_layer_name,
+                                    'style_outfalls.qml',
+                                    outfall_field_vals)
         
         """ dividers section """
         if 'DIVIDERS' in dict_all_raw_vals.keys():
@@ -863,8 +870,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'XSECTIONS' in dict_all_raw_vals.keys():
             all_xsections = build_df_for_section('XSECTIONS', dict_all_raw_vals)
             all_xsections['Shp_Trnsct'] = np.nan # For CUSTOM, IRREGULAR and STREET Shapes
-            if any(all_xsections['Shape'] == 'STREET'):
-                feedback.setProgressText(self.tr('Warning: import of streets data is not implemented yet'))
             all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'STREET','Geom1']
             all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Geom1'] = np.nan
             all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR','Geom1']
@@ -1012,7 +1017,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if result_prefix != '':
                 pumps_layer_name = result_prefix+'_'+pumps_layer_name
             pumps_layer = create_layer_from_table(all_pumps,'PUMPS','LineString',pumps_layer_name)
-            add_layer_on_completion(folder_save, pumps_layer_name,'style_pumps.qml')
+            from .g_s_links import pump_field_vals
+            add_layer_on_completion(folder_save, pumps_layer_name,'style_pumps.qml', pump_field_vals)
 
         """weirs section"""
         if 'WEIRS' in dict_all_raw_vals.keys():

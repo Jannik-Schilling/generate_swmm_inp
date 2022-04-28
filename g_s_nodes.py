@@ -14,6 +14,13 @@ def get_outfalls_from_shapefile(outfalls_raw):
     outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
     return outfalls_raw
 
+outfall_field_vals = {'FlapGate':{'NO':'NO','YES':'YES'},
+                      'Type':{'FIXED':'FIXED',
+                              'FREE':'FREE',
+                              'NORMAL':'NORMAL',
+                              'TIMESERIES':'TIMESERIES',
+                              'TIDAL':'TIDAL'}}
+
 
 # Storages
 st_types_def = {'FUNCTIONAL':['Coeff',
@@ -32,7 +39,7 @@ st_types_def = {'FUNCTIONAL':['Coeff',
             'CYLINDRICAL':['MajorAxis',
                           'MinorAxis']}
 all_st_type_cols = ['Curve', 'Coeff' ,'Exponent', 'Constant','MajorAxis' , 'MinorAxis', 'SideSlope','SurfHeight']
-
+storage_field_vals = {'Type':{k:k for k in st_types_def.keys()}}
 
 def get_storages_from_geodata(storages_raw):
     '''creates a df for storages from raw storage data'''
@@ -63,9 +70,6 @@ def get_storages_from_geodata(storages_raw):
     storage_df = storage_df.drop(columns=st_types_needed)
     return storage_df
 
-
-
-
 def get_storages_from_inp(st_raw_line):
     '''adjusts '''
     init_elems = st_raw_line[:5]
@@ -85,9 +89,11 @@ def get_storages_from_inp(st_raw_line):
     # resulting line
     st_line_adjusted = init_elems+type_elems+sur_elems
     return(st_line_adjusted)
+    
 
 
 
+#inflows
 def get_inflows_from_table(inflows_raw,all_nodes):
     '''
     generates a dict for direct inflow and
