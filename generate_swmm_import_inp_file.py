@@ -1087,7 +1087,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'SUBCATCHMENTS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating subcatchments file ...'))
             feedback.setProgress(90)
-            from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
+            from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df, subc_field_vals
             all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
             all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
             all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
@@ -1108,8 +1108,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 subc_layer_name = result_prefix+'_'+subc_layer_name
-            subcatchments_layer = create_layer_from_table(all_subcatchments,'SUBCATCHMENTS','Polygon',subc_layer_name, all_subcatchments_fields)
-            add_layer_on_completion(folder_save, subc_layer_name, 'style_catchments.qml')
+            subcatchments_layer = create_layer_from_table(all_subcatchments,
+                                                          'SUBCATCHMENTS',
+                                                          'Polygon',
+                                                          subc_layer_name,
+                                                          all_subcatchments_fields)
+            add_layer_on_completion(folder_save,
+                                    subc_layer_name,
+                                    'style_catchments.qml',
+                                    subc_field_vals)
         feedback.setProgress(99)
         feedback.setProgressText(self.tr('all data was saved in '+str(folder_save)))
         return {}

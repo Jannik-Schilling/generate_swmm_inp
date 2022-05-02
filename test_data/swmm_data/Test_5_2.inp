@@ -61,7 +61,7 @@ S_2              RG_1             J_9              2.063503388798237 43.0     87
 ;;Subcatchment   N-Imperv   N-Perv     S-Imperv   S-Perv     PctZero    RouteTo    PctRouted 
 ;;-------------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 S_1              0.023      0.15       2.0        3.0        0.0        OUTLET    
-S_2              0.01       0.087      2.1        0.1        1.0        IMPERV     100.0     
+S_2              0.01       0.087      2.1        0.1        1.0        PERVIOUS     100.0     
 
 [INFILTRATION]
 ;;Subcatchment   Param1     Param2     Param3     Param4     Param5    

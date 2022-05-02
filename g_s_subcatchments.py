@@ -133,6 +133,17 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
     all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on = 'Name')
     return all_subcatchments, def_infiltr_dtypes
 
+subc_field_vals = {'RouteTo':{'OUTLET':'OUTLET',
+                              'PERVIOUS':'PERVIOUS',
+                              'IMPERVIOUS':'IMPERVIOUS'},
+                   'InfMethod':{'HORTON':'HORTON',
+                                'MODIFIED_HORTON':'MODIFIED_HORTON',
+                                'GREEN_AMPT':'GREEN_AMPT',
+                                'MODIFIED_GREEN_AMPT':'MODIFIED_GREEN_AMPT',
+                                'CURVE_NUMBER':'CURVE_NUMBER'}
+                  }
+
+
 def rg_position(polyg_dict):
     all_yx = pd.concat([v for k,v in polyg_dict.items()])
     x_mean = np.mean(all_yx['x'])+10
