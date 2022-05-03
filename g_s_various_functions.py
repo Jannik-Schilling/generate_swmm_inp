@@ -28,6 +28,7 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from qgis.core import QgsWkbTypes, QgsProcessingException, QgsEditorWidgetSetup
 
 ## geometry functions
@@ -145,7 +146,16 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 try:
                     ts_df['Time'] = [t.strftime('%H:%M') for t in ts_df['Time']]
                 except:
-                    ts_df['Time'] = [str(t) for t in ts_df['Time']]
+                    # if string or numeric
+                    str_formats = ['%H:%M:%S', '%H:%M', '%H']
+                    for st in str_formats:
+                        try:
+                            ts_df['Time'] = [datetime.strptime(str(t),st) for t in ts_df['Time']]
+                            ts_df['Time'] = [t.strftime('%H:%M') for t in ts_df['Time']]
+                        except:
+                            ts_df['Time'] = [str(t) for t in ts_df['Time']]
+                        else:
+                            break
             ts_description= ts_df['Description'].fillna('').unique()[0]
             ts_format= ts_df['Format'].fillna('').unique()[0]
             ts_type = ts_df['Type'].unique()[0]
@@ -160,26 +170,21 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
 
 def get_raingages_from_timeseries(ts_dict, feedback):
     """generates a raingages dict for the input file from timeseries dict"""
-    from datetime import datetime
     rg_dict= {}
     rg_list = [k for k in ts_dict.keys() if (ts_dict[k]['Type'] == 'rain_gage')]
     for rg in rg_list:
         rg_i = ts_dict[rg]
         rg_i['TimeSeries'] = rg_i['TimeSeries'].reset_index(drop=True)
         if len(rg_i['TimeSeries']) == 1: #only one value or external time series
-            rg_interval = ('5') #set to ten minutes
-            feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
+            rg_interval = ('5') #set to five minutes
+            feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined (is external) and was set by default to 5 Minutes. Please check in SWMM.')
         else:
             try:
-                timediff = rg_i['TimeSeries']['Time'][1]-rg_i['TimeSeries']['Time'][0]
+                timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
                 rg_interval = str(timediff)[:-3]
             except:
-                try:
-                    timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
-                    rg_interval = str(timediff)[:-3]
-                except:
-                    rg_interval = ('5') #set to ten minutes
-                    feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
+                rg_interval = ('5') #set to ten minutes
+                feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
         rg_dict[rg_i['Description']] = {'Name':rg_i['Description'],
                'Format':rg_i['Format'],
                'Interval': rg_interval,
