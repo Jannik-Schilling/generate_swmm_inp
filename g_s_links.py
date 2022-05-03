@@ -26,10 +26,19 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import pandas as pd
 import numpy as np
+from enum import Enum
 from qgis.core import QgsProcessingException
 from .g_s_defaults import def_sections_dict
 from .g_s_various_functions import check_columns
 
+
+# FlapGate
+class SwmmFlapGate(Enum):
+    """class for FlapGate definition in Links"""
+    YES = 'YES'
+    NO = 'NO'
+
+# conduits
 def get_conduits_from_shapefile(conduits_raw):
     """
     prepares conduits data for writing an input file
@@ -72,22 +81,43 @@ def get_conduits_from_shapefile(conduits_raw):
     losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
+# conduit widgets
+conduit_field_vals = {
+    'FlapGate':{t.value:t.value for t in SwmmFlapGate},
+    'Shape':{
+        'ARCH':'ARCH',
+        'BASKETHANDLE':'BASKETHANDLE',
+        'CATENARY':'CATENARY',
+        'CIRCULAR':'CIRCULAR',
+        'CUSTOM':'CUSTOM',
+        'EGG':'EGG',
+        'FILLED_CIRCULAR':'FILLED_CIRCULAR',
+        'FORCE_MAIN':'FORCE_MAIN',
+        'GOTHIC':'GOTHIC',
+        'HORIZ_ELLIPSE':'HORIZ_ELLIPSE',
+        'HORSESHOE':'HORSESHOE',
+        'IRREGULAR':'IRREGULAR',
+        'MODBASKETHANDLE':'MODBASKETHANDLE',
+        'RECTANGULAR':'RECTANGULAR',
+        'PARABOLIC':'PARABOLIC',
+        'POWER':'POWER',
+        'RECT_CLOSED':'RECT_CLOSED',
+        'RECT_ROUND':'RECT_ROUND',
+        'RECT_TRIANGULAR':'RECT_TRIANGULAR',
+        'SEMICIRCULAR':'SEMICIRCULAR',
+        'SEMIELLIPTICAL':'SEMIELLIPTICAL',
+        'STREET':'STREET',
+        'TRAPEZOIDAL':'TRAPEZOIDAL',
+        'VERT_ELLIPSE':'VERT_ELLIPSE'}}
 
 # Inlets
-inl_types_def = {'GRATE':['Length',
-                          'Width',
-                          'Shape'],
-            'CUSTOM':['Shape'],
-            'CURB':['Length',
-                    'Heigth',
-                    'Shape'],
-            'SLOTTED':['Length',
-                       'Width'],
-            'DROP_GRATE':['Length',
-                       'Width',
-                       'Shape'],
-            'DROP_CURB':['Length',
-                          'Heigth']}
+inl_types_def = {
+    'GRATE':['Length','Width','Shape'],
+    'CUSTOM':['Shape'],
+    'CURB':['Length','Heigth','Shape'],
+    'SLOTTED':['Length','Width'],
+    'DROP_GRATE':['Length','Width','Shape'],
+    'DROP_CURB':['Length','Heigth']}
 all_inl_type_cols = ['Length','Width', 'Heigth' ,'Shape', 'OpenFract','SplashVel']
 
 def get_street_from_tables(streets_inlets_raw):
@@ -140,7 +170,7 @@ def del_first_last_vt(link):
     """
     return link[1:-1]
  
-
+# pumps
 def get_pumps_from_shapefile(pumps_raw):
     """prepares pumps data for writing an input file"""
     # check if all columns exist
@@ -158,8 +188,25 @@ def get_pumps_from_shapefile(pumps_raw):
     pumps_df = pumps_df.reset_index(drop=True)
     return pumps_df
 
-pump_field_vals = {'Status':{'ON':'ON','OFF':'OFF'}}
+pump_field_vals = {
+    'Status':{
+        'ON':'ON',
+        'OFF':'OFF'}}
 
+
+# weirs
+weirs_shape_dict = {'TRANSVERSE':'RECT_OPEN',
+     'SIDEFLOW':'RECT_OPEN',
+     'V-NOTCH':'TRIANGULAR',
+     'TRAPEZOIDAL':'TRAPEZOIDAL',
+     'ROADWAY':'RECT_OPEN'}
+
+weir_field_vals = {
+    'Type':{k:k for k in weirs_shape_dict.keys()},
+    'FlapGate':{t.value:t.value for t in SwmmFlapGate},
+    'Surcharge':{
+        'YES':'YES',
+        'NO':'NO'}}
 
 def get_weirs_from_shapefile(weirs_raw):
     """prepares weirs data for writing an input file"""
@@ -182,12 +229,7 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_df['EndContrac'] = weirs_df['EndContrac'].fillna('0')
     weirs_df['EndCoeff'] = weirs_df['EndCoeff'].fillna('0')
     weirs_df=weirs_df[weirs_cols]
-    shape_dict = {'TRANSVERSE':'RECT_OPEN',
-     'SIDEFLOW':'RECT_OPEN',
-     'V-NOTCH':'TRIANGULAR',
-     'TRAPEZOIDAL':'TRAPEZOIDAL',
-     'ROADWAY':'RECT_OPEN'}
-    weirs_raw['Shape'] = [shape_dict[x] for x in weirs_raw['Type']]
+    weirs_raw['Shape'] = [weirs_shape_dict[x] for x in weirs_raw['Type']]
     weirs_raw['Geom3'] = weirs_raw['Geom3'].fillna('0')
     weirs_raw['Geom4'] = weirs_raw['Geom3']
     xsections_df = weirs_raw[['Name',
@@ -200,7 +242,7 @@ def get_weirs_from_shapefile(weirs_raw):
     xsections_df['Culvert'] = ''
     return weirs_df, xsections_df
 
-
+# orifices
 def get_orifices_from_shapefile(orifices_raw):
     """
     prepares orifices data for writing an input file
@@ -231,7 +273,17 @@ def get_orifices_from_shapefile(orifices_raw):
     xsections_df['Barrels'] = ''
     xsections_df['Culvert'] = ''
     return orifices_df, xsections_df
+    
+orifice_field_vals = {
+    'Type':{
+        'SIDE':'SIDE',
+        'BOTTOM':'BOTTOM'},
+    'FlapGate':{t.value:t.value for t in SwmmFlapGate},
+    'Shape':{
+        'CIRCULAR':'CIRCULAR',
+        'RECT_CLOSED':'RECT_CLOSED'}}
 
+# outlets
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
     def get_outl_curve(outl_row):
@@ -261,7 +313,15 @@ def get_outlets_from_shapefile(outlets_raw):
                              'FlapGate']]
     return outlets_df 
 
-
+outlet_field_vals = {
+    'FlapGate':{t.value:t.value for t in SwmmFlapGate},
+    'RateCurve':{
+        'FUNCTIONAL/DEPTH':'FUNCTIONAL/DEPTH',
+        'FUNCTIONAL/HEAD':'FUNCTIONAL/HEAD',
+        'TABULAR/DEPTH':'TABULAR/DEPTH',
+        'TABULAR/HEAD':'TABULAR/HEAD'}}
+        
+        
 def get_transects_from_table(transects_raw):
     """writes strings for transects"""
     tr_data = transects_raw['Data']
@@ -291,29 +351,3 @@ def get_transects_from_table(transects_raw):
     return transects_string_list
     
     
-# link widgets
-conduit_field_vals = {'FlapGate':{'NO':'NO','YES':'YES'},
-                      'Shape':{'ARCH':'ARCH',
-                               'BASKETHANDLE':'BASKETHANDLE',
-                               'CATENARY':'CATENARY',
-                               'CIRCULAR':'CIRCULAR',
-                               'CUSTOM':'CUSTOM',
-                               'EGG':'EGG',
-                               'FILLED_CIRCULAR':'FILLED_CIRCULAR',
-                               'FORCE_MAIN':'FORCE_MAIN',
-                               'GOTHIC':'GOTHIC',
-                               'HORIZ_ELLIPSE':'HORIZ_ELLIPSE',
-                               'HORSESHOE':'HORSESHOE',
-                               'IRREGULAR':'IRREGULAR',
-                               'MODBASKETHANDLE':'MODBASKETHANDLE',
-                               'RECTANGULAR':'RECTANGULAR',
-                               'PARABOLIC':'PARABOLIC',
-                               'POWER':'POWER',
-                               'RECT_CLOSED':'RECT_CLOSED',
-                               'RECT_ROUND':'RECT_ROUND',
-                               'RECT_TRIANGULAR':'RECT_TRIANGULAR',
-                               'SEMICIRCULAR':'SEMICIRCULAR',
-                               'SEMIELLIPTICAL':'SEMIELLIPTICAL',
-                               'STREET':'STREET',
-                               'TRAPEZOIDAL':'TRAPEZOIDAL',
-                               'VERT_ELLIPSE':'VERT_ELLIPSE'}}

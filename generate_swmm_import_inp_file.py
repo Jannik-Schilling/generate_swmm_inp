@@ -827,8 +827,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 dividers_layer_name = result_prefix+'_'+dividers_layer_name
-            dividers_layer = create_layer_from_table(all_dividers,'DIVIDERS','Point',dividers_layer_name)
-            add_layer_on_completion(folder_save, dividers_layer_name, 'style_dividers.qml')
+            from .g_s_nodes import divider_field_vals
+            dividers_layer = create_layer_from_table(
+                all_dividers,'DIVIDERS','Point',
+                dividers_layer_name)
+            add_layer_on_completion(
+                folder_save,
+                dividers_layer_name,
+                'style_dividers.qml',
+                divider_field_vals)
 
         """LINES"""
         feedback.setProgressText(self.tr('extracting vertices ...'))
@@ -903,16 +910,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 conduits_layer_name = result_prefix+'_'+conduits_layer_name
-            conduits_layer = create_layer_from_table(all_conduits,
-                                                     'CONDUITS',
-                                                     'LineString',
-                                                     conduits_layer_name,
-                                                     layer_fields = all_conduits_fields)
+            conduits_layer = create_layer_from_table(
+                all_conduits,
+                'CONDUITS',
+                'LineString',
+                conduits_layer_name,
+                layer_fields = all_conduits_fields)
             from .g_s_links import conduit_field_vals
-            add_layer_on_completion(folder_save,
-                                    conduits_layer_name,
-                                    'style_conduits.qml',
-                                    conduit_field_vals)
+            add_layer_on_completion(
+                folder_save,
+                conduits_layer_name,
+                'style_conduits.qml',
+                conduit_field_vals)
         
         
             # transects in hec2 format
@@ -1001,8 +1010,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 outlets_layer_name = result_prefix+'_'+outlets_layer_name
-            outlets_layer = create_layer_from_table(all_outlets,'OUTLETS','LineString',outlets_layer_name)
-            add_layer_on_completion(folder_save, outlets_layer_name, 'style_regulators.qml')
+            outlets_layer = create_layer_from_table(
+                all_outlets,
+                'OUTLETS',
+                'LineString',
+                outlets_layer_name)
+            from .g_s_links import outlet_field_vals
+            add_layer_on_completion(
+                folder_save,
+                outlets_layer_name,
+                'style_regulators.qml',
+                outlet_field_vals)
 
         """pumps section """
         if 'PUMPS' in dict_all_raw_vals.keys():
@@ -1016,9 +1034,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 pumps_layer_name = result_prefix+'_'+pumps_layer_name
-            pumps_layer = create_layer_from_table(all_pumps,'PUMPS','LineString',pumps_layer_name)
+            pumps_layer = create_layer_from_table(
+                all_pumps,
+                'PUMPS',
+                'LineString',
+                pumps_layer_name)
             from .g_s_links import pump_field_vals
-            add_layer_on_completion(folder_save, pumps_layer_name,'style_pumps.qml', pump_field_vals)
+            add_layer_on_completion(
+                folder_save,
+                pumps_layer_name,
+                'style_pumps.qml',
+                pump_field_vals)
 
         """weirs section"""
         if 'WEIRS' in dict_all_raw_vals.keys():
@@ -1037,8 +1063,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 weirs_layer_name = result_prefix+'_'+weirs_layer_name
-            weirs_layer = create_layer_from_table(all_weirs,'WEIRS','LineString',weirs_layer_name,all_weirs_fields)
-            add_layer_on_completion(folder_save, weirs_layer_name, 'style_regulators.qml')
+            weirs_layer = create_layer_from_table(
+                all_weirs,
+                'WEIRS',
+                'LineString',
+                weirs_layer_name,
+                all_weirs_fields)
+            from .g_s_links import weir_field_vals
+            add_layer_on_completion(
+                folder_save,
+                weirs_layer_name,
+                'style_regulators.qml',
+                weir_field_vals)
             
             
         """ORIFICES section"""
@@ -1058,8 +1094,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 orifices_layer_name = result_prefix+'_'+orifices_layer_name
-            orifices_layer = create_layer_from_table(all_orifices,'ORIFICES','LineString',orifices_layer_name,all_orifices_fields)
-            add_layer_on_completion(folder_save, orifices_layer_name, 'style_regulators.qml')
+            orifices_layer = create_layer_from_table(
+                all_orifices,
+                'ORIFICES',
+                'LineString',
+                orifices_layer_name,
+                all_orifices_fields)
+            from .g_s_links import orifice_field_vals
+            add_layer_on_completion(
+                folder_save,
+                orifices_layer_name,
+                'style_regulators.qml',
+                orifice_field_vals)
 
         """ POLYGONS """
         if 'Polygons' in dict_all_raw_vals.keys():
@@ -1108,15 +1154,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
             # add prefix to layer name if available
             if result_prefix != '':
                 subc_layer_name = result_prefix+'_'+subc_layer_name
-            subcatchments_layer = create_layer_from_table(all_subcatchments,
-                                                          'SUBCATCHMENTS',
-                                                          'Polygon',
-                                                          subc_layer_name,
-                                                          all_subcatchments_fields)
-            add_layer_on_completion(folder_save,
-                                    subc_layer_name,
-                                    'style_catchments.qml',
-                                    subc_field_vals)
+            subcatchments_layer = create_layer_from_table(
+                all_subcatchments,
+                'SUBCATCHMENTS',
+                'Polygon',
+                subc_layer_name,
+                all_subcatchments_fields)
+            add_layer_on_completion(
+                folder_save,
+                subc_layer_name,
+                'style_catchments.qml',
+                subc_field_vals)
         feedback.setProgress(99)
         feedback.setProgressText(self.tr('all data was saved in '+str(folder_save)))
         return {}
