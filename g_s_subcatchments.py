@@ -34,9 +34,9 @@ from .g_s_defaults import def_sections_dict, def_infiltr_dtypes
 
 #subcatchments_df = raw_data_dict['subcatchments_raw']
 def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method):
-    '''
+    """
     reads subcatchment shapefile
-    '''
+    """
     # check if all columns exist
     subc_cols = list(def_sections_dict['SUBCATCHMENTS'].keys())
     suba_cols = list(def_sections_dict['SUBAREAS'].keys())
@@ -86,6 +86,7 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
     return(subcatchments_df)
 
 def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all_infiltr, main_infiltration_method):
+    """creates pd.Dataframes from lists of subcatchment attributes (from an inp file)"""
     def_infiltr_dtypes = {'InfMethod':'String',
                       'SuctHead':'Double',
                       'Conductiv':'Double',
@@ -147,6 +148,7 @@ subc_field_vals = {
 
 
 def rg_position(polyg_dict):
+    """sets the position of a rain gauge based on all subcatchment polygons"""
     all_yx = pd.concat([v for k,v in polyg_dict.items()])
     x_mean = np.mean(all_yx['x'])+10
     y_mean = np.mean(all_yx['y'])+10

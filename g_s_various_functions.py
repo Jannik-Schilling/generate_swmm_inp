@@ -33,7 +33,10 @@ from qgis.core import QgsWkbTypes, QgsProcessingException, QgsEditorWidgetSetup
 
 ## geometry functions
 def get_coords_from_geometry(df):
-    """extracts coords from any gpd.geodataframe"""
+    """
+    extracts coords from any gpd.geodataframe
+    param pd.DataFrame df
+    """
     def extract_xy_from_simple_line(line_simple):
         """extracts x and y coordinates from a LineString"""
         xy_arr = np.dstack((p.x(),p.y()) for p in line_simple)[0]
@@ -68,7 +71,7 @@ def get_coords_from_geometry(df):
 def get_point_from_x_y(sr):
     """
     converts x and y coordinates from a pd.Series to a QgsPoint geometry
-    :param pd.Series sr)
+    :param pd.Series sr
     """
     from qgis.core import QgsGeometry
     x_coord = sr['X_Coord']
@@ -82,7 +85,11 @@ def get_point_from_x_y(sr):
 
 ## functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
-    """generates curve data for the input file from tables (curve_raw)"""
+    """
+    generates curve data for the input file from tables (curve_raw)
+    param pd.DataFrame curve_raw
+    param str name_col
+    """
     from .g_s_defaults import def_curve_types
     curve_dict = dict()
     for curve_type in def_curve_types:
@@ -104,7 +111,11 @@ def get_curves_from_table(curves_raw, name_col):
     
 
 def get_patterns_from_table(patterns_raw, name_col):
-    """generates a pattern dict for the input file from tables (patterns_raw)"""
+    """
+    generates a pattern dict for the input file from tables (patterns_raw)
+    param pd.DataFrame patterns_raw
+    param str name_col
+    """
     pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
     pattern_dict = {}
     for pattern_type in pattern_types:
@@ -124,7 +135,12 @@ def get_patterns_from_table(patterns_raw, name_col):
     
     
 def get_timeseries_from_table(ts_raw, name_col, feedback):
-    """generates a timeseries dict for the input file from tables (ts_raw)"""
+    """
+    enerates a timeseries dict for the input file from tables (ts_raw)
+    param pd.DataFrame ts_raw
+    param str name_col
+    param QgsProcessingFeedback feedback
+    """
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
     if not 'File_Name' in ts_raw.columns:
@@ -169,7 +185,11 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     
 
 def get_raingages_from_timeseries(ts_dict, feedback):
-    """generates a raingages dict for the input file from timeseries dict"""
+    """
+    enerates a raingages dict for the input file from timeseries dict
+    param dict ts_dict
+    param QgsProcessingFeedback feedback
+    """
     rg_dict= {}
     rg_list = [k for k in ts_dict.keys() if (ts_dict[k]['Type'] == 'rain_gage')]
     for rg in rg_list:
@@ -216,6 +236,12 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         
 # input widgets
 def field_to_value_map(layer, field, list_values):
+    """
+    creates a drop down menue in QGIS layers
+    param str layer 
+    param str field
+    param list list_values
+    """
     config = {'map' : list_values}
     widget_setup = QgsEditorWidgetSetup('ValueMap',config)
     field_idx = layer.fields().indexFromName(field)

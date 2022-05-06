@@ -131,6 +131,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         return ImportInpFile()
 
     def processAlgorithm(self, parameters, context, feedback):
+        
+        #transfer of parameters
         folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
         readfile = self.parameterAsString(parameters, self.INP_FILE, context)
         result_prefix = self.parameterAsString(parameters, self.PREFIX, context)
@@ -141,6 +143,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+        
+        #check if the selected folder is temporary
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
             raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
             
@@ -153,7 +157,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         except:
             raise QgsProcessingException(self.tr('Could not add style files to chosen folder'))
         
-        '''reading input text file'''
+        #reading input text file
         feedback.setProgressText(self.tr('reading inp ...'))
         feedback.setProgress(3)            
         encodings = ['utf-8', 'windows-1250', 'windows-1252'] # add more
