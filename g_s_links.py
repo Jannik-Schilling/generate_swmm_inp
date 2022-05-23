@@ -50,7 +50,7 @@ def get_conduits_from_shapefile(conduits_raw):
     xsections_cols =  list(def_sections_dict['XSECTIONS'].keys())
     losses_cols = list(def_sections_dict['LOSSES'].keys())
     cond_layer_name = 'Conduits Layer'
-    all_conduits_cols = conduits_cols + conduits_cols +losses_cols
+    all_conduits_cols = conduits_cols + xsections_cols +losses_cols
     check_columns(cond_layer_name,
                   all_conduits_cols,
                   conduits_raw.keys())
