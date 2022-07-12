@@ -103,8 +103,6 @@ def read_shapefiles_direct(file_outfalls,
     data_dict = {key_i:del_none_bool(data_dict[key_i]) for key_i in data_dict.keys()}
     return data_dict
 
-
-
     
 def read_data_from_table_direct(file, sheet=0): 
     '''reads curves or other tables from excel or csv'''
@@ -127,3 +125,43 @@ def read_data_from_table_direct(file, sheet=0):
     if file_extension == '.csv':
         data_df = pd.read_csv(file)
     return data_df
+    
+    
+""" Excel files """
+def dict_to_excel(data_dict, save_name, feedback, res_prefix = '', desired_format = None):
+    """
+    writes an excel file from a data_dict
+    :param dict data_dict
+    :param str save_name
+    :param str res_prefix: prefix for file name
+    """
+    if res_prefix != '':
+        save_name = res_prefix+'_'+save_name
+    if desired_format is not None:
+        try:
+            save_name = save_name+desired_format
+            with pd.ExcelWriter(os.path.join(folder_save, save_name)) as writer:
+                for sheet_name, df in data_dict.items():
+                    df.to_excel(writer, sheet_name=sheet_name,index = False)
+        except:
+            raise QgsProcessingException(self.tr('Could not write tables in the desired file format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
+    else:
+        try:
+            save_name_xlsx = save_name+'.xlsx'
+            with pd.ExcelWriter(os.path.join(folder_save, save_name_xlsx)) as writer:
+                for sheet_name, df in data_dict.items():
+                    df.to_excel(writer, sheet_name=sheet_name,index = False)
+        except:
+            try:
+                save_name_xls = save_name+'.xls'
+                with pd.ExcelWriter(os.path.join(folder_save, save_name_xls)) as writer:
+                    for sheet_name, df in data_dict.items():
+                        df.to_excel(writer, sheet_name=sheet_name,index = False)
+            except:
+                try:
+                    save_name_ods = save_name+'.ods'
+                    with pd.ExcelWriter(os.path.join(folder_save, save_name_ods)) as writer:
+                        for sheet_name, df in data_dict.items():
+                            df.to_excel(writer, sheet_name=sheet_name,index = False)
+                except:
+                    raise QgsProcessingException(self.tr('Could not write tables in .xlsx, .xls, or .ods format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))

@@ -48,6 +48,7 @@ from qgis.PyQt.QtCore import QVariant, QCoreApplication
 import shutil
 from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict
 from .g_s_various_functions import field_to_value_map
+from .g_s_read_write_data import dict_to_excel
 pluginPath = os.path.dirname(__file__)
 
 
