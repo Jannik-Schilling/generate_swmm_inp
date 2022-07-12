@@ -116,6 +116,8 @@ def get_patterns_from_table(patterns_raw, name_col):
     :param pd.DataFrame patterns_raw
     :param str name_col
     """
+    pattern_cols = ['Name','Factor']
+    check_columns('Patterns Table', cols_expected, cols_in_df)
     pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
     pattern_dict = {}
     for pattern_type in pattern_types:
@@ -202,7 +204,8 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         pass
     else:
         err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
-        err_message = err_message+'. For further advice regarding columns, read the documentation file in the plugin folder.'
+        err_message = err_message+'. Plaese add columns or check if the correct file was selected. '
+        err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)
         
         

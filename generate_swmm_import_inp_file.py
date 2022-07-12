@@ -48,7 +48,7 @@ from qgis.PyQt.QtCore import QVariant, QCoreApplication
 import shutil
 from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict
 from .g_s_various_functions import field_to_value_map
-from .g_s_read_write_data import dict_to_excel
+from .g_s_read_write_data  import dict_to_excel
 pluginPath = os.path.dirname(__file__)
 
 
@@ -607,34 +607,22 @@ class ImportInpFile (QgsProcessingAlgorithm):
         """ timeseries section """
         ts_cols_dict = {
             'Name':'String',
-            'Type':'String',
             'Date':'Date',
             'Time':'Time',
             'Value':'Double',
-            'Format':'String',
             'File_Name':'String',
             'Description':'String'
             }
         if 'TIMESERIES' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('generating timeseries file ...'))
-            feedback.setProgress(30)
+            
             all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
             # for external File
             all_time_series = [insert_nan_after_kw(x,2,'FILE',[3,4]) for x in all_time_series]
             all_time_series = [del_kw_from_list(x, 'FILE', 2) for x in all_time_series]
             all_time_series = build_df_from_vals_list(all_time_series,def_sections_dict['TIMESERIES'])
-            all_time_series.insert(1,'Type',np.nan)
-            all_time_series['Format'] = np.nan
             all_time_series['Description'] = np.nan
         else:
             all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
-        if 'RAINGAGES' in dict_all_raw_vals.keys():
-            rain_gage = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],def_sections_dict['RAINGAGES'])
-            for i in rain_gage.index:
-                if rain_gage.loc[i,'Source'] == 'TIMESERIES':
-                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Type'] = 'rain_gage'
-                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Format'] = rain_gage.loc[i,'Format']
-                    all_time_series.loc[all_time_series['Name'] == rain_gage.loc[i,'SourceName'],'Description'] = rain_gage.loc[i,'Description']
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_to_excel({'Table1':all_time_series},
                       'gisswmm_timeseries',
@@ -758,6 +746,22 @@ class ImportInpFile (QgsProcessingAlgorithm):
         from .g_s_various_functions import get_point_from_x_y
         all_geoms = [get_point_from_x_y(coords.loc[i,:]) for i in coords.index] # point geometries
         all_geoms = pd.DataFrame(all_geoms, columns = ['Name', 'geometry']).set_index('Name')
+        
+        """raingages section"""
+        if 'RAINGAGES' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('generating raingages file ...'))
+            feedback.setProgress(37)
+            all_rain_gages = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],list(def_sections_dict['RAINGAGES'].keys()))
+            rg_choords = build_df_for_section('SYMBOLS', dict_all_raw_vals)
+            rg_geoms = [get_point_from_x_y(rg_choords.loc[i,:]) for i in rg_choords.index]
+            rg_geoms = pd.DataFrame(rg_geoms, columns = ['Name', 'geometry']).set_index('Name')
+            all_rain_gages = all_rain_gages.join(rg_geoms, on = 'Name')
+            all_rain_gages = all_rain_gages.applymap(replace_nan_null)
+            rg_layer_name = 'SWMM_raingages'
+            if result_prefix != '':
+                rg_layer_name = result_prefix+'_'+rg_layer_name
+            rg_layer = create_layer_from_table(all_rain_gages,'RAINGAGES','Point',rg_layer_name)
+            add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
 
         """junctions section """
         if 'JUNCTIONS' in dict_all_raw_vals.keys():

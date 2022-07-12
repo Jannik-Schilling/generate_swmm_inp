@@ -41,7 +41,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterVectorLayer)
 from .g_s_various_functions import check_columns, get_coords_from_geometry
 from .g_s_defaults import def_sections_dict, def_curve_types
-from .g_s_read_write_data import read_data_from_table_direct, read_shapefiles_direct
+from .g_s_read_write_data  import read_data_from_table_direct, read_shapefiles_direct
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
