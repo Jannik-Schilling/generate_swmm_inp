@@ -351,13 +351,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
-            from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
+            from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position_default
             subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'],
                                                                 main_infiltration_method)
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
             inp_dict['subcatchments_df'] = subcatchments_df
-            rg_x_mean, rg_y_mean = rg_position(inp_dict['polygons_dict']) # mean position of catchments for rain gage
-            inp_dict['rg_pos'] = [rg_x_mean, rg_y_mean]
+            rg_x_mean, rg_y_mean = rg_position_default(inp_dict['polygons_dict']) # mean position of catchments as default for rain gage
+            inp_dict['rg_position_default'] = [rg_x_mean, rg_y_mean]
 
         """conduits"""
         if 'conduits_raw' in raw_data_dict.keys():
@@ -522,17 +522,25 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """time series"""
         if 'timeseries' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
-            from .g_s_various_functions import get_timeseries_from_table, get_raingages_from_timeseries
+            from .g_s_various_functions import get_timeseries_from_table
+            from .g_s_subcatchments import get_raingages_from_timeseries
             inp_dict['timeseries_dict'] = get_timeseries_from_table(raw_data_dict['timeseries'],
                                                                  name_col='Name',
                                                                  feedback = feedback)
-            """rain gages"""
-            inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'],feedback)
-            if 'rg_pos' in inp_dict.keys():
-                pass
-            else:
-                inp_dict['rg_pos'] = [1,2]
+        
+        """rain gages"""
+        if 'rg_pos' in inp_dict.keys():
+            pass
+        else:
+            inp_dict['rg_pos'] = [1,2]
         feedback.setProgress(70)
+        
+        rg_ts_dict = {k:v for k,v in  inp_dict['timeseries_dict'].items() if (v['Type'] == 'rain_gage')}
+        inp_dict['raingages_dict'] = get_raingages_from_timeseries(rg_ts_dict,
+                                                                   inp_dict['rg_pos'],
+                                                                   feedback)
+        print(inp_dict['raingages_dict'])
+
    
         """quality"""
         if 'quality' in raw_data_dict.keys():

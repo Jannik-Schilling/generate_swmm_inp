@@ -147,9 +147,79 @@ subc_field_vals = {
         'CURVE_NUMBER':'CURVE_NUMBER'}}
 
 
-def rg_position(polyg_dict):
-    """sets the position of a rain gauge based on all subcatchment polygons"""
+
+
+##for raingages
+
+def rg_position_default(polyg_dict):
+    """sets the default position of a rain gauge based on all subcatchment polygons"""
     all_yx = pd.concat([v for k,v in polyg_dict.items()])
     x_mean = np.mean(all_yx['x'])+10
     y_mean = np.mean(all_yx['y'])+10
     return x_mean, y_mean
+
+def get_raingages_from_timeseries(rg_ts_dict, rg_pos_default, feedback):
+    """
+    generates a raingages dict for the input file from timeseries dict
+    :param list rg_ts_list
+    :param QgsProcessingFeedback feedback
+    """
+    rg_dict= {}
+    for v in rg_ts_dict.values():
+        v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)
+        rg_i = SwmmRainGage.from_ts(v, feedback)
+        rg_dict[v['Description']] = rg_i.to_inp_str()
+    return (rg_dict)
+    
+
+class SwmmRainGage:
+    """Rain gage class for SWMM models"""
+    def __init__(self,
+            Name,
+            Format,
+            Source,
+            Interval = None,
+            SCF = 1,
+            Position = None):
+        self.Name = str(Name)
+        self.Format = str(Format)
+        self.Interval = Interval
+        self.Source = Source
+        self.Position = Position
+        self.SCF = 1
+        
+    def from_ts(rg_ts, feedback):
+        """creates a rain gage from timeseries dict"""
+        rg_source = {
+            'Type':'TIMESERIES',
+            'TS_Name': rg_ts['Name']}
+        try:
+            timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
+            rg_interval = str(timediff)[:-3]
+        except:
+            rg_interval = ('5') #set to ten minutes
+            feedback.setProgressText('Time interval for rain gage "'
+                +rg_ts['Description']+
+                '"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
+        return SwmmRainGage(
+            rg_ts['Description'],
+            rg_ts['Format'],
+            rg_source,
+            rg_interval)
+            
+    def to_inp_str(self):
+        """writes a string for the input file"""
+        if self.Source['Type'] == 'TIMESERIES':
+            source_string = (str(self.Source['Type'])+' '+
+                str(self.Source['TS_Name']))
+        if self.Source['Type'] == 'FILE':
+            source_string = (str(self.Source['Type'])+' '+
+                str(self.Source['TS_Name'])+' '+
+                str(self.Source['Station'])+' '+
+                str(self.Source['RainUnit']))
+        inp_str = (self.Name+'    '+
+            self.Format+'    '+
+            str(self.Interval)+'    '+
+            str(self.SCF)+'    '+
+            source_string)
+        return inp_str

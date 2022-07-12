@@ -35,7 +35,7 @@ from qgis.core import QgsWkbTypes, QgsProcessingException, QgsEditorWidgetSetup
 def get_coords_from_geometry(df):
     """
     extracts coords from any gpd.geodataframe
-    param pd.DataFrame df
+    :param pd.DataFrame df
     """
     def extract_xy_from_simple_line(line_simple):
         """extracts x and y coordinates from a LineString"""
@@ -87,8 +87,8 @@ def get_point_from_x_y(sr):
 def get_curves_from_table(curves_raw, name_col):
     """
     generates curve data for the input file from tables (curve_raw)
-    param pd.DataFrame curve_raw
-    param str name_col
+    :param pd.DataFrame curve_raw
+    :param str name_col
     """
     from .g_s_defaults import def_curve_types
     curve_dict = dict()
@@ -113,8 +113,8 @@ def get_curves_from_table(curves_raw, name_col):
 def get_patterns_from_table(patterns_raw, name_col):
     """
     generates a pattern dict for the input file from tables (patterns_raw)
-    param pd.DataFrame patterns_raw
-    param str name_col
+    :param pd.DataFrame patterns_raw
+    :param str name_col
     """
     pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
     pattern_dict = {}
@@ -137,9 +137,9 @@ def get_patterns_from_table(patterns_raw, name_col):
 def get_timeseries_from_table(ts_raw, name_col, feedback):
     """
     enerates a timeseries dict for the input file from tables (ts_raw)
-    param pd.DataFrame ts_raw
-    param str name_col
-    param QgsProcessingFeedback feedback
+    :param pd.DataFrame ts_raw
+    :param str name_col
+    :param QgsProcessingFeedback feedback
     """
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
@@ -184,35 +184,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     
     
 
-def get_raingages_from_timeseries(ts_dict, feedback):
-    """
-    enerates a raingages dict for the input file from timeseries dict
-    param dict ts_dict
-    param QgsProcessingFeedback feedback
-    """
-    rg_dict= {}
-    rg_list = [k for k in ts_dict.keys() if (ts_dict[k]['Type'] == 'rain_gage')]
-    for rg in rg_list:
-        rg_i = ts_dict[rg]
-        rg_i['TimeSeries'] = rg_i['TimeSeries'].reset_index(drop=True)
-        if len(rg_i['TimeSeries']) == 1: #only one value or external time series
-            rg_interval = ('5') #set to five minutes
-            feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined (is external) and was set by default to 5 Minutes. Please check in SWMM.')
-        else:
-            try:
-                timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
-                rg_interval = str(timediff)[:-3]
-            except:
-                rg_interval = ('5') #set to ten minutes
-                feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
-        rg_dict[rg_i['Description']] = {'Name':rg_i['Description'],
-               'Format':rg_i['Format'],
-               'Interval': rg_interval,
-               'SCF':'1',
-               'Source':'TIMESERIES'+' '+rg}
-    return (rg_dict)
-               
-    
+
 
 
 ## errors and feedback
@@ -238,9 +210,9 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
 def field_to_value_map(layer, field, list_values):
     """
     creates a drop down menue in QGIS layers
-    param str layer 
-    param str field
-    param list list_values
+    :param str layer 
+    :param str field
+    :param list list_values
     """
     config = {'map' : list_values}
     widget_setup = QgsEditorWidgetSetup('ValueMap',config)

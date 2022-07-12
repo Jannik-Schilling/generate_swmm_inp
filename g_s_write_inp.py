@@ -72,17 +72,11 @@ def write_inp(inp_file_name,
         feedback.setProgressText('writing [RAINGAGES]...')
         file1.write('[RAINGAGES]\n')
         raingages_dict = inp_dict['raingages_dict']
-        for rg_key in raingages_dict.keys():
-            rg_i = raingages_dict[rg_key]
-            file1.write(str(rg_i['Name'])+'    '+
-                        str(rg_i['Format'])+'    '+
-                        str(rg_i['Interval'])+'    '+
-                        str(rg_i['SCF'])+'    '+
-                        str(rg_i['Source']))
+        for rg_v in raingages_dict.values():
+            file1.write(rg_v)
             file1.write('\n')
-    
-    
-    
+        file1.write('\n')
+
     ##subcatchments
     if 'subcatchments_df' in inp_dict.keys():
         feedback.setProgressText('writing [SUBCATCHMENTS]...')
