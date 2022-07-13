@@ -20,9 +20,11 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.22 2022-06
+changelog= 0.22 2022-07
+	- add raingages as layer (read the documentation for details
 	- fix conduit shape types in widget
 	- fix feedback for missing columns
+	- add default values for layers
 
 
 
