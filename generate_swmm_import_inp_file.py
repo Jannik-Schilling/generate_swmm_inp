@@ -756,28 +756,30 @@ class ImportInpFile (QgsProcessingAlgorithm):
             rg_geoms = pd.DataFrame(rg_geoms, columns = ['Name', 'geometry']).set_index('Name')
             from .g_s_subcatchments import SwmmRainGage
             rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']]
-            rain_gages_df = pd.DataFrame([i.to_qgs_row() for i in rain_gages_list])
-            rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
-            rain_gages_df = rain_gages_df.applymap(replace_nan_null)
-            rg_layer_name = 'SWMM_raingages'
-            if result_prefix != '':
-                rg_layer_name = result_prefix+'_'+rg_layer_name
-            rg_fields = SwmmRainGage.layer_fields
-            rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,rg_fields)
-            add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
+            if len(rain_gages_list) > 0:
+                rain_gages_df = pd.DataFrame([i.to_qgs_row() for i in rain_gages_list])
+                rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
+                rain_gages_df = rain_gages_df.applymap(replace_nan_null)
+                rg_layer_name = 'SWMM_raingages'
+                if result_prefix != '':
+                    rg_layer_name = result_prefix+'_'+rg_layer_name
+                rg_fields = SwmmRainGage.layer_fields
+                rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,rg_fields)
+                add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
 
         """junctions section """
         if 'JUNCTIONS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating junctions file ...'))
             feedback.setProgress(40)
             all_junctions = build_df_for_section('JUNCTIONS',dict_all_raw_vals)
-            all_junctions = all_junctions.join(all_geoms, on = 'Name')
-            all_junctions = all_junctions.applymap(replace_nan_null)
-            junctions_layer_name = 'SWMM_junctions'
-            if result_prefix != '':
-                junctions_layer_name = result_prefix+'_'+junctions_layer_name
-            junctions_layer = create_layer_from_table(all_junctions,'JUNCTIONS','Point',junctions_layer_name)
-            add_layer_on_completion(folder_save, junctions_layer_name, 'style_junctions.qml')
+            if len(all_junctions) > 0:
+                all_junctions = all_junctions.join(all_geoms, on = 'Name')
+                all_junctions = all_junctions.applymap(replace_nan_null)
+                junctions_layer_name = 'SWMM_junctions'
+                if result_prefix != '':
+                    junctions_layer_name = result_prefix+'_'+junctions_layer_name
+                junctions_layer = create_layer_from_table(all_junctions,'JUNCTIONS','Point',junctions_layer_name)
+                add_layer_on_completion(folder_save, junctions_layer_name, 'style_junctions.qml')
             
         """storages section """
         if 'STORAGE' in dict_all_raw_vals.keys():
@@ -785,18 +787,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(45)
             from .g_s_nodes import get_storages_from_inp, storage_field_vals
             st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
-            all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
-            all_storages = all_storages.join(all_geoms, on = 'Name')
-            all_storages = all_storages.applymap(replace_nan_null)
-            storages_layer_name = 'SWMM_storages'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                storages_layer_name = result_prefix+'_'+storages_layer_name
-            storages_layer = create_layer_from_table(all_storages,'STORAGE','Point',storages_layer_name)
-            add_layer_on_completion(folder_save,
-                                    storages_layer_name,
-                                    'style_storages.qml',
-                                    storage_field_vals)
+            if len(st_list>0)
+                all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
+                all_storages = all_storages.join(all_geoms, on = 'Name')
+                all_storages = all_storages.applymap(replace_nan_null)
+                storages_layer_name = 'SWMM_storages'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    storages_layer_name = result_prefix+'_'+storages_layer_name
+                storages_layer = create_layer_from_table(all_storages,'STORAGE','Point',storages_layer_name)
+                add_layer_on_completion(folder_save,
+                                        storages_layer_name,
+                                        'style_storages.qml',
+                                        storage_field_vals)
         
         """ outfalls section """
         if 'OUTFALLS' in dict_all_raw_vals.keys():
@@ -808,18 +811,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
             dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIDAL',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
             dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIMESERIES',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
             all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
-            all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
-            all_outfalls = all_outfalls.applymap(replace_nan_null)
-            outfalls_layer_name = 'SWMM_outfalls'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                outfalls_layer_name = result_prefix+'_'+outfalls_layer_name
-            outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point',outfalls_layer_name)
-            from .g_s_nodes import outfall_field_vals
-            add_layer_on_completion(folder_save,
-                                    outfalls_layer_name,
-                                    'style_outfalls.qml',
-                                    outfall_field_vals)
+            if len(all_outfalls) > 0:
+                all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
+                all_outfalls = all_outfalls.applymap(replace_nan_null)
+                outfalls_layer_name = 'SWMM_outfalls'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    outfalls_layer_name = result_prefix+'_'+outfalls_layer_name
+                outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point',outfalls_layer_name)
+                from .g_s_nodes import outfall_field_vals
+                add_layer_on_completion(folder_save,
+                                        outfalls_layer_name,
+                                        'style_outfalls.qml',
+                                        outfall_field_vals)
         
         """ dividers section """
         if 'DIVIDERS' in dict_all_raw_vals.keys():
@@ -833,21 +837,22 @@ class ImportInpFile (QgsProcessingAlgorithm):
             divider_raw = [adjust_line_length(x,10,13,[np.nan,np.nan,np.nan]) for x in divider_raw]
             dict_all_raw_vals['DIVIDERS'] = divider_raw.copy()
             all_dividers = build_df_for_section('DIVIDERS',dict_all_raw_vals)
-            all_dividers = all_dividers.join(all_geoms, on = 'Name')
-            all_dividers = all_dividers.applymap(replace_nan_null)
-            dividers_layer_name = 'SWMM_dividers'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                dividers_layer_name = result_prefix+'_'+dividers_layer_name
-            from .g_s_nodes import divider_field_vals
-            dividers_layer = create_layer_from_table(
-                all_dividers,'DIVIDERS','Point',
-                dividers_layer_name)
-            add_layer_on_completion(
-                folder_save,
-                dividers_layer_name,
-                'style_dividers.qml',
-                divider_field_vals)
+            if len(all_dividers) > 0:
+                all_dividers = all_dividers.join(all_geoms, on = 'Name')
+                all_dividers = all_dividers.applymap(replace_nan_null)
+                dividers_layer_name = 'SWMM_dividers'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    dividers_layer_name = result_prefix+'_'+dividers_layer_name
+                from .g_s_nodes import divider_field_vals
+                dividers_layer = create_layer_from_table(
+                    all_dividers,'DIVIDERS','Point',
+                    dividers_layer_name)
+                add_layer_on_completion(
+                    folder_save,
+                    dividers_layer_name,
+                    'style_dividers.qml',
+                    divider_field_vals)
 
         """LINES"""
         feedback.setProgressText(self.tr('extracting vertices ...'))
@@ -908,32 +913,33 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else: 
                 all_losses = build_df_from_vals_list([],list(def_sections_dict['LOSSES'].keys()))
             all_conduits = build_df_for_section('CONDUITS', dict_all_raw_vals)
-            all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
-            all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
-            all_conduits['FlapGate'] = all_conduits['FlapGate'].fillna('NO')
-            conduits_geoms = get_line_geometry(all_conduits)
-            all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
-            all_conduits_fields = def_sections_dict['CONDUITS'].copy()
-            all_conduits_fields.update(def_sections_dict['XSECTIONS'])
-            all_conduits_fields.update({'Shp_Trnsct':'String'})
-            all_conduits_fields.update(def_sections_dict['LOSSES'])
-            all_conduits = all_conduits.applymap(replace_nan_null)
-            conduits_layer_name = 'SWMM_conduits'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                conduits_layer_name = result_prefix+'_'+conduits_layer_name
-            conduits_layer = create_layer_from_table(
-                all_conduits,
-                'CONDUITS',
-                'LineString',
-                conduits_layer_name,
-                layer_fields = all_conduits_fields)
-            from .g_s_links import conduit_field_vals
-            add_layer_on_completion(
-                folder_save,
-                conduits_layer_name,
-                'style_conduits.qml',
-                conduit_field_vals)
+            if len(all_conduits) > 0:
+                all_conduits = all_conduits.join(all_xsections.set_index('Name'), on = 'Name')
+                all_conduits = all_conduits.join(all_losses.set_index('Name'), on = 'Name')
+                all_conduits['FlapGate'] = all_conduits['FlapGate'].fillna('NO')
+                conduits_geoms = get_line_geometry(all_conduits)
+                all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
+                all_conduits_fields = def_sections_dict['CONDUITS'].copy()
+                all_conduits_fields.update(def_sections_dict['XSECTIONS'])
+                all_conduits_fields.update({'Shp_Trnsct':'String'})
+                all_conduits_fields.update(def_sections_dict['LOSSES'])
+                all_conduits = all_conduits.applymap(replace_nan_null)
+                conduits_layer_name = 'SWMM_conduits'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    conduits_layer_name = result_prefix+'_'+conduits_layer_name
+                conduits_layer = create_layer_from_table(
+                    all_conduits,
+                    'CONDUITS',
+                    'LineString',
+                    conduits_layer_name,
+                    layer_fields = all_conduits_fields)
+                from .g_s_links import conduit_field_vals
+                add_layer_on_completion(
+                    folder_save,
+                    conduits_layer_name,
+                    'style_conduits.qml',
+                    conduit_field_vals)
         
         
             # transects in hec2 format
@@ -1015,78 +1021,81 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(75)
             dict_all_raw_vals['OUTLETS'] = [adjust_outlets_list(i) for i in dict_all_raw_vals['OUTLETS']]
             all_outlets = build_df_for_section('OUTLETS', dict_all_raw_vals)
-            all_outlets = all_outlets.applymap(replace_nan_null)
-            outlets_geoms = get_line_geometry(all_outlets)
-            all_outlets = all_outlets.join(outlets_geoms, on = 'Name')
-            outlets_layer_name = 'SWMM_outlets'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                outlets_layer_name = result_prefix+'_'+outlets_layer_name
-            outlets_layer = create_layer_from_table(
-                all_outlets,
-                'OUTLETS',
-                'LineString',
-                outlets_layer_name)
-            from .g_s_links import outlet_field_vals
-            add_layer_on_completion(
-                folder_save,
-                outlets_layer_name,
-                'style_regulators.qml',
-                outlet_field_vals)
+            if len(all_outlets) > 0:
+                all_outlets = all_outlets.applymap(replace_nan_null)
+                outlets_geoms = get_line_geometry(all_outlets)
+                all_outlets = all_outlets.join(outlets_geoms, on = 'Name')
+                outlets_layer_name = 'SWMM_outlets'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    outlets_layer_name = result_prefix+'_'+outlets_layer_name
+                outlets_layer = create_layer_from_table(
+                    all_outlets,
+                    'OUTLETS',
+                    'LineString',
+                    outlets_layer_name)
+                from .g_s_links import outlet_field_vals
+                add_layer_on_completion(
+                    folder_save,
+                    outlets_layer_name,
+                    'style_regulators.qml',
+                    outlet_field_vals)
 
         """pumps section """
         if 'PUMPS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating pumps file ...'))
             feedback.setProgress(80)
             all_pumps = build_df_for_section('PUMPS', dict_all_raw_vals)
-            all_pumps = all_pumps.applymap(replace_nan_null)
-            pumps_geoms = get_line_geometry(all_pumps)
-            all_pumps = all_pumps.join(pumps_geoms, on = 'Name')
-            pumps_layer_name = 'SWMM_pumps'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                pumps_layer_name = result_prefix+'_'+pumps_layer_name
-            pumps_layer = create_layer_from_table(
-                all_pumps,
-                'PUMPS',
-                'LineString',
-                pumps_layer_name)
-            from .g_s_links import pump_field_vals
-            add_layer_on_completion(
-                folder_save,
-                pumps_layer_name,
-                'style_pumps.qml',
-                pump_field_vals)
+            if len(all_pumps) > 0:
+                all_pumps = all_pumps.applymap(replace_nan_null)
+                pumps_geoms = get_line_geometry(all_pumps)
+                all_pumps = all_pumps.join(pumps_geoms, on = 'Name')
+                pumps_layer_name = 'SWMM_pumps'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    pumps_layer_name = result_prefix+'_'+pumps_layer_name
+                pumps_layer = create_layer_from_table(
+                    all_pumps,
+                    'PUMPS',
+                    'LineString',
+                    pumps_layer_name)
+                from .g_s_links import pump_field_vals
+                add_layer_on_completion(
+                    folder_save,
+                    pumps_layer_name,
+                    'style_pumps.qml',
+                    pump_field_vals)
 
         """weirs section"""
         if 'WEIRS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating weirs file ...'))
             feedback.setProgress(82)
             all_weirs= build_df_for_section('WEIRS', dict_all_raw_vals)
-            all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
-            all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct'])
-            all_weirs = all_weirs.rename(columns = {'Geom1':'Height','Geom2':'Length', 'Geom3':'SideSlope'})
-            all_weirs = all_weirs.applymap(replace_nan_null) 
-            weirs_geoms = get_line_geometry(all_weirs)
-            all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
-            all_weirs_fields = def_sections_dict['WEIRS'].copy()
-            all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
-            weirs_layer_name = 'SWMM_weirs'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                weirs_layer_name = result_prefix+'_'+weirs_layer_name
-            weirs_layer = create_layer_from_table(
-                all_weirs,
-                'WEIRS',
-                'LineString',
-                weirs_layer_name,
-                all_weirs_fields)
-            from .g_s_links import weir_field_vals
-            add_layer_on_completion(
-                folder_save,
-                weirs_layer_name,
-                'style_regulators.qml',
-                weir_field_vals)
+            if len(all_weirs) > 0:
+                all_weirs = all_weirs.join(all_xsections.set_index('Name'), on = 'Name')
+                all_weirs = all_weirs.drop(columns=['Shape', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct'])
+                all_weirs = all_weirs.rename(columns = {'Geom1':'Height','Geom2':'Length', 'Geom3':'SideSlope'})
+                all_weirs = all_weirs.applymap(replace_nan_null) 
+                weirs_geoms = get_line_geometry(all_weirs)
+                all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
+                all_weirs_fields = def_sections_dict['WEIRS'].copy()
+                all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
+                weirs_layer_name = 'SWMM_weirs'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    weirs_layer_name = result_prefix+'_'+weirs_layer_name
+                weirs_layer = create_layer_from_table(
+                    all_weirs,
+                    'WEIRS',
+                    'LineString',
+                    weirs_layer_name,
+                    all_weirs_fields)
+                from .g_s_links import weir_field_vals
+                add_layer_on_completion(
+                    folder_save,
+                    weirs_layer_name,
+                    'style_regulators.qml',
+                    weir_field_vals)
             
             
         """ORIFICES section"""
@@ -1094,30 +1103,31 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('generating orifices file ...'))
             feedback.setProgress(85)
             all_orifices = build_df_for_section('ORIFICES', dict_all_raw_vals)
-            all_orifices = all_orifices.join(all_xsections.set_index('Name'), on = 'Name')
-            all_orifices = all_orifices.drop(columns=['Geom3', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct'])
-            all_orifices = all_orifices.rename(columns = {'Geom1':'Height','Geom2':'Width'})
-            all_orifices = all_orifices.applymap(replace_nan_null) 
-            orifices_geoms = get_line_geometry(all_orifices)
-            all_orifices = all_orifices.join(orifices_geoms, on = 'Name')
-            all_orifices_fields = def_sections_dict['ORIFICES'].copy()
-            all_orifices_fields.update({'Shape':'String','Height':'Double','Width':'Double'})
-            orifices_layer_name = 'SWMM_orifices'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                orifices_layer_name = result_prefix+'_'+orifices_layer_name
-            orifices_layer = create_layer_from_table(
-                all_orifices,
-                'ORIFICES',
-                'LineString',
-                orifices_layer_name,
-                all_orifices_fields)
-            from .g_s_links import orifice_field_vals
-            add_layer_on_completion(
-                folder_save,
-                orifices_layer_name,
-                'style_regulators.qml',
-                orifice_field_vals)
+            if len(all_orifices) > 0:
+                all_orifices = all_orifices.join(all_xsections.set_index('Name'), on = 'Name')
+                all_orifices = all_orifices.drop(columns=['Geom3', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct'])
+                all_orifices = all_orifices.rename(columns = {'Geom1':'Height','Geom2':'Width'})
+                all_orifices = all_orifices.applymap(replace_nan_null) 
+                orifices_geoms = get_line_geometry(all_orifices)
+                all_orifices = all_orifices.join(orifices_geoms, on = 'Name')
+                all_orifices_fields = def_sections_dict['ORIFICES'].copy()
+                all_orifices_fields.update({'Shape':'String','Height':'Double','Width':'Double'})
+                orifices_layer_name = 'SWMM_orifices'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    orifices_layer_name = result_prefix+'_'+orifices_layer_name
+                orifices_layer = create_layer_from_table(
+                    all_orifices,
+                    'ORIFICES',
+                    'LineString',
+                    orifices_layer_name,
+                    all_orifices_fields)
+                from .g_s_links import orifice_field_vals
+                add_layer_on_completion(
+                    folder_save,
+                    orifices_layer_name,
+                    'style_regulators.qml',
+                    orifice_field_vals)
 
         """ POLYGONS """
         if 'Polygons' in dict_all_raw_vals.keys():
@@ -1147,35 +1157,36 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(90)
             from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
             all_subcatchments = build_df_for_section('SUBCATCHMENTS',dict_all_raw_vals)
-            all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
-            all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
-            all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill missing Methods
-            all_infiltr = build_df_from_vals_list(all_infiltr, list(def_sections_dict['INFILTRATION'].keys()))
-            all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
-                                                                                        all_subareas, 
-                                                                                        all_infiltr, 
-                                                                                        main_infiltration_method)
-            polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
-            polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
-            all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
-            all_subcatchments = all_subcatchments.applymap(replace_nan_null)
-            all_subcatchments_fields = def_sections_dict['SUBCATCHMENTS'].copy()
-            all_subcatchments_fields.update(def_sections_dict['SUBAREAS'])
-            all_subcatchments_fields.update(infiltr_dtypes)
-            subc_layer_name = 'SWMM_subcatchments'
-            # add prefix to layer name if available
-            if result_prefix != '':
-                subc_layer_name = result_prefix+'_'+subc_layer_name
-            subcatchments_layer = create_layer_from_table(
-                all_subcatchments,
-                'SUBCATCHMENTS',
-                'Polygon',
-                subc_layer_name,
-                all_subcatchments_fields)
-            add_layer_on_completion(
-                folder_save,
-                subc_layer_name,
-                'style_catchments.qml')
+            if len(all_subcatchments) > 0:
+                all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
+                all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
+                all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill missing Methods
+                all_infiltr = build_df_from_vals_list(all_infiltr, list(def_sections_dict['INFILTRATION'].keys()))
+                all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
+                                                                                            all_subareas, 
+                                                                                            all_infiltr, 
+                                                                                            main_infiltration_method)
+                polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
+                polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
+                all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
+                all_subcatchments = all_subcatchments.applymap(replace_nan_null)
+                all_subcatchments_fields = def_sections_dict['SUBCATCHMENTS'].copy()
+                all_subcatchments_fields.update(def_sections_dict['SUBAREAS'])
+                all_subcatchments_fields.update(infiltr_dtypes)
+                subc_layer_name = 'SWMM_subcatchments'
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    subc_layer_name = result_prefix+'_'+subc_layer_name
+                subcatchments_layer = create_layer_from_table(
+                    all_subcatchments,
+                    'SUBCATCHMENTS',
+                    'Polygon',
+                    subc_layer_name,
+                    all_subcatchments_fields)
+                add_layer_on_completion(
+                    folder_save,
+                    subc_layer_name,
+                    'style_catchments.qml')
         feedback.setProgress(99)
         feedback.setProgressText(self.tr('all data was saved in '+str(folder_save)))
         return {}
