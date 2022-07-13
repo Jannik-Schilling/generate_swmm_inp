@@ -787,7 +787,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(45)
             from .g_s_nodes import get_storages_from_inp, storage_field_vals
             st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
-            if len(st_list>0)
+            if len(st_list) > 0:
                 all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
                 all_storages = all_storages.join(all_geoms, on = 'Name')
                 all_storages = all_storages.applymap(replace_nan_null)
