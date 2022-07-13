@@ -128,7 +128,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
         return infiltr_row
     all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x, main_infiltration_method), axis =1)
     all_infiltr = all_infiltr[['Name']+list(def_infiltr_dtypes.keys())]
-    all_infiltr = all_infiltr.dropna(how='all', axis=1) # if all subcatchments have the same infiltration method
+    #all_infiltr = all_infiltr.dropna(how='all', axis=1) # if all subcatchments have the same infiltration method
     def_infiltr_dtypes = {k:v for k,v in def_infiltr_dtypes.items() if k in all_infiltr.columns} 
     all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on = 'Name')
     all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on = 'Name')
