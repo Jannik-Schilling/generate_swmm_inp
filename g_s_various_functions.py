@@ -29,7 +29,13 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from qgis.core import QgsWkbTypes, QgsProcessingException, QgsEditorWidgetSetup
+from qgis.core import (
+    Qgis,
+    QgsWkbTypes,
+    QgsProcessingException,
+    QgsEditorWidgetSetup
+)
+
 
 ## geometry functions
 def get_coords_from_geometry(df):
@@ -117,11 +123,11 @@ def get_patterns_from_table(patterns_raw, name_col):
     :param str name_col
     """
     pattern_cols = ['Name','Factor']
-    check_columns('Patterns Table', cols_expected, cols_in_df)
     pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
     pattern_dict = {}
     for pattern_type in pattern_types:
         pattern_df = patterns_raw[pattern_type]
+        check_columns('Patterns Table', pattern_cols, pattern_df.columns)
         pattern_df = pattern_df[pattern_df[name_col] != ";"]
         pattern_df = pattern_df[pd.notna(pattern_df[name_col])]
         if pattern_df.empty:
@@ -144,9 +150,13 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     :param QgsProcessingFeedback feedback
     """
     ts_dict = dict()
+    rg_ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
     if not 'File_Name' in ts_raw.columns:
         feedback.setProgressText('No external file is used in time series')
+    #deprecated:
+    if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
+        feedback.reportError('Warning: The columns \"Type\" and \"Format\" will not be used any longer in future versions of the plugin. Creating rain gages from timeseries only is deprcated. Please create a rain gage layer instead. You can get an examplary layer from the default data set or have a look at the documentation file.')
     if ts_raw.empty:
         pass
     else:
@@ -175,14 +185,24 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                         else:
                             break
             ts_description= ts_df['Description'].fillna('').unique()[0]
-            ts_format= ts_df['Format'].fillna('').unique()[0]
-            ts_type = ts_df['Type'].unique()[0]
-            ts_dict[i] = {'Name':i,
-                   'Type':ts_type,
-                   'TimeSeries':ts_df[['Name','Date','Time','Value']], 
-                   'Description':ts_description,
-                   'Format':ts_format}
-    return(ts_dict)
+            ts_dict[i] = {
+                'Name':i,
+                'TimeSeries':ts_df[['Name','Date','Time','Value']], 
+                'Description':ts_description
+            }
+            # deprecated:
+            rg_ts_dict = {}
+            if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
+                ts_format= ts_df['Format'].fillna('').unique()[0]
+                ts_type = ts_df['Type'].unique()[0]
+                rg_ts_dict[i] = {
+                    'Name':i,
+                    'Type':ts_type,
+                    'TimeSeries':ts_df[['Name','Date','Time','Value']], 
+                    'Description':ts_description,
+                    'Format':ts_format
+                }
+    return(ts_dict, rg_ts_dict)
     
     
 

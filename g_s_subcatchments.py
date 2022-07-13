@@ -158,41 +158,138 @@ def rg_position_default(polyg_dict):
     y_mean = np.mean(all_yx['y'])+10
     return x_mean, y_mean
 
-def get_raingages_from_timeseries(rg_ts_dict, rg_pos_default, feedback):
+
+def get_raingages(rg_features_df, feedback, rg_ts_dict = None, rg_pos_default = None):
     """
     generates a raingages dict for the input file from timeseries dict
     :param list rg_ts_list
     :param QgsProcessingFeedback feedback
     """
-    rg_dict= {}
-    for v in rg_ts_dict.values():
-        v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)
-        rg_i = SwmmRainGage.from_ts(v, feedback)
-        rg_dict[v['Description']] = rg_i.to_inp_str()
+    rg_dict = {}
+    temp_rg_ts = {}
+    #SwmmRainGage[]
+    if rg_ts_dict is not None:
+        for v in rg_ts_dict.values():
+            v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)
+            rg_i = SwmmRainGage.from_ts(v, feedback)
+            temp_rg_ts[v['Description']] = rg_i.to_inp_str()
     return (rg_dict)
-    
+
 
 class SwmmRainGage:
     """Rain gage class for SWMM models"""
     def __init__(self,
             Name,
             Format,
+            Interval,
+            SCF,
             Source,
-            Interval = None,
-            SCF = 1,
             Position = None):
         self.Name = str(Name)
         self.Format = str(Format)
-        self.Interval = Interval
+        self.Interval = str(Interval)
+        self.SCF = SCF
         self.Source = Source
         self.Position = Position
-        self.SCF = 1
         
+    layer_fields = {
+        'Name':'String',
+        'Format':'String',
+        'Interval':'String',
+        'SCF':'Double',
+        'DataSource':'String',
+        'SeriesName':'String',
+        'FileName':'String',
+        'StationID':'String',
+        'RainUnits':'String'
+    }
+    
+    def from_qgs_row(rg_row):
+        if rg_row['DataSource'] == 'TIMESERIES':
+            rg_source ={
+                'DataSource':'TIMESERIES',
+                'SeriesName':rg_row['SeriesName'] 
+            }
+        else: # FILE
+            rg_source = {
+                'DataSource':'FILE',
+                'FileName':rg_row['FileName'], 
+                'StationID':rg_row['StationID'],
+                'RainUnits':rg_row['RainUnits']
+            }
+        return SwmmRainGage(
+            rg_row['Name'],
+            rg_row['Format'], 
+            rg_row['Interval'], 
+            rg_row['SCF'], 
+            rg_source
+        )
+    def from_inp_line(rg_line):
+        if rg_line[4] == 'TIMESERIES':
+            rg_source = {
+                'DataSource':'TIMESERIES',
+                'SeriesName':rg_line[5] 
+            }
+        else: # FILE
+            rg_source = {
+                'DataSource':'FILE',
+                'FileName':rg_line[5], 
+                'StationID':rg_line[6],
+                'RainUnits':rg_line[7]
+            }
+        return SwmmRainGage(
+            rg_line[0], #Name
+            rg_line[1], #Format
+            rg_line[2], #Interval
+            rg_line[3], #SCF
+            rg_source
+        )
+    
+    def to_qgs_row(self):
+        '''prepares a pandas series for QGS features'''
+        rg_row = pd.Series({
+            'Name':self.Name,
+            'Format':self.Format,
+            'Interval':self.Interval,
+            'SCF':self.SCF
+        })
+        if self.Source['DataSource'] == 'TIMESERIES':
+            rg_row['DataSource'] = 'TIMESERIES'
+            rg_row['SeriesName'] = str(self.Source['SeriesName'])
+            rg_row['FileName'] = np.nan
+            rg_row['StationID'] = np.nan
+            rg_row['RainUnits'] = np.nan
+        if self.Source['DataSource'] == 'FILE':
+            rg_row['DataSource'] = 'FILE'
+            rg_row['SeriesName'] = np.nan
+            rg_row['FileName'] = str(self.Source['FileName'])
+            rg_row['StationID'] = str(self.Source['StationID'])
+            rg_row['RainUnits'] = str(self.Source['RainUnits'])
+        return rg_row
+        
+    def to_inp_str(self):
+        """writes a string for the input file"""
+        if self.Source['DataSource'] == 'TIMESERIES':
+            source_string = (str(self.Source['DataSource'])+' '+
+                str(self.Source['SeriesName']))
+        if self.Source['DataSource'] == 'FILE':
+            source_string = (str(self.Source['DataSource'])+' '+
+                str(self.Source['FileName'])+' '+
+                str(self.Source['StationID'])+' '+
+                str(self.Source['RainUnits']))
+        inp_str = (self.Name+'    '+
+            self.Format+'    '+
+            str(self.Interval)+'    '+
+            str(self.SCF)+'    '+
+            source_string)
+        return inp_str
+            
+        #deprecated:
     def from_ts(rg_ts, feedback):
         """creates a rain gage from timeseries dict"""
         rg_source = {
-            'Type':'TIMESERIES',
-            'TS_Name': rg_ts['Name']}
+            'DataSource':'TIMESERIES',
+            'SeriesName': rg_ts['Name']}
         try:
             timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
             rg_interval = str(timediff)[:-3]
@@ -204,22 +301,7 @@ class SwmmRainGage:
         return SwmmRainGage(
             rg_ts['Description'],
             rg_ts['Format'],
+            rg_interval,
+            1,
             rg_source,
-            rg_interval)
-            
-    def to_inp_str(self):
-        """writes a string for the input file"""
-        if self.Source['Type'] == 'TIMESERIES':
-            source_string = (str(self.Source['Type'])+' '+
-                str(self.Source['TS_Name']))
-        if self.Source['Type'] == 'FILE':
-            source_string = (str(self.Source['Type'])+' '+
-                str(self.Source['TS_Name'])+' '+
-                str(self.Source['Station'])+' '+
-                str(self.Source['RainUnit']))
-        inp_str = (self.Name+'    '+
-            self.Format+'    '+
-            str(self.Interval)+'    '+
-            str(self.SCF)+'    '+
-            source_string)
-        return inp_str
+        )

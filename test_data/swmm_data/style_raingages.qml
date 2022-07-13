@@ -355,9 +355,18 @@
       </editWidget>
     </field>
     <field name="Units">
-      <editWidget type="TextEdit">
+      <editWidget type="ValueMap">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option name="map" type="List">
+              <Option type="Map">
+                <Option name="MM" value="MM" type="QString"/>
+              </Option>
+              <Option type="Map">
+                <Option name="IN" value="IN" type="QString"/>
+              </Option>
+            </Option>
+          </Option>
         </config>
       </editWidget>
     </field>

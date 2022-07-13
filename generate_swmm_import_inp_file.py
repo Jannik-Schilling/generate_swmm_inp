@@ -751,16 +751,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'RAINGAGES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating raingages file ...'))
             feedback.setProgress(37)
-            all_rain_gages = build_df_from_vals_list(dict_all_raw_vals['RAINGAGES'],list(def_sections_dict['RAINGAGES'].keys()))
             rg_choords = build_df_for_section('SYMBOLS', dict_all_raw_vals)
             rg_geoms = [get_point_from_x_y(rg_choords.loc[i,:]) for i in rg_choords.index]
             rg_geoms = pd.DataFrame(rg_geoms, columns = ['Name', 'geometry']).set_index('Name')
-            all_rain_gages = all_rain_gages.join(rg_geoms, on = 'Name')
-            all_rain_gages = all_rain_gages.applymap(replace_nan_null)
+            from .g_s_subcatchments import SwmmRainGage
+            rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']]
+            rain_gages_df = pd.DataFrame([i.to_qgs_row() for i in rain_gages_list])
+            rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
+            rain_gages_df = rain_gages_df.applymap(replace_nan_null)
             rg_layer_name = 'SWMM_raingages'
             if result_prefix != '':
                 rg_layer_name = result_prefix+'_'+rg_layer_name
-            rg_layer = create_layer_from_table(all_rain_gages,'RAINGAGES','Point',rg_layer_name)
+            rg_fields = SwmmRainGage.layer_fields
+            rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,rg_fields)
             add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
 
         """junctions section """

@@ -33,23 +33,14 @@ import numpy as np
 from qgis.core import (NULL,
                        QgsProcessingException)
 
-def read_shapefiles_direct(file_outfalls,
-                       file_storages,
-                       file_subcatchments,
-                       file_conduits,
-                       file_junctions,
-                       file_pumps,
-                       file_weirs,
-                       file_orifices,
-                       file_outlets,
-                       file_dividers):
-    """reads shapefiles from swmm model"""
-    data_dict = dict()
+def read_layers_direct(raw_layers_dict):
+    """reads layers from swmm model"""
     def del_none_bool(df):
         """
         replaces None or NULL with np.nan
         replaces True and False with 'YES' and 'NO'
-        ...except of geometry column
+        except of geometry column
+        :param pd.DataFrame df
         """
         df[df.columns[:-1]] =  df[df.columns[:-1]].fillna(value=np.nan)
         def replace_null_nan(atrr_value):
@@ -60,8 +51,11 @@ def read_shapefiles_direct(file_outfalls,
         df = df.applymap(replace_null_nan)
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
-    def load_shapefile_to_df(vlayer):
-        """reads shapefile attributes and geometries"""
+    def load_layer_to_df(vlayer):
+        """
+        reads layer attributes and geometries
+        :param QgsVectorLayer vlayer
+        """
         cols = [f.name() for f in vlayer.fields()]
         # check for null geometries
         if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
@@ -71,36 +65,8 @@ def read_shapefiles_direct(file_outfalls,
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
         
-    if file_outfalls is not None:
-        data_dict['outfalls_raw'] = load_shapefile_to_df(file_outfalls)
-    
-    if file_storages is not None:
-        data_dict['storages_raw'] = load_shapefile_to_df(file_storages)
-    
-    if file_subcatchments is not None:
-        data_dict['subcatchments_raw'] = load_shapefile_to_df(file_subcatchments)
-    
-    if file_conduits is not None:
-        data_dict['conduits_raw'] = load_shapefile_to_df(file_conduits)
-    
-    if file_junctions is not None:
-        data_dict['junctions_raw'] = load_shapefile_to_df(file_junctions)
-    
-    if file_pumps is not None:
-        data_dict['pumps_raw'] = load_shapefile_to_df(file_pumps)
-    
-    if file_outlets is not None:
-        data_dict['outlets_raw'] = load_shapefile_to_df(file_outlets)
-    
-    if file_orifices is not None:
-        data_dict['orifices_raw'] = load_shapefile_to_df(file_orifices)
-    
-    if file_weirs is not None:
-        data_dict['weirs_raw'] = load_shapefile_to_df(file_weirs)
-    
-    if file_dividers is not None:
-        data_dict['dividers_raw'] = load_shapefile_to_df(file_dividers)
-    data_dict = {key_i:del_none_bool(data_dict[key_i]) for key_i in data_dict.keys()}
+    data_dict = {l_name: load_layer_to_df(l_data) for l_name, l_data in raw_layers_dict.items()}
+    data_dict = {l_name:del_none_bool(data_dict[l_name]) for l_name in data_dict.keys()}
     return data_dict
 
     
