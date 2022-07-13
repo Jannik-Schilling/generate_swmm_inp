@@ -65,7 +65,7 @@ def read_layers_direct(raw_layers_dict):
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
         
-    data_dict = {l_name: load_layer_to_df(l_data) for l_name, l_data in raw_layers_dict.items()}
+    data_dict = {l_name: load_layer_to_df(l_data) for l_name, l_data in raw_layers_dict.items() if l_data is not None}
     data_dict = {l_name:del_none_bool(data_dict[l_name]) for l_name in data_dict.keys()}
     return data_dict
 
