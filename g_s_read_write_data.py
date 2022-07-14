@@ -35,6 +35,7 @@ from qgis.core import (NULL,
 
 def read_layers_direct(raw_layers_dict):
     """reads layers from swmm model"""
+    
     def del_none_bool(df):
         """
         replaces None or NULL with np.nan
@@ -64,10 +65,9 @@ def read_layers_direct(raw_layers_dict):
         datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
-        
-    data_dict = {l_name: load_layer_to_df(l_data) for l_name, l_data in raw_layers_dict.items() if l_data is not None}
-    data_dict_out = {k: v for k, v in data_dict.items() if len(v) > 0}
-    data_dict_out = {l_name:del_none_bool(data_dict_out[l_name]) for l_name in data_dict_out.keys()}
+    data_dict = {n: load_layer_to_df(d) for n, d in raw_layers_dict.items() if d is not None}
+    data_dict_out = {n:d for n, d in data_dict.items() if len(d) > 0}
+    data_dict_out = {n:del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
     return data_dict_out
 
     

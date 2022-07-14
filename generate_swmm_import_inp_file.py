@@ -715,7 +715,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     transform_context,
                     options
                 )
-                print('yea')
             except:
                 # for older QGIS versions
                 QgsVectorFileWriter.writeAsVectorFormat(
@@ -725,7 +724,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     vector_layer.crs(),
                     driverName=geodata_driver_name
                 )
-                print('no..')
             return vector_layer
 
         def replace_nan_null(data):

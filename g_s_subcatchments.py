@@ -42,32 +42,42 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
     suba_cols = list(def_sections_dict['SUBAREAS'].keys())
     all_sub_cols = subc_cols+suba_cols+['InfMethod']
     sub_layer_name = 'Subcatchments Layer'
-    check_columns(sub_layer_name,
-                  all_sub_cols,
-                  subcatchments_df.keys())
+    check_columns(
+        sub_layer_name,
+        all_sub_cols,
+        subcatchments_df.keys()
+    )
 
     def rename_for_infiltation(subc_row, main_infiltration_method):
-        """selects and renames different columns according to the columns 'InfMethod'"""
+        """
+        selects and renames different columns according to the columns 'InfMethod'
+        """
         infiltr_method = subc_row['InfMethod']
         if pd.isna(infiltr_method):
             # take main infiltration method, if not given for subcatchment
             infiltr_method = main_infiltration_method
         if infiltr_method in ['GREEN_AMPT','MODIFIED_GREEN_AMPT']:
-            subc_row = subc_row.rename({'SuctHead':'Param1',
-                                        'Conductiv':'Param2',
-                                        'InitDef':'Param3'})
+            subc_row = subc_row.rename({
+                'SuctHead':'Param1',
+                'Conductiv':'Param2',
+                'InitDef':'Param3'
+            })
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
         if infiltr_method in ['HORTON','MODIFIED_HORTON']:
-            subc_row = subc_row.rename({'MaxRate':'Param1', 
-                                        'MinRate':'Param2',
-                                        'Decay':'Param3',  
-                                        'DryTime':'Param4', 
-                                        'MaxInf':'Param5'})
+            subc_row = subc_row.rename({
+                'MaxRate':'Param1',
+                'MinRate':'Param2',
+                'Decay':'Param3',
+                'DryTime':'Param4',
+                'MaxInf':'Param5'
+            })
         if infiltr_method == 'CURVE_NUMBER':
-            subc_row = subc_row.rename({'CurveNum':'Param1',
-                                        'Conductiv':'Param2', 
-                                        'DryTime':'Param3'})
+            subc_row = subc_row.rename({
+                'CurveNum':'Param1',
+                'Conductiv':'Param2', 
+                'DryTime':'Param3'
+            })
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
         if infiltr_method is None:
@@ -77,26 +87,32 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
             subc_row['Param4'] = ''
             subc_row['Param5'] = ''
         return subc_row
-    subcatchments_df = subcatchments_df.apply(rename_for_infiltation, 
-                                              axis=1, 
-                                              args=(main_infiltration_method,))
+    subcatchments_df = subcatchments_df.apply(
+        rename_for_infiltation, 
+        axis=1, 
+        args=(main_infiltration_method,)
+    )
     subcatchments_df['SnowPack'] = subcatchments_df['SnowPack'].fillna('')
     subcatchments_df['PctRouted'] = subcatchments_df['PctRouted'].fillna(100)
     subcatchments_df = subcatchments_df.reset_index(drop=True)
     return(subcatchments_df)
 
 def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all_infiltr, main_infiltration_method):
-    """creates pd.Dataframes from lists of subcatchment attributes (from an inp file)"""
-    def_infiltr_dtypes = {'InfMethod':'String',
-                      'SuctHead':'Double',
-                      'Conductiv':'Double',
-                      'InitDef':'Double',
-                      'MaxRate':'Double',
-                      'MinRate':'Double',
-                      'Decay':'Double',
-                      'DryTime':'Double',
-                      'MaxInf':'Double',
-                      'CurveNum':'Double'}
+    """
+    creates pd.Dataframes from lists of subcatchment attributes (from an inp file)
+    """
+    def_infiltr_dtypes = {
+        'InfMethod':'String',
+        'SuctHead':'Double',
+        'Conductiv':'Double',
+        'InitDef':'Double',
+        'MaxRate':'Double',
+        'MinRate':'Double',
+        'Decay':'Double',
+        'DryTime':'Double',
+        'MaxInf':'Double',
+        'CurveNum':'Double'
+    }
     def create_infiltr_df(infiltr_row, main_infilt_method):
         if pd.isna(infiltr_row['InfMethod']):
             infiltr_row['InfMethod'] = main_infilt_method
@@ -152,7 +168,9 @@ subc_field_vals = {
 ##for raingages
 
 def rg_position_default(polyg_dict):
-    """sets the default position of a rain gauge based on all subcatchment polygons"""
+    """
+    sets the default position of a rain gauge based on all subcatchment polygons
+    """
     all_yx = pd.concat([v for k,v in polyg_dict.items()])
     x_mean = np.mean(all_yx['x'])+10
     y_mean = np.mean(all_yx['y'])+10
@@ -237,10 +255,16 @@ class SwmmRainGage:
                 'StationID':rg_line[6],
                 'RainUnits':rg_line[7]
             }
+        interval_split = str(rg_line[2]).split(':') #Interval splitted in HH:mm
+        if len(interval_split) == 1:
+            interval_split = interval_split+['00'] # if only hours
+        if len(interval_split[0]) == 1:
+            interval_split[0] = '0'+interval_split[0] # if one digit hour
+        interval = interval_split[0]+':'+interval_split[1]
         return SwmmRainGage(
             rg_line[0], #Name
             rg_line[1], #Format
-            rg_line[2], #Interval
+            interval, 
             rg_line[3], #SCF
             rg_source
         )
