@@ -35,6 +35,7 @@ from qgis.core import (NULL,
                        QgsGeometry,
                        QgsProcessingAlgorithm,
                        QgsProcessingContext,
+                       QgsCoordinateTransformContext,
                        QgsProcessingException,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterEnum,
@@ -703,11 +704,28 @@ class ImportInpFile (QgsProcessingAlgorithm):
             vector_layer.updateFields()
             data_df.apply(lambda x: create_feature_from_df(x, pr), axis =1)
             vector_layer.updateExtents() 
-            QgsVectorFileWriter.writeAsVectorFormat(vector_layer,
-                                                    os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
-                                                    'utf-8',
-                                                    vector_layer.crs(),
-                                                    driverName=geodata_driver_name)
+            try:
+                options = QgsVectorFileWriter.SaveVectorOptions()
+                options.fileEnconding = 'utf-8'
+                options.driverName = geodata_driver_name
+                transform_context = QgsProject.instance().transformContext()
+                QgsVectorFileWriter.writeAsVectorFormatV3(
+                    vector_layer,
+                    os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+                    transform_context,
+                    options
+                )
+                print('yea')
+            except:
+                # for older QGIS versions
+                QgsVectorFileWriter.writeAsVectorFormat(
+                    vector_layer,
+                    os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+                    'utf-8',
+                    vector_layer.crs(),
+                    driverName=geodata_driver_name
+                )
+                print('no..')
             return vector_layer
 
         def replace_nan_null(data):
