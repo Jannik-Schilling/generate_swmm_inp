@@ -557,6 +557,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             rg_symbols_df = rg_features_df[['Name','X_Coord','Y_Coord']]
             rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgs_row(row) ,axis = 1)
             inp_dict['raingages_dict'] = {rg.Name:rg.to_inp_str() for rg in rg_list}
+        else:
+            inp_dict['raingages_dict'] = {}
+            rg_symbols_df = df = pd.DataFrame({
+                'Name': pd.Series(dtype='str'),
+                'X_Coord': pd.Series(dtype='str'),
+                'Y_Coord': pd.Series(dtype='str')
+                })
 
         # deprecated!
         if len(rg_ts_dict) > 0:
@@ -596,6 +603,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         feedback.setProgressText(self.tr('Creating inp file:'))
         """writing inp"""
+        inp_dict = {k:v for k,v in inp_dict.items() if len(v)>0} #remove empty sections
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,
