@@ -70,7 +70,7 @@ all_st_type_cols = [
     'MinorAxis',
     'SideSlope',
     'SurfHeight']
-storage_field_vals = {'Type':{k:k for k in st_types_def.keys()}}
+
 
 def get_storages_from_geodata(storages_raw):
     '''creates a df for storages from raw storage data'''
