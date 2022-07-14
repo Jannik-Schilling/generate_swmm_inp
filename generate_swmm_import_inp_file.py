@@ -803,21 +803,30 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STORAGE' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating storages file ...'))
             feedback.setProgress(45)
-            from .g_s_nodes import get_storages_from_inp, storage_field_vals
+            from .g_s_nodes import get_storages_from_inp
             st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
             if len(st_list) > 0:
-                all_storages = build_df_from_vals_list(st_list, list(def_sections_dict['STORAGE'].keys()))
+                all_storages = build_df_from_vals_list(
+                    st_list,
+                    list(def_sections_dict['STORAGE'].keys())
+                )
                 all_storages = all_storages.join(all_geoms, on = 'Name')
                 all_storages = all_storages.applymap(replace_nan_null)
                 storages_layer_name = 'SWMM_storages'
                 # add prefix to layer name if available
                 if result_prefix != '':
                     storages_layer_name = result_prefix+'_'+storages_layer_name
-                storages_layer = create_layer_from_table(all_storages,'STORAGE','Point',storages_layer_name)
-                add_layer_on_completion(folder_save,
-                                        storages_layer_name,
-                                        'style_storages.qml',
-                                        storage_field_vals)
+                storages_layer = create_layer_from_table(
+                    all_storages,
+                    'STORAGE',
+                    'Point',
+                    storages_layer_name
+                )
+                add_layer_on_completion(
+                    folder_save,
+                    storages_layer_name,
+                    'style_storages.qml',
+                )
         
         """ outfalls section """
         if 'OUTFALLS' in dict_all_raw_vals.keys():
