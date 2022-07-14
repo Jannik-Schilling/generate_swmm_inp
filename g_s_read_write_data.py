@@ -66,7 +66,8 @@ def read_layers_direct(raw_layers_dict):
         return df
         
     data_dict = {l_name: load_layer_to_df(l_data) for l_name, l_data in raw_layers_dict.items() if l_data is not None}
-    data_dict = {l_name:del_none_bool(data_dict[l_name]) for l_name in data_dict.keys()}
+    data_dict_out = {k: v for k, v in data_dict.items() if len(v) > 0}
+    data_dict_out = {l_name:del_none_bool(data_dict_out[l_name]) for l_name in data_dict_out.keys()}
     return data_dict
 
     
