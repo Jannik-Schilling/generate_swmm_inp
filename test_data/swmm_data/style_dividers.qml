@@ -1,20 +1,8 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis maxScale="0" simplifyAlgorithm="0" symbologyReferenceScale="-1" version="3.22.4-Białowieża" simplifyLocal="1" simplifyDrawingHints="0" minScale="0" labelsEnabled="0" styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" simplifyDrawingTol="1" readOnly="0" simplifyMaxScale="1">
-  <flags>
-    <Identifiable>1</Identifiable>
-    <Removable>1</Removable>
-    <Searchable>1</Searchable>
-    <Private>0</Private>
-  </flags>
-  <temporal fixedDuration="0" mode="0" durationField="" enabled="0" startExpression="" endField="" durationUnit="min" startField="" endExpression="" accumulate="0" limitMode="0">
-    <fixedRange>
-      <start></start>
-      <end></end>
-    </fixedRange>
-  </temporal>
-  <renderer-v2 symbollevels="0" type="singleSymbol" forceraster="0" enableorderby="0" referencescale="-1">
+<qgis version="3.22.7-Białowieża" styleCategories="Symbology|Labeling|Fields|Forms" labelsEnabled="0">
+  <renderer-v2 forceraster="0" type="singleSymbol" enableorderby="0" referencescale="-1" symbollevels="0">
     <symbols>
-      <symbol type="marker" alpha="1" force_rhr="0" clip_to_extent="1" name="0">
+      <symbol alpha="1" clip_to_extent="1" force_rhr="0" type="marker" name="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" value="" name="name"/>
@@ -22,7 +10,7 @@
             <Option type="QString" value="collection" name="type"/>
           </Option>
         </data_defined_properties>
-        <layer enabled="1" pass="0" locked="0" class="SimpleMarker">
+        <layer locked="0" class="SimpleMarker" enabled="1" pass="0">
           <Option type="Map">
             <Option type="QString" value="0" name="angle"/>
             <Option type="QString" value="square" name="cap_style"/>
@@ -82,116 +70,8 @@
     <rotation/>
     <sizescale/>
   </renderer-v2>
-  <customproperties>
-    <Option type="Map">
-      <Option type="List" name="dualview/previewExpressions">
-        <Option type="QString" value="&quot;Name&quot;"/>
-      </Option>
-      <Option type="int" value="0" name="embeddedWidgets/count"/>
-      <Option name="variableNames"/>
-      <Option name="variableValues"/>
-    </Option>
-  </customproperties>
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
-  <layerOpacity>1</layerOpacity>
-  <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Histogram">
-    <DiagramCategory spacing="5" scaleBasedVisibility="0" backgroundColor="#ffffff" sizeType="MM" rotationOffset="270" minScaleDenominator="0" minimumSize="0" diagramOrientation="Up" showAxis="1" width="15" spacingUnitScale="3x:0,0,0,0,0,0" opacity="1" penWidth="0" backgroundAlpha="255" labelPlacementMethod="XHeight" direction="0" barWidth="5" penColor="#000000" lineSizeType="MM" penAlpha="255" height="15" scaleDependency="Area" lineSizeScale="3x:0,0,0,0,0,0" maxScaleDenominator="0" sizeScale="3x:0,0,0,0,0,0" enabled="0" spacingUnit="MM">
-      <fontProperties description="Ubuntu,11,-1,5,50,0,0,0,0,0" style=""/>
-      <attribute color="#000000" field="" label=""/>
-      <axisSymbol>
-        <symbol type="line" alpha="1" force_rhr="0" clip_to_extent="1" name="">
-          <data_defined_properties>
-            <Option type="Map">
-              <Option type="QString" value="" name="name"/>
-              <Option name="properties"/>
-              <Option type="QString" value="collection" name="type"/>
-            </Option>
-          </data_defined_properties>
-          <layer enabled="1" pass="0" locked="0" class="SimpleLine">
-            <Option type="Map">
-              <Option type="QString" value="0" name="align_dash_pattern"/>
-              <Option type="QString" value="square" name="capstyle"/>
-              <Option type="QString" value="5;2" name="customdash"/>
-              <Option type="QString" value="3x:0,0,0,0,0,0" name="customdash_map_unit_scale"/>
-              <Option type="QString" value="MM" name="customdash_unit"/>
-              <Option type="QString" value="0" name="dash_pattern_offset"/>
-              <Option type="QString" value="3x:0,0,0,0,0,0" name="dash_pattern_offset_map_unit_scale"/>
-              <Option type="QString" value="MM" name="dash_pattern_offset_unit"/>
-              <Option type="QString" value="0" name="draw_inside_polygon"/>
-              <Option type="QString" value="bevel" name="joinstyle"/>
-              <Option type="QString" value="35,35,35,255" name="line_color"/>
-              <Option type="QString" value="solid" name="line_style"/>
-              <Option type="QString" value="0.26" name="line_width"/>
-              <Option type="QString" value="MM" name="line_width_unit"/>
-              <Option type="QString" value="0" name="offset"/>
-              <Option type="QString" value="3x:0,0,0,0,0,0" name="offset_map_unit_scale"/>
-              <Option type="QString" value="MM" name="offset_unit"/>
-              <Option type="QString" value="0" name="ring_filter"/>
-              <Option type="QString" value="0" name="trim_distance_end"/>
-              <Option type="QString" value="3x:0,0,0,0,0,0" name="trim_distance_end_map_unit_scale"/>
-              <Option type="QString" value="MM" name="trim_distance_end_unit"/>
-              <Option type="QString" value="0" name="trim_distance_start"/>
-              <Option type="QString" value="3x:0,0,0,0,0,0" name="trim_distance_start_map_unit_scale"/>
-              <Option type="QString" value="MM" name="trim_distance_start_unit"/>
-              <Option type="QString" value="0" name="tweak_dash_pattern_on_corners"/>
-              <Option type="QString" value="0" name="use_custom_dash"/>
-              <Option type="QString" value="3x:0,0,0,0,0,0" name="width_map_unit_scale"/>
-            </Option>
-            <prop k="align_dash_pattern" v="0"/>
-            <prop k="capstyle" v="square"/>
-            <prop k="customdash" v="5;2"/>
-            <prop k="customdash_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-            <prop k="customdash_unit" v="MM"/>
-            <prop k="dash_pattern_offset" v="0"/>
-            <prop k="dash_pattern_offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-            <prop k="dash_pattern_offset_unit" v="MM"/>
-            <prop k="draw_inside_polygon" v="0"/>
-            <prop k="joinstyle" v="bevel"/>
-            <prop k="line_color" v="35,35,35,255"/>
-            <prop k="line_style" v="solid"/>
-            <prop k="line_width" v="0.26"/>
-            <prop k="line_width_unit" v="MM"/>
-            <prop k="offset" v="0"/>
-            <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-            <prop k="offset_unit" v="MM"/>
-            <prop k="ring_filter" v="0"/>
-            <prop k="trim_distance_end" v="0"/>
-            <prop k="trim_distance_end_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-            <prop k="trim_distance_end_unit" v="MM"/>
-            <prop k="trim_distance_start" v="0"/>
-            <prop k="trim_distance_start_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-            <prop k="trim_distance_start_unit" v="MM"/>
-            <prop k="tweak_dash_pattern_on_corners" v="0"/>
-            <prop k="use_custom_dash" v="0"/>
-            <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-            <data_defined_properties>
-              <Option type="Map">
-                <Option type="QString" value="" name="name"/>
-                <Option name="properties"/>
-                <Option type="QString" value="collection" name="type"/>
-              </Option>
-            </data_defined_properties>
-          </layer>
-        </symbol>
-      </axisSymbol>
-    </DiagramCategory>
-  </SingleCategoryDiagramRenderer>
-  <DiagramLayerSettings zIndex="0" dist="0" placement="0" linePlacementFlags="18" obstacle="0" priority="0" showAll="1">
-    <properties>
-      <Option type="Map">
-        <Option type="QString" value="" name="name"/>
-        <Option name="properties"/>
-        <Option type="QString" value="collection" name="type"/>
-      </Option>
-    </properties>
-  </DiagramLayerSettings>
-  <geometryOptions geometryPrecision="0" removeDuplicateNodes="0">
-    <activeChecks/>
-    <checkConfiguration/>
-  </geometryOptions>
-  <legend showLabelLegend="0" type="default-vector"/>
-  <referencedLayers/>
   <fieldConfiguration>
     <field configurationFlags="None" name="fid">
       <editWidget type="TextEdit">
@@ -222,30 +102,46 @@
       </editWidget>
     </field>
     <field configurationFlags="None" name="Type">
-      <editWidget type="TextEdit">
+      <editWidget type="ValueMap">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option type="Map" name="map">
+              <Option type="QString" value="CUTOFF" name="CUTOFF"/>
+              <Option type="QString" value="OVERFLOW" name="OVERFLOW"/>
+              <Option type="QString" value="TABULAR" name="TABULAR"/>
+              <Option type="QString" value="WEIR" name="WEIR"/>
+            </Option>
+          </Option>
         </config>
       </editWidget>
     </field>
     <field configurationFlags="None" name="CutoffFlow">
       <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option type="bool" value="false" name="IsMultiline"/>
+            <Option type="bool" value="false" name="UseHtml"/>
+          </Option>
         </config>
       </editWidget>
     </field>
     <field configurationFlags="None" name="Curve">
       <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option type="bool" value="false" name="IsMultiline"/>
+            <Option type="bool" value="false" name="UseHtml"/>
+          </Option>
         </config>
       </editWidget>
     </field>
     <field configurationFlags="None" name="WeirMinFlo">
       <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option type="bool" value="false" name="IsMultiline"/>
+            <Option type="bool" value="false" name="UseHtml"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -259,7 +155,10 @@
     <field configurationFlags="None" name="WeirCoeff">
       <editWidget type="TextEdit">
         <config>
-          <Option/>
+          <Option type="Map">
+            <Option type="bool" value="false" name="IsMultiline"/>
+            <Option type="bool" value="false" name="UseHtml"/>
+          </Option>
         </config>
       </editWidget>
     </field>
@@ -325,20 +224,20 @@
     <default expression="" field="Aponded" applyOnUpdate="0"/>
   </defaults>
   <constraints>
-    <constraint notnull_strength="1" unique_strength="1" field="fid" exp_strength="0" constraints="3"/>
-    <constraint notnull_strength="0" unique_strength="0" field="Name" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="Elevation" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="DivertLink" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="Type" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="CutoffFlow" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="Curve" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="WeirMinFlo" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="WeirMaxDep" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="WeirCoeff" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="MaxDepth" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="InitDepth" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="SurDepth" exp_strength="0" constraints="0"/>
-    <constraint notnull_strength="0" unique_strength="0" field="Aponded" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="1" field="fid" unique_strength="1" exp_strength="0" constraints="3"/>
+    <constraint notnull_strength="0" field="Name" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="Elevation" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="DivertLink" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="Type" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="CutoffFlow" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="Curve" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="WeirMinFlo" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="WeirMaxDep" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="WeirCoeff" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="MaxDepth" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="InitDepth" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="SurDepth" unique_strength="0" exp_strength="0" constraints="0"/>
+    <constraint notnull_strength="0" field="Aponded" unique_strength="0" exp_strength="0" constraints="0"/>
   </constraints>
   <constraintExpressions>
     <constraint field="fid" desc="" exp=""/>
@@ -357,33 +256,6 @@
     <constraint field="Aponded" desc="" exp=""/>
   </constraintExpressions>
   <expressionfields/>
-  <attributeactions>
-    <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
-  </attributeactions>
-  <attributetableconfig actionWidgetStyle="dropDown" sortExpression="" sortOrder="0">
-    <columns>
-      <column width="-1" type="field" hidden="0" name="Name"/>
-      <column width="-1" type="field" hidden="0" name="Elevation"/>
-      <column width="-1" type="field" hidden="0" name="DivertLink"/>
-      <column width="-1" type="field" hidden="0" name="Type"/>
-      <column width="-1" type="field" hidden="0" name="Curve"/>
-      <column width="-1" type="field" hidden="0" name="WeirMinFlo"/>
-      <column width="-1" type="field" hidden="0" name="WeirMaxDep"/>
-      <column width="-1" type="field" hidden="0" name="WeirCoeff"/>
-      <column width="-1" type="field" hidden="0" name="MaxDepth"/>
-      <column width="-1" type="field" hidden="0" name="InitDepth"/>
-      <column width="-1" type="field" hidden="0" name="SurDepth"/>
-      <column width="-1" type="field" hidden="0" name="Aponded"/>
-      <column width="-1" type="field" hidden="0" name="fid"/>
-      <column width="-1" type="field" hidden="0" name="CutoffFlow"/>
-      <column width="-1" type="actions" hidden="1"/>
-    </columns>
-  </attributetableconfig>
-  <conditionalstyles>
-    <rowstyles/>
-    <fieldstyles/>
-  </conditionalstyles>
-  <storedexpressions/>
   <editform tolerant="1"></editform>
   <editforminit/>
   <editforminitcodesource>0</editforminitcodesource>
@@ -406,23 +278,45 @@ def my_form_open(dialog, layer, feature):
 	control = dialog.findChild(QWidget, "MyLineEdit")
 ]]></editforminitcode>
   <featformsuppress>0</featformsuppress>
-  <editorlayout>generatedlayout</editorlayout>
+  <editorlayout>tablayout</editorlayout>
+  <attributeEditorForm>
+    <attributeEditorField index="0" showLabel="1" name="fid"/>
+    <attributeEditorField index="1" showLabel="1" name="Name"/>
+    <attributeEditorField index="2" showLabel="1" name="Elevation"/>
+    <attributeEditorField index="3" showLabel="1" name="DivertLink"/>
+    <attributeEditorField index="4" showLabel="1" name="Type"/>
+    <attributeEditorField index="10" showLabel="1" name="MaxDepth"/>
+    <attributeEditorField index="11" showLabel="1" name="InitDepth"/>
+    <attributeEditorField index="12" showLabel="1" name="SurDepth"/>
+    <attributeEditorField index="13" showLabel="1" name="Aponded"/>
+    <attributeEditorContainer visibilityExpressionEnabled="1" visibilityExpression="&quot;Type&quot; = 'CUTOFF'" columnCount="1" groupBox="1" showLabel="0" name="Cutoff">
+      <attributeEditorField index="5" showLabel="1" name="CutoffFlow"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer visibilityExpressionEnabled="1" visibilityExpression="&quot;Type&quot; = 'TABULAR'" columnCount="1" groupBox="1" showLabel="0" name="Tabular">
+      <attributeEditorField index="6" showLabel="1" name="Curve"/>
+    </attributeEditorContainer>
+    <attributeEditorContainer visibilityExpressionEnabled="1" visibilityExpression="&quot;Type&quot; = 'WEIR'" columnCount="1" groupBox="1" showLabel="0" name="Weir">
+      <attributeEditorField index="7" showLabel="1" name="WeirMinFlo"/>
+      <attributeEditorField index="8" showLabel="1" name="WeirMaxDep"/>
+      <attributeEditorField index="9" showLabel="1" name="WeirCoeff"/>
+    </attributeEditorContainer>
+  </attributeEditorForm>
   <editable>
-    <field name="Aponded" editable="1"/>
-    <field name="Curve" editable="1"/>
-    <field name="CutOffFlow" editable="1"/>
-    <field name="CutoffFlow" editable="1"/>
-    <field name="DivertLink" editable="1"/>
-    <field name="Elevation" editable="1"/>
-    <field name="InitDepth" editable="1"/>
-    <field name="MaxDepth" editable="1"/>
-    <field name="Name" editable="1"/>
-    <field name="SurDepth" editable="1"/>
-    <field name="Type" editable="1"/>
-    <field name="WeirCoeff" editable="1"/>
-    <field name="WeirMaxDep" editable="1"/>
-    <field name="WeirMinFlo" editable="1"/>
-    <field name="fid" editable="1"/>
+    <field editable="1" name="Aponded"/>
+    <field editable="1" name="Curve"/>
+    <field editable="1" name="CutOffFlow"/>
+    <field editable="1" name="CutoffFlow"/>
+    <field editable="1" name="DivertLink"/>
+    <field editable="1" name="Elevation"/>
+    <field editable="1" name="InitDepth"/>
+    <field editable="1" name="MaxDepth"/>
+    <field editable="1" name="Name"/>
+    <field editable="1" name="SurDepth"/>
+    <field editable="1" name="Type"/>
+    <field editable="1" name="WeirCoeff"/>
+    <field editable="1" name="WeirMaxDep"/>
+    <field editable="1" name="WeirMinFlo"/>
+    <field editable="1" name="fid"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="Aponded"/>
@@ -460,7 +354,5 @@ def my_form_open(dialog, layer, feature):
   </reuseLastValue>
   <dataDefinedFieldProperties/>
   <widgets/>
-  <previewExpression>"Name"</previewExpression>
-  <mapTip></mapTip>
   <layerGeometryType>0</layerGeometryType>
 </qgis>

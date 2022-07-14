@@ -50,7 +50,7 @@ def get_conduits_from_shapefile(conduits_raw):
     xsections_cols =  list(def_sections_dict['XSECTIONS'].keys())
     losses_cols = list(def_sections_dict['LOSSES'].keys())
     cond_layer_name = 'Conduits Layer'
-    all_conduits_cols = conduits_cols + conduits_cols +losses_cols
+    all_conduits_cols = conduits_cols + xsections_cols +losses_cols
     check_columns(cond_layer_name,
                   all_conduits_cols,
                   conduits_raw.keys())
@@ -98,16 +98,17 @@ conduit_field_vals = {
         'HORSESHOE':'HORSESHOE',
         'IRREGULAR':'IRREGULAR',
         'MODBASKETHANDLE':'MODBASKETHANDLE',
-        'RECTANGULAR':'RECTANGULAR',
         'PARABOLIC':'PARABOLIC',
         'POWER':'POWER',
         'RECT_CLOSED':'RECT_CLOSED',
         'RECT_ROUND':'RECT_ROUND',
+        'RECT_OPEN':'RECT_OPEN',
         'RECT_TRIANGULAR':'RECT_TRIANGULAR',
         'SEMICIRCULAR':'SEMICIRCULAR',
         'SEMIELLIPTICAL':'SEMIELLIPTICAL',
         'STREET':'STREET',
         'TRAPEZOIDAL':'TRAPEZOIDAL',
+        'TRIANGULAR':'TRIANGULAR',
         'VERT_ELLIPSE':'VERT_ELLIPSE'}}
 
 # Inlets

@@ -41,13 +41,14 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterVectorLayer)
 from .g_s_various_functions import check_columns, get_coords_from_geometry
 from .g_s_defaults import def_sections_dict, def_curve_types
-from .g_s_read_data import read_data_from_table_direct, read_shapefiles_direct
+from .g_s_read_write_data  import read_data_from_table_direct, read_layers_direct
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
     generates a swmm input file from geodata and tables
     """
     QGIS_OUT_INP_FILE = 'QGIS_OUT_INP_FILE'
+    FILE_RAINGAGES = 'FILE_RAINGAGES'
     FILE_CONDUITS = 'FILE_CONDUITS'
     FILE_JUNCTIONS = 'FILE_JUNCTIONS'
     FILE_DIVIDERS = 'FILE_DIVIDERS'
@@ -81,7 +82,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 'INP files (*.inp)', #defaultValue=['date.inp'] 
             )
         )
-        
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_RAINGAGES,
+                self.tr('Rain gages Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorPoint],
+                optional = True#,defaultValue = 'SWMM_Raingagges'
+                ))
+                
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_JUNCTIONS,
@@ -254,7 +262,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         """ reading geodata"""
         feedback.setProgressText(self.tr('Reading shapfiles'))
-        feedback.setProgress(5)
+        feedback.setProgress(1)
+        file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
         file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
         file_subcatchments = self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)
@@ -265,18 +274,22 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_orifices = self.parameterAsVectorLayer(parameters, self.FILE_ORIFICES, context)
         file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
         file_dividers = self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)
-        raw_data_dict = read_shapefiles_direct(file_outfalls,
-                                           file_storages,
-                                           file_subcatchments,
-                                           file_conduits,
-                                           file_junctions,
-                                           file_pumps,
-                                           file_weirs,
-                                           file_orifices,
-                                           file_outlets,
-                                           file_dividers)
+        raw_layers_dict = {
+            'raingages_raw':file_raingages,
+            'outfalls_raw':file_outfalls,
+            'storages_raw':file_storages,
+            'subcatchments_raw':file_subcatchments,
+            'conduits_raw': file_conduits,
+            'junctions_raw':file_junctions,
+            'pumps_raw':file_pumps,
+            'weirs_raw':file_weirs,
+            'orifices_raw':file_orifices,
+            'outlets_raw':file_outlets,
+            'dividers_raw':file_dividers
+            }
+        raw_data_dict = read_layers_direct(raw_layers_dict)
         feedback.setProgressText(self.tr('done \n'))
-        feedback.setProgress(20)
+        feedback.setProgress(12)
 
         """reading data in tables (curves, patterns, inflows ...)"""
         feedback.setProgressText(self.tr('Reading tables'))
@@ -336,7 +349,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     raw_data_dict['streets'][streets_param] = read_data_from_table_direct(file_streets,
                                                                                               sheet = streets_param)
         feedback.setProgressText(self.tr('done \n'))
-        feedback.setProgress(25)
+        feedback.setProgress(20)
         
         feedback.setProgressText(self.tr('preparing data for input file:'))
         
@@ -351,13 +364,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
-            from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position
+            from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position_default
             subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'],
                                                                 main_infiltration_method)
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
             inp_dict['subcatchments_df'] = subcatchments_df
-            rg_x_mean, rg_y_mean = rg_position(inp_dict['polygons_dict']) # mean position of catchments for rain gage
-            inp_dict['rg_pos'] = [rg_x_mean, rg_y_mean]
+            rg_x_mean, rg_y_mean = rg_position_default(inp_dict['polygons_dict']) # mean position of catchments as default for rain gage
+            inp_dict['rg_position_default'] = [rg_x_mean, rg_y_mean]
 
         """conduits"""
         if 'conduits_raw' in raw_data_dict.keys():
@@ -522,17 +535,58 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """time series"""
         if 'timeseries' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
-            from .g_s_various_functions import get_timeseries_from_table, get_raingages_from_timeseries
-            inp_dict['timeseries_dict'] = get_timeseries_from_table(raw_data_dict['timeseries'],
+            from .g_s_various_functions import get_timeseries_from_table
+            inp_dict['timeseries_dict'], rg_ts_dict = get_timeseries_from_table(raw_data_dict['timeseries'],
                                                                  name_col='Name',
                                                                  feedback = feedback)
-            """rain gages"""
-            inp_dict['raingages_dict'] = get_raingages_from_timeseries(inp_dict['timeseries_dict'],feedback)
-            if 'rg_pos' in inp_dict.keys():
+        else:
+            rg_ts_dict = dict()
+        feedback.setProgress(70)
+        
+        """rain gages"""
+        from .g_s_subcatchments import SwmmRainGage
+        if 'raingages_raw' in raw_data_dict.keys():
+            feedback.setProgressText(self.tr('[RAINGAGES] section'))
+            rg_features_df = raw_data_dict['raingages_raw']
+            check_columns(
+                file_raingages,
+                SwmmRainGage.layer_fields,
+                rg_features_df.columns
+            )
+            rg_features_df['X_Coord'],rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)
+            rg_symbols_df = rg_features_df[['Name','X_Coord','Y_Coord']]
+            rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgs_row(row) ,axis = 1)
+            inp_dict['raingages_dict'] = {rg.Name:rg.to_inp_str() for rg in rg_list}
+        else:
+            inp_dict['raingages_dict'] = {}
+            rg_symbols_df = df = pd.DataFrame({
+                'Name': pd.Series(dtype='str'),
+                'X_Coord': pd.Series(dtype='str'),
+                'Y_Coord': pd.Series(dtype='str')
+                })
+
+        # deprecated!
+        if len(rg_ts_dict) > 0:
+            if 'rg_position_default' in inp_dict.keys():
                 pass
             else:
-                inp_dict['rg_pos'] = [1,2]
-        feedback.setProgress(70)
+                inp_dict['rg_position_default'] = [1,2]
+            temp_rg_ts = {}
+            for v in rg_ts_dict.values():
+                v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)
+                rg_i = SwmmRainGage.from_ts(v, feedback)
+                temp_rg_ts[v['Description']] = rg_i.to_inp_str()
+                append_rg_dict = {k:v for k,v in temp_rg_ts.items() if k not in inp_dict['raingages_dict'].keys()}
+            inp_dict['raingages_dict'].update(append_rg_dict)
+            for gr_key in append_rg_dict.keys():
+                rg_symbols_df.append([
+                    gr_key, 
+                    inp_dict['rg_position_default'][0],
+                    inp_dict['rg_position_default'][1]
+                ])
+        inp_dict['symbols_df'] = rg_symbols_df
+
+
    
         """quality"""
         if 'quality' in raw_data_dict.keys():
@@ -549,6 +603,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         feedback.setProgressText(self.tr('Creating inp file:'))
         """writing inp"""
+        inp_dict = {k:v for k,v in inp_dict.items() if len(v)>0} #remove empty sections
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,

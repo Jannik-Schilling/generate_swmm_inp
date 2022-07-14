@@ -70,17 +70,20 @@ all_st_type_cols = [
     'MinorAxis',
     'SideSlope',
     'SurfHeight']
-storage_field_vals = {'Type':{k:k for k in st_types_def.keys()}}
+
 
 def get_storages_from_geodata(storages_raw):
     '''creates a df for storages from raw storage data'''
+    storages_layer_name = 'Storages Layer'
     storage_df = storages_raw.copy()
+    check_columns(storages_layer_name,
+                  ['Type'],
+                  storage_df.keys())
     occuring_storage_types = list(set(storages_raw['Type']))
     st_types_needed = list(set([col for s_t in occuring_storage_types for col in st_types_def[s_t]]))
     st_types_not_needed = [col for col in all_st_type_cols if col not in st_types_needed]
     storages_cols = list(def_sections_dict['STORAGE'].keys())
     storages_cols_needed = [col for col in storages_cols if col not in st_types_not_needed]
-    storages_layer_name = 'Storages Layer'
     check_columns(storages_layer_name,
                   storages_cols_needed,
                   storage_df.keys())

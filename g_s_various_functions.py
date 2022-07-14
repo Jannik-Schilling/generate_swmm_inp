@@ -29,13 +29,19 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from qgis.core import QgsWkbTypes, QgsProcessingException, QgsEditorWidgetSetup
+from qgis.core import (
+    Qgis,
+    QgsWkbTypes,
+    QgsProcessingException,
+    QgsEditorWidgetSetup
+)
+
 
 ## geometry functions
 def get_coords_from_geometry(df):
     """
     extracts coords from any gpd.geodataframe
-    param pd.DataFrame df
+    :param pd.DataFrame df
     """
     def extract_xy_from_simple_line(line_simple):
         """extracts x and y coordinates from a LineString"""
@@ -87,8 +93,8 @@ def get_point_from_x_y(sr):
 def get_curves_from_table(curves_raw, name_col):
     """
     generates curve data for the input file from tables (curve_raw)
-    param pd.DataFrame curve_raw
-    param str name_col
+    :param pd.DataFrame curve_raw
+    :param str name_col
     """
     from .g_s_defaults import def_curve_types
     curve_dict = dict()
@@ -113,13 +119,15 @@ def get_curves_from_table(curves_raw, name_col):
 def get_patterns_from_table(patterns_raw, name_col):
     """
     generates a pattern dict for the input file from tables (patterns_raw)
-    param pd.DataFrame patterns_raw
-    param str name_col
+    :param pd.DataFrame patterns_raw
+    :param str name_col
     """
+    pattern_cols = ['Name','Factor']
     pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
     pattern_dict = {}
     for pattern_type in pattern_types:
         pattern_df = patterns_raw[pattern_type]
+        check_columns('Patterns Table', pattern_cols, pattern_df.columns)
         pattern_df = pattern_df[pattern_df[name_col] != ";"]
         pattern_df = pattern_df[pd.notna(pattern_df[name_col])]
         if pattern_df.empty:
@@ -137,14 +145,18 @@ def get_patterns_from_table(patterns_raw, name_col):
 def get_timeseries_from_table(ts_raw, name_col, feedback):
     """
     enerates a timeseries dict for the input file from tables (ts_raw)
-    param pd.DataFrame ts_raw
-    param str name_col
-    param QgsProcessingFeedback feedback
+    :param pd.DataFrame ts_raw
+    :param str name_col
+    :param QgsProcessingFeedback feedback
     """
     ts_dict = dict()
+    rg_ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
     if not 'File_Name' in ts_raw.columns:
         feedback.setProgressText('No external file is used in time series')
+    #deprecated:
+    if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
+        feedback.reportError('Warning: The columns \"Type\" and \"Format\" will not be used any longer in future versions of the plugin. Creating rain gages from timeseries only is deprcated. Please create a rain gage layer instead. You can get an examplary layer from the default data set or have a look at the documentation file.')
     if ts_raw.empty:
         pass
     else:
@@ -173,46 +185,28 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                         else:
                             break
             ts_description= ts_df['Description'].fillna('').unique()[0]
-            ts_format= ts_df['Format'].fillna('').unique()[0]
-            ts_type = ts_df['Type'].unique()[0]
-            ts_dict[i] = {'Name':i,
-                   'Type':ts_type,
-                   'TimeSeries':ts_df[['Name','Date','Time','Value']], 
-                   'Description':ts_description,
-                   'Format':ts_format}
-    return(ts_dict)
+            ts_dict[i] = {
+                'Name':i,
+                'TimeSeries':ts_df[['Name','Date','Time','Value']], 
+                'Description':ts_description
+            }
+            # deprecated:
+            rg_ts_dict = {}
+            if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
+                ts_format= ts_df['Format'].fillna('').unique()[0]
+                ts_type = ts_df['Type'].unique()[0]
+                rg_ts_dict[i] = {
+                    'Name':i,
+                    'Type':ts_type,
+                    'TimeSeries':ts_df[['Name','Date','Time','Value']], 
+                    'Description':ts_description,
+                    'Format':ts_format
+                }
+    return(ts_dict, rg_ts_dict)
     
     
 
-def get_raingages_from_timeseries(ts_dict, feedback):
-    """
-    enerates a raingages dict for the input file from timeseries dict
-    param dict ts_dict
-    param QgsProcessingFeedback feedback
-    """
-    rg_dict= {}
-    rg_list = [k for k in ts_dict.keys() if (ts_dict[k]['Type'] == 'rain_gage')]
-    for rg in rg_list:
-        rg_i = ts_dict[rg]
-        rg_i['TimeSeries'] = rg_i['TimeSeries'].reset_index(drop=True)
-        if len(rg_i['TimeSeries']) == 1: #only one value or external time series
-            rg_interval = ('5') #set to five minutes
-            feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined (is external) and was set by default to 5 Minutes. Please check in SWMM.')
-        else:
-            try:
-                timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1],'%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0],'%H:%M')
-                rg_interval = str(timediff)[:-3]
-            except:
-                rg_interval = ('5') #set to ten minutes
-                feedback.setProgressText('Time interval for rain gage "'+rg+'"could not be determined and was set by default to 5 Minutes. Please check in SWMM.')
-        rg_dict[rg_i['Description']] = {'Name':rg_i['Description'],
-               'Format':rg_i['Format'],
-               'Interval': rg_interval,
-               'SCF':'1',
-               'Source':'TIMESERIES'+' '+rg}
-    return (rg_dict)
-               
-    
+
 
 
 ## errors and feedback
@@ -230,7 +224,8 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         pass
     else:
         err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
-        err_message = err_message+'. For further advice regarding columns, read the documentation file in the plugin folder.'
+        err_message = err_message+'. Plaese add columns or check if the correct file was selected. '
+        err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)
         
         
@@ -238,9 +233,9 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
 def field_to_value_map(layer, field, list_values):
     """
     creates a drop down menue in QGIS layers
-    param str layer 
-    param str field
-    param list list_values
+    :param str layer 
+    :param str field
+    :param list list_values
     """
     config = {'map' : list_values}
     widget_setup = QgsEditorWidgetSetup('ValueMap',config)

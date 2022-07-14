@@ -33,23 +33,15 @@ import numpy as np
 from qgis.core import (NULL,
                        QgsProcessingException)
 
-def read_shapefiles_direct(file_outfalls,
-                       file_storages,
-                       file_subcatchments,
-                       file_conduits,
-                       file_junctions,
-                       file_pumps,
-                       file_weirs,
-                       file_orifices,
-                       file_outlets,
-                       file_dividers):
-    """reads shapefiles from swmm model"""
-    data_dict = dict()
+def read_layers_direct(raw_layers_dict):
+    """reads layers from swmm model"""
+    
     def del_none_bool(df):
         """
         replaces None or NULL with np.nan
         replaces True and False with 'YES' and 'NO'
-        ...except of geometry column
+        except of geometry column
+        :param pd.DataFrame df
         """
         df[df.columns[:-1]] =  df[df.columns[:-1]].fillna(value=np.nan)
         def replace_null_nan(atrr_value):
@@ -60,8 +52,11 @@ def read_shapefiles_direct(file_outfalls,
         df = df.applymap(replace_null_nan)
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
-    def load_shapefile_to_df(vlayer):
-        """reads shapefile attributes and geometries"""
+    def load_layer_to_df(vlayer):
+        """
+        reads layer attributes and geometries
+        :param QgsVectorLayer vlayer
+        """
         cols = [f.name() for f in vlayer.fields()]
         # check for null geometries
         if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
@@ -70,40 +65,10 @@ def read_shapefiles_direct(file_outfalls,
         datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
-        
-    if file_outfalls is not None:
-        data_dict['outfalls_raw'] = load_shapefile_to_df(file_outfalls)
-    
-    if file_storages is not None:
-        data_dict['storages_raw'] = load_shapefile_to_df(file_storages)
-    
-    if file_subcatchments is not None:
-        data_dict['subcatchments_raw'] = load_shapefile_to_df(file_subcatchments)
-    
-    if file_conduits is not None:
-        data_dict['conduits_raw'] = load_shapefile_to_df(file_conduits)
-    
-    if file_junctions is not None:
-        data_dict['junctions_raw'] = load_shapefile_to_df(file_junctions)
-    
-    if file_pumps is not None:
-        data_dict['pumps_raw'] = load_shapefile_to_df(file_pumps)
-    
-    if file_outlets is not None:
-        data_dict['outlets_raw'] = load_shapefile_to_df(file_outlets)
-    
-    if file_orifices is not None:
-        data_dict['orifices_raw'] = load_shapefile_to_df(file_orifices)
-    
-    if file_weirs is not None:
-        data_dict['weirs_raw'] = load_shapefile_to_df(file_weirs)
-    
-    if file_dividers is not None:
-        data_dict['dividers_raw'] = load_shapefile_to_df(file_dividers)
-    data_dict = {key_i:del_none_bool(data_dict[key_i]) for key_i in data_dict.keys()}
-    return data_dict
-
-
+    data_dict = {n: load_layer_to_df(d) for n, d in raw_layers_dict.items() if d is not None}
+    data_dict_out = {n:d for n, d in data_dict.items() if len(d) > 0}
+    data_dict_out = {n:del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
+    return data_dict_out
 
     
 def read_data_from_table_direct(file, sheet=0): 
@@ -127,3 +92,43 @@ def read_data_from_table_direct(file, sheet=0):
     if file_extension == '.csv':
         data_df = pd.read_csv(file)
     return data_df
+    
+    
+""" Excel files """
+def dict_to_excel(data_dict, save_name, feedback, res_prefix = '', desired_format = None):
+    """
+    writes an excel file from a data_dict
+    :param dict data_dict
+    :param str save_name
+    :param str res_prefix: prefix for file name
+    """
+    if res_prefix != '':
+        save_name = res_prefix+'_'+save_name
+    if desired_format is not None:
+        try:
+            save_name = save_name+desired_format
+            with pd.ExcelWriter(os.path.join(folder_save, save_name)) as writer:
+                for sheet_name, df in data_dict.items():
+                    df.to_excel(writer, sheet_name=sheet_name,index = False)
+        except:
+            raise QgsProcessingException(self.tr('Could not write tables in the desired file format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
+    else:
+        try:
+            save_name_xlsx = save_name+'.xlsx'
+            with pd.ExcelWriter(os.path.join(folder_save, save_name_xlsx)) as writer:
+                for sheet_name, df in data_dict.items():
+                    df.to_excel(writer, sheet_name=sheet_name,index = False)
+        except:
+            try:
+                save_name_xls = save_name+'.xls'
+                with pd.ExcelWriter(os.path.join(folder_save, save_name_xls)) as writer:
+                    for sheet_name, df in data_dict.items():
+                        df.to_excel(writer, sheet_name=sheet_name,index = False)
+            except:
+                try:
+                    save_name_ods = save_name+'.ods'
+                    with pd.ExcelWriter(os.path.join(folder_save, save_name_ods)) as writer:
+                        for sheet_name, df in data_dict.items():
+                            df.to_excel(writer, sheet_name=sheet_name,index = False)
+                except:
+                    raise QgsProcessingException(self.tr('Could not write tables in .xlsx, .xls, or .ods format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
