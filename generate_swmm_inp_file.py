@@ -555,7 +555,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             )
             rg_features_df['X_Coord'],rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)
             rg_symbols_df = rg_features_df[['Name','X_Coord','Y_Coord']]
-            rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgs_row(row) ,axis = 1)
+            rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgis_row(row) ,axis = 1)
             inp_dict['raingages_dict'] = {rg.Name:rg.to_inp_str() for rg in rg_list}
         else:
             inp_dict['raingages_dict'] = {}

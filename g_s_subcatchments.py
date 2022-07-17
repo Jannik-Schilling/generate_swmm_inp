@@ -101,7 +101,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
     """
     creates pd.Dataframes from lists of subcatchment attributes (from an inp file)
     """
-    def_infiltr_dtypes = {
+    InfiltrDtypes = {
         'InfMethod':'String',
         'SuctHead':'Double',
         'Conductiv':'Double',
@@ -121,7 +121,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                'Param2':'Conductiv',
                                'Param3':'InitDef'})
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
-            cols_not_in_infilt =[k for k in def_infiltr_dtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in InfiltrDtypes.keys() if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] in ['HORTON','MODIFIED_HORTON']:
@@ -130,7 +130,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                    'Param3':'Decay',
                                    'Param4':'DryTime',
                                    'Param5':'MaxInf'})
-            cols_not_in_infilt =[k for k in def_infiltr_dtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in InfiltrDtypes.keys() if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
@@ -138,17 +138,17 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                'Param2':'Conductiv',
                                'Param3':'DryTime'})
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
-            cols_not_in_infilt =[k for k in def_infiltr_dtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in InfiltrDtypes.keys() if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         return infiltr_row
     all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x, main_infiltration_method), axis =1)
-    all_infiltr = all_infiltr[['Name']+list(def_infiltr_dtypes.keys())]
+    all_infiltr = all_infiltr[['Name']+list(InfiltrDtypes.keys())]
     #all_infiltr = all_infiltr.dropna(how='all', axis=1) # if all subcatchments have the same infiltration method
-    def_infiltr_dtypes = {k:v for k,v in def_infiltr_dtypes.items() if k in all_infiltr.columns} 
+    InfiltrDtypes = {k:v for k,v in InfiltrDtypes.items() if k in all_infiltr.columns} 
     all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on = 'Name')
     all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on = 'Name')
-    return all_subcatchments, def_infiltr_dtypes
+    return all_subcatchments, InfiltrDtypes
 
 subc_field_vals = {
     'RouteTo':{
@@ -166,7 +166,7 @@ subc_field_vals = {
 
 
 ##for raingages
-
+# deprecated....
 def rg_position_default(polyg_dict):
     """
     sets the default position of a rain gauge based on all subcatchment polygons
@@ -194,6 +194,7 @@ def get_raingages(rg_features_df, feedback, rg_ts_dict = None, rg_pos_default = 
     return (rg_dict)
 
 
+# new...
 class SwmmRainGage:
     """Rain gage class for SWMM models"""
     def __init__(self,
@@ -210,7 +211,7 @@ class SwmmRainGage:
         self.Source = Source
         self.Position = Position
         
-    layer_fields = {
+    LayerFields = {
         'Name':'String',
         'Format':'String',
         'Interval':'String',
@@ -222,7 +223,7 @@ class SwmmRainGage:
         'RainUnits':'String'
     }
     
-    def from_qgs_row(rg_row):
+    def from_qgis_row(rg_row):
         if rg_row['DataSource'] == 'TIMESERIES':
             rg_source ={
                 'DataSource':'TIMESERIES',
@@ -269,8 +270,8 @@ class SwmmRainGage:
             rg_source
         )
     
-    def to_qgs_row(self):
-        '''prepares a pandas series for QGS features'''
+    def to_qgis_row(self):
+        '''prepares a pandas series for QGIS features'''
         rg_row = pd.Series({
             'Name':self.Name,
             'Format':self.Format,

@@ -737,10 +737,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         
         
-        def add_layer_on_completion(folder_save, layer_name, style_file, widget_setup = None):
+        def add_layer_on_completion(layer_name, style_file, widget_setup = None):
             """
             adds the current layer on completen to canvas
-            :param str folder_save
             :param str layer_name
             :param str style_file: file name of the qml file
             :param dict widget_setup: definititons for field widgets
@@ -754,8 +753,43 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 for k,v in widget_setup.items():
                     field_to_value_map(vlayer, k, v)
             context.temporaryLayerStore().addMapLayer(vlayer)
-            context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+            context.addLayerToLoadOnCompletion(
+                vlayer.id(),
+                QgsProcessingContext.LayerDetails("", QgsProject.instance(), "")
+            )
             
+        
+        
+        def add_inp_line_as_layer(
+            swmm_section_name,
+            swmm_obj_type,
+            all_geoms            
+        ):
+            layer_name = swmm_obj_type.QgisLayerName
+            layer_fields = swmm_obj_type.QgisLayerFields
+            layer_geom_type = swmm_obj_type.SwmmGeomType
+            layer_style_file = swmm_obj_type.QgisLayerStyleFile
+            swmm_obj_list = [swmm_obj_type.from_inp_line(l) for l in dict_all_raw_vals[swmm_section_name]]
+            swmm_obj_df = pd.DataFrame([i.to_qgis_row() for i in swmm_obj_list])
+            if len(swmm_obj_df) > 0:
+                swmm_obj_df = swmm_obj_df.join(all_geoms, on = 'Name')
+                swmm_obj_df = swmm_obj_df.applymap(replace_nan_null)
+                # add prefix to layer name if available
+                if result_prefix != '':
+                    layer_name = result_prefix+'_'+layer_name
+                outfalls_layer = create_layer_from_table(
+                    swmm_obj_df,
+                    swmm_section_name,
+                    layer_geom_type,
+                    layer_name,
+                    layer_fields
+                )
+                add_layer_on_completion(
+                    layer_name,
+                    layer_style_file
+                )
+             
+        
         
         """ POINTS"""
         coords = build_df_for_section('COORDINATES',dict_all_raw_vals)
@@ -771,17 +805,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
             rg_geoms = [get_point_from_x_y(rg_choords.loc[i,:]) for i in rg_choords.index]
             rg_geoms = pd.DataFrame(rg_geoms, columns = ['Name', 'geometry']).set_index('Name')
             from .g_s_subcatchments import SwmmRainGage
-            rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']]
+            rain_gages_list = [SwmmRainGage.from_inp_line(l) for l in dict_all_raw_vals['RAINGAGES']]
             if len(rain_gages_list) > 0:
-                rain_gages_df = pd.DataFrame([i.to_qgs_row() for i in rain_gages_list])
+                rain_gages_df = pd.DataFrame([i.to_qgis_row() for i in rain_gages_list])
                 rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
                 rain_gages_df = rain_gages_df.applymap(replace_nan_null)
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                rg_fields = SwmmRainGage.layer_fields
-                rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,rg_fields)
-                add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
+                layer_fields = SwmmRainGage.LayerFields
+                rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,layer_fields)
+                add_layer_on_completion(rg_layer_name, 'style_raingages.qml')
 
         """junctions section """
         if 'JUNCTIONS' in dict_all_raw_vals.keys():
@@ -795,7 +829,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 if result_prefix != '':
                     junctions_layer_name = result_prefix+'_'+junctions_layer_name
                 junctions_layer = create_layer_from_table(all_junctions,'JUNCTIONS','Point',junctions_layer_name)
-                add_layer_on_completion(folder_save, junctions_layer_name, 'style_junctions.qml')
+                add_layer_on_completion(junctions_layer_name, 'style_junctions.qml')
             
         """storages section """
         if 'STORAGE' in dict_all_raw_vals.keys():
@@ -821,7 +855,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     storages_layer_name
                 )
                 add_layer_on_completion(
-                    folder_save,
                     storages_layer_name,
                     'style_storages.qml',
                 )
@@ -830,54 +863,25 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OUTFALLS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating outfalls file ...'))
             feedback.setProgress(50)
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'NORMAL',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FIXED',[4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIDAL',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIMESERIES',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            all_outfalls = build_df_for_section('OUTFALLS',dict_all_raw_vals)
-            if len(all_outfalls) > 0:
-                all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
-                all_outfalls = all_outfalls.applymap(replace_nan_null)
-                outfalls_layer_name = 'SWMM_outfalls'
-                # add prefix to layer name if available
-                if result_prefix != '':
-                    outfalls_layer_name = result_prefix+'_'+outfalls_layer_name
-                outfalls_layer = create_layer_from_table(all_outfalls,'OUTFALLS','Point',outfalls_layer_name)
-                from .g_s_nodes import outfall_field_vals
-                add_layer_on_completion(folder_save,
-                                        outfalls_layer_name,
-                                        'style_outfalls.qml',
-                                        outfall_field_vals)
+            from .g_s_nodes import SwmmOutfall
+            add_inp_line_as_layer(
+                'OUTFALLS',
+                SwmmOutfall,
+                all_geoms
+            )
+            
+            
         
         """ dividers section """
         if 'DIVIDERS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating dividers file ...'))
-            feedback.setProgress(51)
-            divider_raw = dict_all_raw_vals['DIVIDERS'].copy()
-            divider_raw = [insert_nan_after_kw(x,3,'OVERFLOW',[4,5,6,7,8]) for x in divider_raw]
-            divider_raw = [insert_nan_after_kw(x,3,'CUTOFF',[5,6,7,8]) for x in divider_raw]
-            divider_raw = [insert_nan_after_kw(x,3,'TABULAR',[4,6,7,8]) for x in divider_raw]
-            divider_raw = [insert_nan_after_kw(x,3,'WEIR',[4,5]) for x in divider_raw]
-            divider_raw = [adjust_line_length(x,10,13,[np.nan,np.nan,np.nan]) for x in divider_raw]
-            dict_all_raw_vals['DIVIDERS'] = divider_raw.copy()
-            all_dividers = build_df_for_section('DIVIDERS',dict_all_raw_vals)
-            if len(all_dividers) > 0:
-                all_dividers = all_dividers.join(all_geoms, on = 'Name')
-                all_dividers = all_dividers.applymap(replace_nan_null)
-                dividers_layer_name = 'SWMM_dividers'
-                # add prefix to layer name if available
-                if result_prefix != '':
-                    dividers_layer_name = result_prefix+'_'+dividers_layer_name
-                from .g_s_nodes import divider_field_vals
-                dividers_layer = create_layer_from_table(
-                    all_dividers,'DIVIDERS','Point',
-                    dividers_layer_name)
-                add_layer_on_completion(
-                    folder_save,
-                    dividers_layer_name,
-                    'style_dividers.qml',
-                    divider_field_vals)
+            feedback.setProgress(53)
+            from .g_s_nodes import SwmmDivider
+            add_inp_line_as_layer(
+                'DIVIDERS',
+                SwmmDivider,
+                all_geoms
+            )
 
         """LINES"""
         feedback.setProgressText(self.tr('extracting vertices ...'))
@@ -961,7 +965,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     layer_fields = all_conduits_fields)
                 from .g_s_links import conduit_field_vals
                 add_layer_on_completion(
-                    folder_save,
                     conduits_layer_name,
                     'style_conduits.qml',
                     conduit_field_vals)
@@ -1061,7 +1064,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     outlets_layer_name)
                 from .g_s_links import outlet_field_vals
                 add_layer_on_completion(
-                    folder_save,
                     outlets_layer_name,
                     'style_regulators.qml',
                     outlet_field_vals)
@@ -1086,7 +1088,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     pumps_layer_name)
                 from .g_s_links import pump_field_vals
                 add_layer_on_completion(
-                    folder_save,
                     pumps_layer_name,
                     'style_pumps.qml',
                     pump_field_vals)
@@ -1117,7 +1118,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     all_weirs_fields)
                 from .g_s_links import weir_field_vals
                 add_layer_on_completion(
-                    folder_save,
                     weirs_layer_name,
                     'style_regulators.qml',
                     weir_field_vals)
@@ -1149,7 +1149,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     all_orifices_fields)
                 from .g_s_links import orifice_field_vals
                 add_layer_on_completion(
-                    folder_save,
                     orifices_layer_name,
                     'style_regulators.qml',
                     orifice_field_vals)
@@ -1209,7 +1208,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     subc_layer_name,
                     all_subcatchments_fields)
                 add_layer_on_completion(
-                    folder_save,
                     subc_layer_name,
                     'style_catchments.qml')
         feedback.setProgress(99)

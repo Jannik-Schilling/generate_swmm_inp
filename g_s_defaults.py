@@ -25,6 +25,17 @@ __author__ = 'Jannik Schilling'
 __date__ = '2022-04-28'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
+
+class SwmmObject:
+    SwmmNodesList = list()
+    SwmmLinksList = list()
+    SwmmSubcatchmentsList = list()
+    SwmmRainGagesList = list()
+    
+    SwmmSeparatorList = ['    ','\t']
+    SwmmSep = SwmmSeparatorList[0]
+    
+
 def_curve_types = ['Control',
                    'Pump1',
                    'Pump2',

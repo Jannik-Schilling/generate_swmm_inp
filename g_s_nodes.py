@@ -26,8 +26,97 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import numpy as np
 import pandas as pd
-from .g_s_defaults import def_sections_dict
+from .g_s_defaults import def_sections_dict, SwmmObject
 from .g_s_various_functions import check_columns, get_coords_from_geometry
+
+class SwmmNode(SwmmObject):
+    # Attributes      
+    SwmmGeomType = 'Point'    
+    def __init__(
+            self,
+            Name,
+            Elevation,
+            NodeType):
+        self.Name = str(Name)
+        self.Elevation = float(Elevation)
+        self.NodeType = NodeType
+        if Name in self.SwmmNodesList:
+            raise ValueError('duplicate Name: '+str(Name))
+        else:
+            self.SwmmNodesList.append(Name)
+    
+
+ 
+# Outfalls           
+class SwmmOutfall(SwmmNode):
+    # Attributes
+    SectionName = 'OUTFALLS'
+    QgisLayerFields = {
+        'Name':'String',
+        'Elevation':'Double',
+        'Type':'String',
+        'FixedStage':'Double',
+        'Curve_TS':'String',
+        'FlapGate':'String',
+        'RouteTo':'String'
+     }
+    QgisLayerName = 'SWMM_outfalls'
+    QgisLayerStyleFile = 'style_outfalls.qml'
+    
+    # Functions
+    def __init__(self,
+        Name,
+        Elevation,
+        Type,
+        FixedStage = np.nan,
+        Curve_TS = None,
+        FlapGate = 'NO',
+        RouteTo = None
+    ):
+        SwmmNode.__init__(self, Name, Elevation, 'Outfall')
+        self.Type = Type
+        self.FixedStage = float(FixedStage)
+        self.Curve_TS = str(Curve_TS)
+        self.FlapGate = FlapGate
+        self.RouteTo = RouteTo
+    
+    def from_inp_line(inp_line):
+        """
+        creates a SwmmOutfall from a list of attributes
+        :param list inp_line
+        """
+        of_args = dict()
+        of_type = inp_line[2]
+        if of_type == 'FIXED':
+            of_args.update({'FixedStage':inp_line[3]})
+        elif of_type == 'TIMESERIES' or of_type == 'TIDAL':
+            of_args.update({'Curve_TS':inp_line[3]})
+        else: # FREE, NORMAL
+            inp_line.insert(3,np.nan)
+        of_args.update({'FlapGate':inp_line[4]})
+        if len(inp_line) == 6:
+            of_args.update({'RouteTo':inp_line[5]})
+        return SwmmOutfall(
+            inp_line[0], # Name
+            inp_line[1], # Elevation
+            of_type,
+            **of_args            
+        )
+        
+    def to_qgis_row(self):
+        """
+        creates a pd.Series from a SwmmOutfall
+        """
+        qgis_row = pd.Series({
+            'Name':self.Name,
+            'Elevation':self.Elevation,
+            'Type':self.Type,
+            'FixedStage':self.FixedStage,
+            'Curve_TS':self.Curve_TS,
+            'FlapGate':self.FlapGate,
+            'RouteTo':self.RouteTo
+        })
+        return qgis_row
 
 # Outfalls
 def get_outfalls_from_shapefile(outfalls_raw):
@@ -40,16 +129,7 @@ def get_outfalls_from_shapefile(outfalls_raw):
     outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
     return outfalls_raw
 
-outfall_field_vals = {
-    'FlapGate':{
-        'NO':'NO',
-        'YES':'YES'},
-    'Type':{
-        'FIXED':'FIXED',
-        'FREE':'FREE',
-        'NORMAL':'NORMAL',
-        'TIMESERIES':'TIMESERIES',
-        'TIDAL':'TIDAL'}}
+
 
 
 
@@ -187,6 +267,110 @@ def get_inflows_from_table(inflows_raw,all_nodes):
 
 
 
-# dividers
-divider_types = ('CUTOFF','OVERFLOW','TABULAR','WEIR')
-divider_field_vals =  {'Type':{t:t for t in divider_types}}
+# Dividers           
+class SwmmDivider(SwmmNode):
+    # Attributes
+    SectionName = 'DIVIDERS'
+    QgisLayerFields = {
+        'Name':'String',
+        'Elevation':'Double',
+        'DivertLink':'String',
+        'Type':'String',
+        'CutoffFlow':'Double',
+        'Curve':'String',
+        'WeirMinFlo':'Double',
+        'WeirMaxDep':'Double',
+        'WeirCoeff':'Double',
+        'MaxDepth':'Double',
+        'InitDepth':'Double',
+        'SurDepth':'Double',
+        'Aponded':'Double'}
+    QgisLayerName = 'SWMM_dividers'
+    QgisLayerStyleFile = 'style_dividers.qml'
+
+    
+    # Functions
+    def __init__(self,
+        Name,
+        Elevation,
+        DivertLink,
+        Type,
+        CutoffFlow = np.nan,
+        Curve = None,
+        WeirMinFlo = np.nan,
+        WeirMaxDep = np.nan,
+        WeirCoeff = np.nan,
+        MaxDepth = np.nan,
+        InitDepth = np.nan,
+        SurDepth = np.nan,
+        Aponded = np.nan
+    ):
+        SwmmNode.__init__(self, Name, Elevation, 'Divider')
+        self.DivertLink = str(DivertLink)
+        self.Type = str(Type)
+        self.CutoffFlow = float(CutoffFlow)
+        self.Curve = str(Curve)
+        self.WeirMinFlo = float(WeirMinFlo)
+        self.WeirMaxDep = float(WeirMaxDep)
+        self.WeirCoeff = float(WeirCoeff)
+        self.MaxDepth = float(MaxDepth)
+        self.InitDepth = float(InitDepth)
+        self.SurDepth = float(SurDepth)
+        self.Aponded = float(Aponded)
+    
+    def from_inp_line(inp_line):
+        """
+        creates a SwmmDivider from a list of attributes
+        :param list of_line
+        """
+        d_args = dict()
+        d_type = inp_line[3]
+        if d_type == 'OVERFLOW':
+            depth_list = inp_line[4:]
+        elif d_type == 'CUTOFF':
+            d_args.update({'CutoffFlow':inp_line[4]})
+            depth_list = inp_line[5:]
+        elif d_type == 'TABULAR':
+            d_args.update({'Curve':inp_line[4]})
+            depth_list = inp_line[5:]
+        else: # WEIR
+            d_args.update({
+                'WeirMinFlo':inp_line[4],
+                'WeirMaxDep':inp_line[5],
+                'WeirCoeff':inp_line[6]
+            })
+            depth_list = inp_line[7:]
+        d_args.update({
+            'MaxDepth':depth_list[0],
+            'InitDepth':depth_list[1],
+            'SurDepth':depth_list[2],
+            'Aponded':depth_list[3],
+        })
+        return SwmmDivider(
+            inp_line[0], # Name
+            inp_line[1], # Elevation
+            inp_line[2], # DivertLink
+            d_type,
+            **d_args            
+        )
+        
+    def to_qgis_row(self):
+        """
+        creates a pd.Series from a SwmmOutfall
+        """
+        qgis_row = pd.Series({
+            'Name':self.Name,
+            'Elevation':self.Elevation,
+            'DivertLink':self.DivertLink,
+            'Type':self.Type,
+            'CutoffFlow':self.CutoffFlow,
+            'Curve':self.Curve,
+            'WeirMinFlo':self.WeirMinFlo,
+            'WeirMaxDep':self.WeirMaxDep,
+            'WeirCoeff':self.WeirCoeff,
+            'MaxDepth':self.MaxDepth,
+            'InitDepth':self.InitDepth,
+            'SurDepth':self.SurDepth,
+            'Aponded':self.Aponded
+        })
+        return qgis_row
