@@ -1,16 +1,19 @@
 # ![icon](/icons/icon.png) generate_swmm_inp
 A QGIS plugin which provides tools to create a SWMM input file from layers in QGIS, and to import input files into QGIS. The plugin was recently updated according to new functions in SWMM 5.2. Input files from SWMM 5.1.15 will still work. 
 
+## Documentation
+[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) to the documentation file
 
 ## Recommended Workflow
 ### 0 Install 
-- [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
 - if needed: the python packages "pandas" and "openpyxl": 
     - for windows: https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/
     - for linux, install via pip 
+- [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
 
-### 1 Load the default data 
+
+### 1 Load the default data set
 ...with the first tool (**1_GenerateDefaultData**). Alternatively you can import existing models into QGIS (**step 5**). Separate layers are provided for the main infrastructures:
 - rain gages (SWMM_raingages.gpkg)
 - junctions (SWMM_junctions.gpkg)
@@ -33,7 +36,7 @@ Further data is provided in tables and can be edited there:
 
 ### 2 Edit
 Now you can do some modifactions.
-You can edit the layers in QGIS and data in tables to create your own model. When filling the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) and the [SWMM user manual](https://www.epa.gov/water-research/storm-water-management-model-swmm-version-51-users-manual) migth help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later.  Saving the file with a new name, e.g. if you want to have different variants of conduits layers, is recommended.
+You can edit the layers in QGIS and data in tables to create your own model. When filling the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) and the [SWMM user manual](https://www.epa.gov/water-research/storm-water-management-model-swmm-version-51-users-manual) migth help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later.  Saving layer as a new file, e.g. if you want to have different variants of conduits layers, is recommended.
 
 If you start from scratch, a useful tool to create a network from a line layer is the QGIS plugin "WaterNetAnalyzer" (available in the [QGIS plugin repository](https://plugins.qgis.org/plugins/WaterNetAnalyzer-master/) or on [Github](https://github.com/Jannik-Schilling/WaterNetAnalyzer)).
 
@@ -62,5 +65,10 @@ R:
 
 
 
-## Contribute
-:+1: Feel free to contribute, contact me, report issues and propose new features/code...
+## Contributing
+- if you encounter any issues while using the plugin please report [here](https://github.com/Jannik-Schilling/generate_swmm_inp/issues).
+- you can also propose new features and discuss them at the issues page. 
+- You can fork this repository to implement your own code and send a pull request
+
+## Cite
+> *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262 *
