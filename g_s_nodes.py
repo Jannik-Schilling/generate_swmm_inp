@@ -26,7 +26,10 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import numpy as np
 import pandas as pd
-from .g_s_defaults import def_sections_dict, SwmmObject
+from .g_s_defaults import (
+    def_sections_dict,
+    SwmmObject
+)
 from .g_s_various_functions import check_columns, get_coords_from_geometry
 
 class SwmmNode(SwmmObject):
@@ -40,13 +43,8 @@ class SwmmNode(SwmmObject):
         self.Name = str(Name)
         self.Elevation = float(Elevation)
         self.NodeType = NodeType
-        if Name in self.SwmmNodesList:
-            raise ValueError('duplicate Name: '+str(Name))
-        else:
-            self.SwmmNodesList.append(Name)
-    
 
- 
+
 # Outfalls           
 class SwmmOutfall(SwmmNode):
     # Attributes

@@ -66,8 +66,8 @@ R:
 
 
 ## Contributing
-- if you encounter any issues while using the plugin please report [here](https://github.com/Jannik-Schilling/generate_swmm_inp/issues).
-- you can also propose new features and discuss them at the issues page. 
+- If you encounter any issues while using the plugin please report them [here](https://github.com/Jannik-Schilling/generate_swmm_inp/issues).
+- You can also propose new features and discuss them at the issues page. 
 - You can fork this repository to implement your own code and send a pull request
 
 ## Cite

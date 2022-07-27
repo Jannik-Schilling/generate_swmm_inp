@@ -29,25 +29,31 @@ from datetime import datetime
 import numpy as np
 import os
 import pandas as pd
-from qgis.core import (NULL,
-                       QgsField,
-                       QgsFeature,
-                       QgsGeometry,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingContext,
-                       QgsCoordinateTransformContext,
-                       QgsProcessingException,
-                       QgsProcessingParameterFile,
-                       QgsProcessingParameterEnum,
-                       QgsProcessingParameterString,
-                       QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterCrs,
-                       QgsProject,
-                       QgsVectorLayer,
-                       QgsVectorFileWriter)
+from qgis.core import (
+    NULL,
+    QgsField,
+    QgsFeature,
+    QgsGeometry,
+    QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsCoordinateTransformContext,
+    QgsProcessingException,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterString,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingParameterCrs,
+    QgsProject,
+    QgsVectorLayer,
+    QgsVectorFileWriter
+)
 from qgis.PyQt.QtCore import QVariant, QCoreApplication
 import shutil
-from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict
+from .g_s_defaults import (
+    def_sections_dict,
+    def_ogr_driver_names,
+    def_ogr_driver_dict
+)
 from .g_s_various_functions import field_to_value_map
 from .g_s_read_write_data  import dict_to_excel
 pluginPath = os.path.dirname(__file__)
@@ -1210,6 +1216,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 add_layer_on_completion(
                     subc_layer_name,
                     'style_catchments.qml')
+
         feedback.setProgress(99)
         feedback.setProgressText(self.tr('all data was saved in '+str(folder_save)))
         return {}
