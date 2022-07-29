@@ -211,7 +211,7 @@ class SwmmRainGage:
         self.Source = Source
         self.Position = Position
         
-    LayerFields = {
+    QgisLayerFields = {
         'Name':'String',
         'Format':'String',
         'Interval':'String',

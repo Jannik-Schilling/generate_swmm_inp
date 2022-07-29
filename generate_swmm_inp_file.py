@@ -550,7 +550,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             rg_features_df = raw_data_dict['raingages_raw']
             check_columns(
                 file_raingages,
-                SwmmRainGage.layer_fields,
+                SwmmRainGage.QgisLayerFields,
                 rg_features_df.columns
             )
             rg_features_df['X_Coord'],rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)

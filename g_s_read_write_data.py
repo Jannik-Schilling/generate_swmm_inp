@@ -74,21 +74,31 @@ def read_layers_direct(raw_layers_dict):
 def read_data_from_table_direct(file, sheet=0): 
     '''reads curves or other tables from excel or csv'''
     filename, file_extension = os.path.splitext(file)
+    try:
+        sheets = list(pd.read_excel(file,None,engine='openpyxl').keys())
+    except:
+        sheets = pd.ExcelFile(file).sheet_names
     if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
         if sheet == 0:
-            data_df = pd.read_excel(file,sheet_name = sheet)
+            s_n = 0
         else:
-            #print ('sheet not 0')
-            if sheet in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = sheet)
-            elif str(sheet).upper() in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = str(sheet).upper())
-            elif str(sheet).lower() in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = str(sheet).lower())
-            elif str(sheet).capitalize() in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = str(sheet).capitalize())
+            if sheet in sheets:
+                s_n = sheet
+            elif str(sheet).upper() in sheets:
+                s_n = str(sheet).upper()
+            elif str(sheet).lower() in sheets:
+                s_n = str(sheet).lower()
+            elif str(sheet).capitalize() in sheets:
+                s_n = str(sheet).capitalize()
             else:
-                data_df = pd.DataFrame()
+                s_n = None
+        if s_n is not None:
+            try:
+                data_df = pd.read_excel(file,sheet_name = s_n)
+            except:
+                data_df = pd.read_excel(file,sheet_name = s_n, engine='openpyxl')
+        else:
+            data_df = pd.DataFrame()
     if file_extension == '.csv':
         data_df = pd.read_csv(file)
     return data_df

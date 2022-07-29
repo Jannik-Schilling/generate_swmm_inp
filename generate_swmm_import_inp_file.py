@@ -751,7 +751,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     layer_name = result_prefix+'_'+layer_name
-                outfalls_layer = create_layer_from_table(
+                qgis_layer = create_layer_from_table(
                     swmm_obj_df,
                     swmm_section_name,
                     layer_geom_type,
@@ -787,7 +787,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                layer_fields = SwmmRainGage.LayerFields
+                layer_fields = SwmmRainGage.QgisLayerFields
                 rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,layer_fields)
                 add_layer_on_completion(rg_layer_name, 'style_raingages.qml')
 
