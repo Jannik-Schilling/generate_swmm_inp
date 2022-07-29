@@ -341,45 +341,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 
 
         """ Excel files """
-        def dict_to_excel(data_dict, save_name, feedback, res_prefix = '', desired_format = None):
-            """
-            writes an excel file from a data_dict
-            :param dict data_dict
-            :param str save_name
-            :param str res_prefix: prefix for file name
-            """
-            if res_prefix != '':
-                save_name = res_prefix+'_'+save_name
-            if desired_format is not None:
-                try:
-                    save_name = save_name+desired_format
-                    with pd.ExcelWriter(os.path.join(folder_save, save_name)) as writer:
-                        for sheet_name, df in data_dict.items():
-                            df.to_excel(writer, sheet_name=sheet_name,index = False)
-                except:
-                    raise QgsProcessingException(self.tr('Could not write tables in the desired file format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
-            else:
-                try:
-                    save_name_xlsx = save_name+'.xlsx'
-                    with pd.ExcelWriter(os.path.join(folder_save, save_name_xlsx)) as writer:
-                        for sheet_name, df in data_dict.items():
-                            df.to_excel(writer, sheet_name=sheet_name,index = False)
-                except:
-                    try:
-                        save_name_xls = save_name+'.xls'
-                        with pd.ExcelWriter(os.path.join(folder_save, save_name_xls)) as writer:
-                            for sheet_name, df in data_dict.items():
-                                df.to_excel(writer, sheet_name=sheet_name,index = False)
-                    except:
-                        try:
-                            save_name_ods = save_name+'.ods'
-                            with pd.ExcelWriter(os.path.join(folder_save, save_name_ods)) as writer:
-                                for sheet_name, df in data_dict.items():
-                                    df.to_excel(writer, sheet_name=sheet_name,index = False)
-                        except:
-                            raise QgsProcessingException(self.tr('Could not write tables in .xlsx, .xls, or .ods format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
-
-
         def adjust_column_types(df, col_types):
             """
             converts column types in df according to col_types
@@ -437,6 +398,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             df_options_converted = convert_options_format_for_import(dict_options, feedback)
             dict_to_excel({'OPTIONS':df_options_converted},
                           'gisswmm_options',
+                          folder_save,
                           feedback,
                           result_prefix)
             main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
@@ -458,6 +420,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         'Dry_Weather':df_dry_weather}
         dict_to_excel(dict_inflows,
                      'gisswmm_inflows',
+                     folder_save,
                      feedback,
                      result_prefix)
 
@@ -537,6 +500,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_patterns[pattern_type] = build_df_from_vals_list([], pattern_cols[pattern_type])
         dict_to_excel(all_patterns,
                      'gisswmm_patterns',
+                     folder_save,
                      feedback,
                      result_prefix)
 
@@ -577,6 +541,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_curves[curve_type]['Notes']=np.nan
         dict_to_excel(all_curves,
                      'gisswmm_curves',
+                     folder_save,
                      feedback,
                      result_prefix)
 
@@ -608,6 +573,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         del all_quality['WASHOFF']
         dict_to_excel(all_quality,
                      'gisswmm_quality',
+                     folder_save,
                      feedback,
                      result_prefix)
 
@@ -633,6 +599,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_to_excel({'Table1':all_time_series},
                       'gisswmm_timeseries',
+                      folder_save,
                       feedback,
                       result_prefix)
             
@@ -666,6 +633,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 street_data['INLET_USAGE'] = build_df_from_vals_list([], list(def_sections_dict['INLET_USAGE'].keys()))
             dict_to_excel(street_data,
                           'gisswmm_streets',
+                          folder_save,
                           feedback,
                           result_prefix)
             
@@ -1034,6 +1002,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 transects_dict = {'Data':all_tr_dats_df, 'XSections':all_tr_vals_df}
                 dict_to_excel(transects_dict,
                              'gisswmm_transects',
+                             folder_save,
                              feedback,
                              result_prefix)
 
