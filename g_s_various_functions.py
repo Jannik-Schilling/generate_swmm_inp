@@ -43,6 +43,37 @@ def get_coords_from_geometry(df):
     extracts coords from any gpd.geodataframe
     :param pd.DataFrame df
     """
+    
+    geom_point_types = {
+        'Point':'simple',
+        'PointM':'simple',
+        'PointZ':'simple',
+        'PointZM':'simple'
+    }
+    geom_line_types = {
+        'LineString':'simple',
+        'LineStringZ':'simple',
+        'LineStringZM':'simple',
+        'LineStringM':'simple',
+        'MultiLineString':'multi',
+        'MultiLineStringM':'multi',
+        'MultiLineStringZ':'multi',
+        'MultiLineStringZM':'multi'
+    }
+    geom_polygon_types = {
+        'Polygon':'simple',
+        'PolygonZ':'simple',
+        'PolygonM':'simple',
+        'PolygonZM':'simple',
+        'MultiPolygon':'multi',
+        'MultiPolygonM':'multi',
+        'MultiPolygonZ':'multi',
+        'MultiPolygonZM':'multi'
+    }
+    point_t_names = list(geom_point_types.keys())
+    line_t_names = list(geom_line_types.keys())
+    polygon_t_names = list(geom_polygon_types.keys())
+    
     def extract_xy_from_simple_line(line_simple):
         """extracts x and y coordinates from a LineString"""
         xy_arr = np.dstack((p.x(),p.y()) for p in line_simple)[0]
@@ -50,29 +81,29 @@ def get_coords_from_geometry(df):
         return xy_df
     def extract_xy_from_line(line_row):
         """extraxts xy from LineString or MultiLineString"""
-        if QgsWkbTypes.displayString(line_row.wkbType()) == 'LineString':
+        act_line_type = QgsWkbTypes.displayString(line_row.wkbType())
+        simple_or_multi = geom_line_types(act_line_type)
+        if simple_or_multi == 'simple':
             return extract_xy_from_simple_line(line_row.asPolyline())
-        if QgsWkbTypes.displayString(line_row.wkbType()) == 'MultiLineString':
+        if simple_or_multi == 'multi':
             xy_list = [extract_xy_from_simple_line(line_simple) for line_simple in line_row.asMultiPolyline()]
             return pd.concat(xy_list, ignore_index=True)
-    if all(QgsWkbTypes.displayString(g_type.wkbType()) in ['Point'] for g_type in df.geometry):
+            
+    if all(QgsWkbTypes.displayString(g_type.wkbType()) in point_t_names for g_type in df.geometry):
         df['X_Coord'] = [str(df_row.asPoint().x()) for df_row in df['geometry']]
         df['Y_Coord'] = [str(df_row.asPoint().y()) for df_row in df['geometry']]
         return df['X_Coord'],df['Y_Coord']
-    if all(QgsWkbTypes.displayString(g_type.wkbType()) in ['LineString', 'MultiLineString'] for g_type in df.geometry):
+    elif all(QgsWkbTypes.displayString(g_type.wkbType()) in line_t_names for g_type in df.geometry):
         return {na:extract_xy_from_line(geom) for geom,na in zip(df.geometry,df.Name)}
-    if all(QgsWkbTypes.displayString(g_type.wkbType()) in ['Polygon', 'MultiPolygon'] for g_type in df.geometry):
+    elif all(QgsWkbTypes.displayString(g_type.wkbType()) in polygon_t_names for g_type in df.geometry):
         def extract_xy_from_area(geom_row):
-            """extraxts xy from MultiPolygon or Polygon"""
-            if QgsWkbTypes.displayString(geom_row.wkbType()) == 'MultiPolygon':
-                xy_arr = np.dstack((v.x(),v.y()) for v in geom_row.vertices())[0]
-                xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
-                return xy_df
-            if QgsWkbTypes.displayString(geom_row.wkbType()) == 'Polygon':
-                xy_arr = np.dstack((v.x(),v.y()) for v in geom_row.vertices())[0]
-                xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
-                return xy_df
+            """extraxts xy from polygon geometries"""
+            xy_arr = np.dstack((v.x(),v.y()) for v in geom_row.vertices())[0]
+            xy_df = pd.DataFrame(xy_arr.T,columns = ['x','y'])
+            return xy_df
         return {na:extract_xy_from_area(ge) for ge,na in zip(df.geometry,df.Name)}
+    else:
+        raise QgsProcessingException('Geometry type of one or more features could not be handled')
 
 def get_point_from_x_y(sr):
     """
