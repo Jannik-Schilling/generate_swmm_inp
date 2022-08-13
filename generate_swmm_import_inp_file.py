@@ -773,13 +773,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
             from .g_s_subcatchments import SwmmRainGage
             rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']]
             if len(rain_gages_list) > 0:
-                rain_gages_df = pd.DataFrame([i.to_qgs_row() for i in rain_gages_list])
+                rain_gages_df = pd.DataFrame([i.to_qgis_row() for i in rain_gages_list])
                 rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
                 rain_gages_df = rain_gages_df.applymap(replace_nan_null)
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                rg_fields = SwmmRainGage.layer_fields
+                rg_fields = SwmmRainGage.QgisLayerFields
                 rg_layer = create_layer_from_table(rain_gages_df,'RAINGAGES','Point',rg_layer_name,rg_fields)
                 add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
 
