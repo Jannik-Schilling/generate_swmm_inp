@@ -31,7 +31,14 @@ import pandas as pd
 import os
 import numpy as np
 from qgis.core import (NULL,
-                       QgsProcessingException)
+                       QgsFeature,
+                       QgsField,
+                       QgsProcessingException,
+                       QgsVectorFileWriter,
+                       QgsVectorLayer)
+from qgis.PyQt.QtCore import QVariant        
+from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict               
+
 
 def read_layers_direct(raw_layers_dict):
     """reads layers from swmm model"""
@@ -69,33 +76,122 @@ def read_layers_direct(raw_layers_dict):
     data_dict_out = {n:d for n, d in data_dict.items() if len(d) > 0}
     data_dict_out = {n:del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
     return data_dict_out
+    
+    
+    
 
+
+def create_feature_from_df(df, pr):
+    """
+    creates a QgsFeature from data in df
+    :param pd.DataFrame df
+    :param QgsVectorLayer.dataProvider() pr
+    """
+    f = QgsFeature()
+    f.setGeometry(df.geometry)
+    f.setAttributes(df.tolist()[:-1])
+    pr.addFeature(f)
+
+                                                     
+def create_layer_from_table(data_df,
+        section_name,
+        geom_type,
+        layer_name, 
+        crs_result,
+        folder_save,
+        geodata_driver_num,
+        layer_fields = 'not_set'):
+    """
+    creates a QgsVectorLayer from data in data_df
+    :param pd.DataFrame data_df
+    :param str section_name: name of SWMM section
+    :param str geom_type: geometry type (Point/LineString/Polygon)
+    :param str layer_name
+    :param list layer fields: optional list of field names for the attribute table if field names differ from those in def_sections_dict
+    """
+    # driver
+    geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
+    geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+    #layer creation     
+    vector_layer = QgsVectorLayer(geom_type,layer_name,'memory')
+    v_l_crs = vector_layer.crs()
+    v_l_crs.createFromUserInput(crs_result)
+    vector_layer.setCrs(v_l_crs)
+    pr = vector_layer.dataProvider()
+    field_types_dict = {'Double':QVariant.Double,
+                        'String':QVariant.String,
+                        'Int':QVariant.Int,
+                        'Bool': QVariant.Bool}
+    if layer_fields == 'not_set':
+        layer_fields = def_sections_dict[section_name]
+    for col in layer_fields:
+        field_type_string = layer_fields[col]
+        field_type = field_types_dict[field_type_string]
+        pr.addAttributes([QgsField(col, field_type)])
+    vector_layer.updateFields()
+    data_df.apply(lambda x: create_feature_from_df(x, pr), axis =1)
+    vector_layer.updateExtents() 
+    try:
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.fileEnconding = 'utf-8'
+        options.driverName = geodata_driver_name
+        transform_context = QgsProject.instance().transformContext()
+        QgsVectorFileWriter.writeAsVectorFormatV3(
+            vector_layer,
+            os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+            transform_context,
+            options
+        )
+    except:
+        # for older QGIS versions
+        QgsVectorFileWriter.writeAsVectorFormat(
+            vector_layer,
+            os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+            'utf-8',
+            vector_layer.crs(),
+            driverName=geodata_driver_name
+        )
+    return vector_layer
+            
+            
+            
+            
     
 def read_data_from_table_direct(file, sheet=0): 
     '''reads curves or other tables from excel or csv'''
     filename, file_extension = os.path.splitext(file)
+    try:
+        sheets = list(pd.read_excel(file,None,engine='openpyxl').keys())
+    except:
+        sheets = pd.ExcelFile(file).sheet_names
     if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
         if sheet == 0:
-            data_df = pd.read_excel(file,sheet_name = sheet)
+            s_n = 0
         else:
-            #print ('sheet not 0')
-            if sheet in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = sheet)
-            elif str(sheet).upper() in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = str(sheet).upper())
-            elif str(sheet).lower() in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = str(sheet).lower())
-            elif str(sheet).capitalize() in pd.ExcelFile(file).sheet_names:
-                data_df = pd.read_excel(file,sheet_name = str(sheet).capitalize())
+            if sheet in sheets:
+                s_n = sheet
+            elif str(sheet).upper() in sheets:
+                s_n = str(sheet).upper()
+            elif str(sheet).lower() in sheets:
+                s_n = str(sheet).lower()
+            elif str(sheet).capitalize() in sheets:
+                s_n = str(sheet).capitalize()
             else:
-                data_df = pd.DataFrame()
+                s_n = None
+        if s_n is not None:
+            try:
+                data_df = pd.read_excel(file,sheet_name = s_n)
+            except:
+                data_df = pd.read_excel(file,sheet_name = s_n, engine='openpyxl')
+        else:
+            data_df = pd.DataFrame()
     if file_extension == '.csv':
         data_df = pd.read_csv(file)
     return data_df
     
     
 """ Excel files """
-def dict_to_excel(data_dict, save_name, feedback, res_prefix = '', desired_format = None):
+def dict_to_excel(data_dict, save_name, folder_save, feedback, res_prefix = '', desired_format = None):
     """
     writes an excel file from a data_dict
     :param dict data_dict
