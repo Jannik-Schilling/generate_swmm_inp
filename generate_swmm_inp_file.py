@@ -364,13 +364,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         """subcatchments"""
         if 'subcatchments_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
-            from .g_s_subcatchments import get_subcatchments_from_shapefile, rg_position_default
+            from .g_s_subcatchments import get_subcatchments_from_shapefile
             subcatchments_df = get_subcatchments_from_shapefile(raw_data_dict['subcatchments_raw'],
                                                                 main_infiltration_method)
             inp_dict['polygons_dict'] = get_coords_from_geometry(subcatchments_df)
             inp_dict['subcatchments_df'] = subcatchments_df
-            rg_x_mean, rg_y_mean = rg_position_default(inp_dict['polygons_dict']) # mean position of catchments as default for rain gage
-            inp_dict['rg_position_default'] = [rg_x_mean, rg_y_mean]
 
         """conduits"""
         if 'conduits_raw' in raw_data_dict.keys():
@@ -536,11 +534,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'timeseries' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
             from .g_s_various_functions import get_timeseries_from_table
-            inp_dict['timeseries_dict'], rg_ts_dict = get_timeseries_from_table(raw_data_dict['timeseries'],
+            inp_dict['timeseries_dict'] = get_timeseries_from_table(raw_data_dict['timeseries'],
                                                                  name_col='Name',
                                                                  feedback = feedback)
-        else:
-            rg_ts_dict = dict()
         feedback.setProgress(70)
         
         """rain gages"""
@@ -550,41 +546,15 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             rg_features_df = raw_data_dict['raingages_raw']
             check_columns(
                 file_raingages,
-                SwmmRainGage.layer_fields,
+                SwmmRainGage.QgisLayerFields,
                 rg_features_df.columns
             )
             rg_features_df['X_Coord'],rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)
             rg_symbols_df = rg_features_df[['Name','X_Coord','Y_Coord']]
-            rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgs_row(row) ,axis = 1)
+            rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgis_row(row) ,axis = 1)
             inp_dict['raingages_dict'] = {rg.Name:rg.to_inp_str() for rg in rg_list}
-        else:
-            inp_dict['raingages_dict'] = {}
-            rg_symbols_df = df = pd.DataFrame({
-                'Name': pd.Series(dtype='str'),
-                'X_Coord': pd.Series(dtype='str'),
-                'Y_Coord': pd.Series(dtype='str')
-                })
+            inp_dict['symbols_df'] = rg_symbols_df
 
-        # deprecated!
-        if len(rg_ts_dict) > 0:
-            if 'rg_position_default' in inp_dict.keys():
-                pass
-            else:
-                inp_dict['rg_position_default'] = [1,2]
-            temp_rg_ts = {}
-            for v in rg_ts_dict.values():
-                v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)
-                rg_i = SwmmRainGage.from_ts(v, feedback)
-                temp_rg_ts[v['Description']] = rg_i.to_inp_str()
-                append_rg_dict = {k:v for k,v in temp_rg_ts.items() if k not in inp_dict['raingages_dict'].keys()}
-            inp_dict['raingages_dict'].update(append_rg_dict)
-            for gr_key in append_rg_dict.keys():
-                rg_symbols_df.append([
-                    gr_key, 
-                    inp_dict['rg_position_default'][0],
-                    inp_dict['rg_position_default'][1]
-                ])
-        inp_dict['symbols_df'] = rg_symbols_df
 
 
    

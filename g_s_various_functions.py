@@ -82,7 +82,7 @@ def get_coords_from_geometry(df):
     def extract_xy_from_line(line_row):
         """extraxts xy from LineString or MultiLineString"""
         act_line_type = QgsWkbTypes.displayString(line_row.wkbType())
-        simple_or_multi = geom_line_types(act_line_type)
+        simple_or_multi = geom_line_types[act_line_type]
         if simple_or_multi == 'simple':
             return extract_xy_from_simple_line(line_row.asPolyline())
         if simple_or_multi == 'multi':
@@ -221,19 +221,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 'TimeSeries':ts_df[['Name','Date','Time','Value']], 
                 'Description':ts_description
             }
-            # deprecated:
-            rg_ts_dict = {}
-            if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
-                ts_format= ts_df['Format'].fillna('').unique()[0]
-                ts_type = ts_df['Type'].unique()[0]
-                rg_ts_dict[i] = {
-                    'Name':i,
-                    'Type':ts_type,
-                    'TimeSeries':ts_df[['Name','Date','Time','Value']], 
-                    'Description':ts_description,
-                    'Format':ts_format
-                }
-    return(ts_dict, rg_ts_dict)
+    return(ts_dict)
     
     
 
