@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.10
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.22
+version=0.23
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
