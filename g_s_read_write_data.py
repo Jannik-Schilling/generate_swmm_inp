@@ -105,7 +105,7 @@ def read_data_from_table_direct(file, sheet=0):
     
     
 """ Excel files """
-def dict_to_excel(data_dict, save_name, feedback, res_prefix = '', desired_format = None):
+def dict_to_excel(data_dict, save_name, folder_save, feedback, res_prefix = '', desired_format = None):
     """
     writes an excel file from a data_dict
     :param dict data_dict
