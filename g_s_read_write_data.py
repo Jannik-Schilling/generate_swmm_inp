@@ -36,8 +36,15 @@ from qgis.core import (NULL,
                        QgsProcessingException,
                        QgsVectorFileWriter,
                        QgsVectorLayer)
-from qgis.PyQt.QtCore import QVariant        
-from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict               
+
+from qgis.PyQt.QtCore import QVariant
+from .g_s_defaults import (
+    def_ogr_driver_names,
+    def_ogr_driver_dict,
+    def_sections_geoms_dict,
+    def_qgis_fields_dict
+)
+
 
 
 def read_layers_direct(raw_layers_dict):
@@ -93,26 +100,27 @@ def create_feature_from_df(df, pr):
     pr.addFeature(f)
 
                                                      
-def create_layer_from_table(data_df,
-        section_name,
-        geom_type,
-        layer_name, 
-        crs_result,
-        folder_save,
-        geodata_driver_num,
-        layer_fields = 'not_set'):
+
+def create_layer_from_table(
+    data_df,
+    section_name,
+    layer_name, 
+    crs_result,
+    folder_save,
+    geodata_driver_num):
+
     """
     creates a QgsVectorLayer from data in data_df
     :param pd.DataFrame data_df
     :param str section_name: name of SWMM section
-    :param str geom_type: geometry type (Point/LineString/Polygon)
     :param str layer_name
-    :param list layer fields: optional list of field names for the attribute table if field names differ from those in def_sections_dict
     """
     # driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-    #layer creation     
+    
+    #layer creation
+    geom_type = def_sections_geoms_dict[section_name]
     vector_layer = QgsVectorLayer(geom_type,layer_name,'memory')
     v_l_crs = vector_layer.crs()
     v_l_crs.createFromUserInput(crs_result)
@@ -122,8 +130,8 @@ def create_layer_from_table(data_df,
                         'String':QVariant.String,
                         'Int':QVariant.Int,
                         'Bool': QVariant.Bool}
-    if layer_fields == 'not_set':
-        layer_fields = def_sections_dict[section_name]
+
+    layer_fields = def_qgis_fields_dict[section_name]
     for col in layer_fields:
         field_type_string = layer_fields[col]
         field_type = field_types_dict[field_type_string]

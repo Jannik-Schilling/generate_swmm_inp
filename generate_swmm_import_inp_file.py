@@ -29,22 +29,34 @@ from datetime import datetime
 import numpy as np
 import os
 import pandas as pd
-from qgis.core import (NULL,
-                       QgsGeometry,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingContext,
-                       QgsCoordinateTransformContext,
-                       QgsProcessingException,
-                       QgsProcessingParameterFile,
-                       QgsProcessingParameterEnum,
-                       QgsProcessingParameterString,
-                       QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterCrs,
-                       QgsProject,
-                       QgsVectorLayer)
+from qgis.core import (
+    NULL,
+    QgsField,
+    QgsFeature,
+    QgsGeometry,
+    QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsCoordinateTransformContext,
+    QgsProcessingException,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterDefinition,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterString,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingParameterCrs,
+    QgsProject,
+    QgsVectorLayer,
+    QgsVectorFileWriter
+)
+
 from qgis.PyQt.QtCore import QCoreApplication
 import shutil
-from .g_s_defaults import def_sections_dict, def_ogr_driver_names, def_ogr_driver_dict
+from .g_s_defaults import (
+    def_sections_dict,
+    def_ogr_driver_dict,
+    def_ogr_driver_names
+)
 from .g_s_various_functions import field_to_value_map
 from .g_s_read_write_data  import dict_to_excel, create_layer_from_table
 pluginPath = os.path.dirname(__file__)
@@ -59,6 +71,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
     SAVE_FOLDER = 'SAVE_FOLDER'
     PREFIX = 'PREFIX'
     DATA_CRS = 'DATA_CRS'
+    CREATE_EMPTY = 'CREATE_EMPTY'
     
     def initAlgorithm(self, config):
         """
@@ -104,6 +117,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
             defaultValue='epsg:25833'
             )
         )
+        
+        empt_param = QgsProcessingParameterBoolean(
+            self.CREATE_EMPTY,
+            self.tr('Create Empty?'),
+            defaultValue = False,
+        )
+        self.addParameter(empt_param)
+        empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
+        
     def name(self):
         return 'ImportInpFile'
         
@@ -142,6 +164,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+        create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
+
 
         
         #check if the selected folder is temporary
@@ -250,7 +274,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         def build_df_from_vals_list(section_vals, col_names):
             """
-            builds a dataframe for a section
+            builds a dataframe for a section; missing vals at the end are set as np.nan
             :param list section_vals
             :param list col_names
             :return: pd.DataFrame
@@ -431,7 +455,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                           'gisswmm_options',
                           feedback,
                           result_prefix)
-            main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
+            try:
+                main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
+            except:
+                main_infiltration_method = 'HORTON' # if for some reason it is not in the OPTIONS section
         else: 
             main_infiltration_method = 'HORTON' #assumption for main infiltration method if not in options
     
@@ -704,6 +731,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         """raingages section"""
         if 'RAINGAGES' in dict_all_raw_vals.keys():
+            inp_section = 'RAINGAGES'
             feedback.setProgressText(self.tr('generating raingages file ...'))
             feedback.setProgress(37)
             rg_choords = build_df_for_section('SYMBOLS', dict_all_raw_vals)
@@ -715,43 +743,56 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 rain_gages_df = pd.DataFrame([i.to_qgis_row() for i in rain_gages_list])
                 rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
                 rain_gages_df = rain_gages_df.applymap(replace_nan_null)
+            else:
+                rain_gages_df = pd.DataFrame()
+            if len(rain_gages_list) > 0 or create_empty == True:
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                rg_fields = SwmmRainGage.QgisLayerFields
+
                 rg_layer = create_layer_from_table(
                     rain_gages_df,
                     'RAINGAGES',
-                    'Point',
                     rg_layer_name, 
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    rg_fields
                 )
-                add_layer_on_completion(folder_save, rg_layer_name, 'style_raingages.qml')
+                add_layer_on_completion(
+                    folder_save,
+                    rg_layer_name, 
+                    'style_raingages.qml'
+                )
+
 
         """junctions section """
         if 'JUNCTIONS' in dict_all_raw_vals.keys():
+            inp_section = 'RAINGAGES'
             feedback.setProgressText(self.tr('generating junctions file ...'))
             feedback.setProgress(40)
             all_junctions = build_df_for_section('JUNCTIONS',dict_all_raw_vals)
             if len(all_junctions) > 0:
                 all_junctions = all_junctions.join(all_geoms, on = 'Name')
                 all_junctions = all_junctions.applymap(replace_nan_null)
+            if len(all_junctions) > 0 or create_empty == True:
                 junctions_layer_name = 'SWMM_junctions'
                 if result_prefix != '':
                     junctions_layer_name = result_prefix+'_'+junctions_layer_name
                 junctions_layer = create_layer_from_table(
                     all_junctions,
                     'JUNCTIONS',
-                    'Point',
                     junctions_layer_name,
                     crs_result,
                     folder_save,
                     geodata_driver_num
                 )
-                add_layer_on_completion(folder_save, junctions_layer_name, 'style_junctions.qml')
+
+                add_layer_on_completion(
+                    folder_save,
+                    junctions_layer_name,
+                    'style_junctions.qml'
+                )
+
             
         """storages section """
         if 'STORAGE' in dict_all_raw_vals.keys():
@@ -759,12 +800,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(45)
             from .g_s_nodes import get_storages_from_inp
             st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
-            if len(st_list) > 0:
+            if len(st_list) > 0 or create_empty == True:
                 all_storages = build_df_from_vals_list(
                     st_list,
                     list(def_sections_dict['STORAGE'].keys())
                 )
+            else: 
+                all_storages = pd.DataFrame()
+            if len(all_storages) > 0:
                 all_storages = all_storages.join(all_geoms, on = 'Name')
+            if len(all_storages) > 0 or create_empty == True:
                 all_storages = all_storages.applymap(replace_nan_null)
                 storages_layer_name = 'SWMM_storages'
                 # add prefix to layer name if available
@@ -773,7 +818,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 storages_layer = create_layer_from_table(
                     all_storages,
                     'STORAGE',
-                    'Point',
                     storages_layer_name,
                     crs_result,
                     folder_save,
@@ -798,6 +842,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(all_outfalls) > 0:
                 all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
                 all_outfalls = all_outfalls.applymap(replace_nan_null)
+            if len(all_outfalls) > 0 or create_empty == True:
                 outfalls_layer_name = 'SWMM_outfalls'
                 # add prefix to layer name if available
                 if result_prefix != '':
@@ -805,7 +850,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 outfalls_layer = create_layer_from_table(
                     all_outfalls,
                     'OUTFALLS',
-                    'Point',
                     outfalls_layer_name,
                     crs_result,
                     folder_save,
@@ -832,15 +876,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(all_dividers) > 0:
                 all_dividers = all_dividers.join(all_geoms, on = 'Name')
                 all_dividers = all_dividers.applymap(replace_nan_null)
+            if len(all_dividers) > 0 or create_empty == True:
                 dividers_layer_name = 'SWMM_dividers'
                 # add prefix to layer name if available
                 if result_prefix != '':
                     dividers_layer_name = result_prefix+'_'+dividers_layer_name
-                from .g_s_nodes import divider_field_vals
                 dividers_layer = create_layer_from_table(
                     all_dividers,
                     'DIVIDERS',
-                    'Point',
                     dividers_layer_name,
                     crs_result,
                     folder_save,
@@ -849,8 +892,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 add_layer_on_completion(
                     folder_save,
                     dividers_layer_name,
-                    'style_dividers.qml',
-                    divider_field_vals)
+                    'style_dividers.qml'
+                    )
 
         """LINES"""
         feedback.setProgressText(self.tr('extracting vertices ...'))
@@ -917,10 +960,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_conduits['FlapGate'] = all_conduits['FlapGate'].fillna('NO')
                 conduits_geoms = get_line_geometry(all_conduits)
                 all_conduits = all_conduits.join(conduits_geoms, on = 'Name')
-                all_conduits_fields = def_sections_dict['CONDUITS'].copy()
-                all_conduits_fields.update(def_sections_dict['XSECTIONS'])
-                all_conduits_fields.update({'Shp_Trnsct':'String'})
-                all_conduits_fields.update(def_sections_dict['LOSSES'])
+            if len(all_conduits) > 0  or create_empty == True:
                 all_conduits = all_conduits.applymap(replace_nan_null)
                 conduits_layer_name = 'SWMM_conduits'
                 # add prefix to layer name if available
@@ -929,12 +969,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 conduits_layer = create_layer_from_table(
                     all_conduits,
                     'CONDUITS',
-                    'LineString',
                     conduits_layer_name,
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    layer_fields = all_conduits_fields
                 )
                 from .g_s_links import conduit_field_vals
                 add_layer_on_completion(
@@ -1028,6 +1066,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_outlets = all_outlets.applymap(replace_nan_null)
                 outlets_geoms = get_line_geometry(all_outlets)
                 all_outlets = all_outlets.join(outlets_geoms, on = 'Name')
+            if len(all_outlets) > 0  or create_empty == True:
                 outlets_layer_name = 'SWMM_outlets'
                 # add prefix to layer name if available
                 if result_prefix != '':
@@ -1035,7 +1074,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 outlets_layer = create_layer_from_table(
                     all_outlets,
                     'OUTLETS',
-                    'LineString',
                     outlets_layer_name,
                     crs_result,
                     folder_save,
@@ -1058,6 +1096,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_pumps = all_pumps.applymap(replace_nan_null)
                 pumps_geoms = get_line_geometry(all_pumps)
                 all_pumps = all_pumps.join(pumps_geoms, on = 'Name')
+            if len(all_pumps) > 0 or create_empty == True:
                 pumps_layer_name = 'SWMM_pumps'
                 # add prefix to layer name if available
                 if result_prefix != '':
@@ -1065,7 +1104,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 pumps_layer = create_layer_from_table(
                     all_pumps,
                     'PUMPS',
-                    'LineString',
                     pumps_layer_name,
                     crs_result,
                     folder_save,
@@ -1091,8 +1129,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_weirs = all_weirs.applymap(replace_nan_null) 
                 weirs_geoms = get_line_geometry(all_weirs)
                 all_weirs = all_weirs.join(weirs_geoms, on = 'Name')
-                all_weirs_fields = def_sections_dict['WEIRS'].copy()
-                all_weirs_fields.update({'Height':'Double','Length':'Double', 'SideSlope':'Double'})
+            if len(all_weirs) > 0 or create_empty == True:
                 weirs_layer_name = 'SWMM_weirs'
                 # add prefix to layer name if available
                 if result_prefix != '':
@@ -1100,12 +1137,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 weirs_layer = create_layer_from_table(
                     all_weirs,
                     'WEIRS',
-                    'LineString',
                     weirs_layer_name,
                     crs_result,
                     folder_save,
-                    geodata_driver_num,
-                    all_weirs_fields
+                    geodata_driver_num
+
                 )
                 from .g_s_links import weir_field_vals
                 add_layer_on_completion(
@@ -1128,8 +1164,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_orifices = all_orifices.applymap(replace_nan_null) 
                 orifices_geoms = get_line_geometry(all_orifices)
                 all_orifices = all_orifices.join(orifices_geoms, on = 'Name')
-                all_orifices_fields = def_sections_dict['ORIFICES'].copy()
-                all_orifices_fields.update({'Shape':'String','Height':'Double','Width':'Double'})
+            if len(all_orifices) > 0 or create_empty == True:
                 orifices_layer_name = 'SWMM_orifices'
                 # add prefix to layer name if available
                 if result_prefix != '':
@@ -1137,12 +1172,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 orifices_layer = create_layer_from_table(
                     all_orifices,
                     'ORIFICES',
-                    'LineString',
                     orifices_layer_name,
                     crs_result,
                     folder_save,
-                    geodata_driver_num,
-                    all_orifices_fields
+                    geodata_driver_num
                 )
                 from .g_s_links import orifice_field_vals
                 add_layer_on_completion(
@@ -1185,17 +1218,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
                 all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill missing Methods
                 all_infiltr = build_df_from_vals_list(all_infiltr, list(def_sections_dict['INFILTRATION'].keys()))
-                all_subcatchments, infiltr_dtypes = create_subcatchm_attributes_from_inp_df(all_subcatchments,
-                                                                                            all_subareas, 
-                                                                                            all_infiltr, 
-                                                                                            main_infiltration_method)
+                all_subcatchments  = create_subcatchm_attributes_from_inp_df(
+                    all_subcatchments,
+                    all_subareas, 
+                    all_infiltr, 
+                    main_infiltration_method
+                )
                 polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
                 polyg_geoms = pd.DataFrame(polyg_geoms, columns = ['Name', 'geometry']).set_index('Name')
                 all_subcatchments = all_subcatchments.join(polyg_geoms, on = 'Name')
                 all_subcatchments = all_subcatchments.applymap(replace_nan_null)
-                all_subcatchments_fields = def_sections_dict['SUBCATCHMENTS'].copy()
-                all_subcatchments_fields.update(def_sections_dict['SUBAREAS'])
-                all_subcatchments_fields.update(infiltr_dtypes)
+            if len(all_subcatchments) > 0  or create_empty == True:
                 subc_layer_name = 'SWMM_subcatchments'
                 # add prefix to layer name if available
                 if result_prefix != '':
@@ -1203,12 +1236,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 subcatchments_layer = create_layer_from_table(
                     all_subcatchments,
                     'SUBCATCHMENTS',
-                    'Polygon',
                     subc_layer_name,
                     crs_result,
                     folder_save,
-                    geodata_driver_num,
-                    all_subcatchments_fields
+                    geodata_driver_num
                 )
                 add_layer_on_completion(
                     folder_save,

@@ -29,6 +29,8 @@ import pandas as pd
 from .g_s_defaults import def_sections_dict
 from .g_s_various_functions import check_columns, get_coords_from_geometry
 
+
+
 # Outfalls
 def get_outfalls_from_shapefile(outfalls_raw):
     outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL','Curve_TS']
@@ -187,6 +189,3 @@ def get_inflows_from_table(inflows_raw,all_nodes):
 
 
 
-# dividers
-divider_types = ('CUTOFF','OVERFLOW','TABULAR','WEIR')
-divider_field_vals =  {'Type':{t:t for t in divider_types}}

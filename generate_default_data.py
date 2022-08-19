@@ -70,8 +70,8 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 self.SWMM_VERSION,
                 self.tr("Default data for SWMM version..."),
-                ['SWMM 5.1','SWMM 5.2'],
-                defaultValue=[0]
+                ['Test data set for SWMM 5.1','Test data set for SWMM 5.2', 'Empty layers'],
+                defaultValue=[1]
             )
         )
 
@@ -95,15 +95,24 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         data_path = os.path.join(pluginPath,'test_data','swmm_data')
         if swmm_version_num == 0: #5.1
             read_file = os.path.join(data_path,'Test_5_1.inp')
+            create_empty = False
+            version_prefix = '5_1'
         if swmm_version_num == 1: #5.2
             read_file = os.path.join(data_path,'Test_5_2.inp')
+            create_empty = False
+            version_prefix = '5_2'
+        if swmm_version_num == 2: #empty
+            read_file = os.path.join(data_path,'Test_empty.inp')
+            create_empty = True
+            version_prefix = 'empty'
             
         alg_params = {
             'DATA_CRS': QgsCoordinateReferenceSystem('epsg:25833'),
             'GEODATA_DRIVER': 1,  # GPKG
             'INP_FILE': read_file,
-            'PREFIX': '',
-            'SAVE_FOLDER': data_save_folder
+            'PREFIX': version_prefix,
+            'SAVE_FOLDER': data_save_folder,
+            'CREATE_EMPTY':create_empty
         }
         subalg_outputs = processing.run('GenSwmmInp:ImportInpFile', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
