@@ -36,7 +36,7 @@ from qgis.core import (NULL,
                        QgsProcessingException,
                        QgsVectorFileWriter,
                        QgsVectorLayer)
-from qgis.PyQt.QtCore import QVariant        
+from qgis.PyQt.QtCore import QVariant
 from .g_s_defaults import (
     def_ogr_driver_names,
     def_ogr_driver_dict,
