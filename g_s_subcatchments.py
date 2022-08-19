@@ -30,7 +30,7 @@ import pandas as pd
 import numpy as np
 from qgis.core import QgsProcessingException
 from .g_s_various_functions import check_columns
-from .g_s_defaults import def_sections_dict, def_infiltr_dtypes
+from .g_s_defaults import def_sections_dict
 
 #subcatchments_df = raw_data_dict['subcatchments_raw']
 def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method):
@@ -101,18 +101,18 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
     """
     creates pd.Dataframes from lists of subcatchment attributes (from an inp file)
     """
-    InfiltrDtypes = {
-        'InfMethod':'String',
-        'SuctHead':'Double',
-        'Conductiv':'Double',
-        'InitDef':'Double',
-        'MaxRate':'Double',
-        'MinRate':'Double',
-        'Decay':'Double',
-        'DryTime':'Double',
-        'MaxInf':'Double',
-        'CurveNum':'Double'
-    }
+    InfiltrDtypes = [
+        'InfMethod',
+        'SuctHead',
+        'Conductiv',
+        'InitDef',
+        'MaxRate',
+        'MinRate',
+        'Decay',
+        'DryTime',
+        'MaxInf',
+        'CurveNum'
+    ]
     def create_infiltr_df(infiltr_row, main_infilt_method):
         if pd.isna(infiltr_row['InfMethod']):
             infiltr_row['InfMethod'] = main_infilt_method
@@ -121,7 +121,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                'Param2':'Conductiv',
                                'Param3':'InitDef'})
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
-            cols_not_in_infilt =[k for k in InfiltrDtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in InfiltrDtypes if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] in ['HORTON','MODIFIED_HORTON']:
@@ -130,7 +130,7 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                    'Param3':'Decay',
                                    'Param4':'DryTime',
                                    'Param5':'MaxInf'})
-            cols_not_in_infilt =[k for k in InfiltrDtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in InfiltrDtypes if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
@@ -138,17 +138,15 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
                                'Param2':'Conductiv',
                                'Param3':'DryTime'})
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
-            cols_not_in_infilt =[k for k in InfiltrDtypes.keys() if k not in infiltr_row.index]# missing columns
+            cols_not_in_infilt =[k for k in InfiltrDtypes if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         return infiltr_row
     all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x, main_infiltration_method), axis =1)
-    all_infiltr = all_infiltr[['Name']+list(InfiltrDtypes.keys())]
-    #all_infiltr = all_infiltr.dropna(how='all', axis=1) # if all subcatchments have the same infiltration method
-    InfiltrDtypes = {k:v for k,v in InfiltrDtypes.items() if k in all_infiltr.columns} 
+    all_infiltr = all_infiltr[['Name']+InfiltrDtypes]
     all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on = 'Name')
     all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on = 'Name')
-    return all_subcatchments, InfiltrDtypes
+    return all_subcatchments
 
 subc_field_vals = {
     'RouteTo':{
