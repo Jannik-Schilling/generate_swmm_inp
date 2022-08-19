@@ -49,6 +49,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsVectorFileWriter
 )
+
 from qgis.PyQt.QtCore import QCoreApplication
 import shutil
 from .g_s_defaults import (
@@ -164,6 +165,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
+
 
         
         #check if the selected folder is temporary
@@ -747,6 +749,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
+
                 rg_layer = create_layer_from_table(
                     rain_gages_df,
                     'RAINGAGES',
@@ -760,6 +763,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     rg_layer_name, 
                     'style_raingages.qml'
                 )
+
 
         """junctions section """
         if 'JUNCTIONS' in dict_all_raw_vals.keys():
@@ -782,11 +786,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num
                 )
+
                 add_layer_on_completion(
                     folder_save,
                     junctions_layer_name,
                     'style_junctions.qml'
                 )
+
             
         """storages section """
         if 'STORAGE' in dict_all_raw_vals.keys():
@@ -1135,6 +1141,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num
+
                 )
                 from .g_s_links import weir_field_vals
                 add_layer_on_completion(

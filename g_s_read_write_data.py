@@ -36,6 +36,7 @@ from qgis.core import (NULL,
                        QgsProcessingException,
                        QgsVectorFileWriter,
                        QgsVectorLayer)
+
 from qgis.PyQt.QtCore import QVariant
 from .g_s_defaults import (
     def_ogr_driver_names,
@@ -43,6 +44,7 @@ from .g_s_defaults import (
     def_sections_geoms_dict,
     def_qgis_fields_dict
 )
+
 
 
 def read_layers_direct(raw_layers_dict):
@@ -98,6 +100,7 @@ def create_feature_from_df(df, pr):
     pr.addFeature(f)
 
                                                      
+
 def create_layer_from_table(
     data_df,
     section_name,
@@ -105,6 +108,7 @@ def create_layer_from_table(
     crs_result,
     folder_save,
     geodata_driver_num):
+
     """
     creates a QgsVectorLayer from data in data_df
     :param pd.DataFrame data_df
@@ -114,6 +118,7 @@ def create_layer_from_table(
     # driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+    
     #layer creation
     geom_type = def_sections_geoms_dict[section_name]
     vector_layer = QgsVectorLayer(geom_type,layer_name,'memory')
@@ -125,6 +130,7 @@ def create_layer_from_table(
                         'String':QVariant.String,
                         'Int':QVariant.Int,
                         'Bool': QVariant.Bool}
+
     layer_fields = def_qgis_fields_dict[section_name]
     for col in layer_fields:
         field_type_string = layer_fields[col]
