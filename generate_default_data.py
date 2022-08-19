@@ -70,7 +70,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 self.SWMM_VERSION,
                 self.tr("Default data for SWMM version..."),
-                ['Test data set for SWMM 5.1','Test data set SWMM 5.2', 'Empty layers'],
+                ['Test data set for SWMM 5.1','Test data set for SWMM 5.2', 'Empty layers'],
                 defaultValue=[1]
             )
         )
@@ -110,7 +110,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             'DATA_CRS': QgsCoordinateReferenceSystem('epsg:25833'),
             'GEODATA_DRIVER': 1,  # GPKG
             'INP_FILE': read_file,
-            'PREFIX': '',
+            'PREFIX': version_prefix,
             'SAVE_FOLDER': data_save_folder,
             'CREATE_EMPTY':create_empty
         }
