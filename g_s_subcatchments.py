@@ -32,14 +32,17 @@ from qgis.core import QgsProcessingException
 from .g_s_various_functions import check_columns
 from .g_s_defaults import def_sections_dict
 
-#subcatchments_df = raw_data_dict['subcatchments_raw']
-def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method):
+
+
+
+def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     """
     reads subcatchment shapefile
     """
     # check if all columns exist
-    subc_cols = list(def_sections_dict['SUBCATCHMENTS'].keys())
-    suba_cols = list(def_sections_dict['SUBAREAS'].keys())
+    subc_cols = def_sections_dict['SUBCATCHMENTS']
+    suba_cols = def_sections_dict['SUBAREAS']
+    inf_cols = def_sections_dict['INFILTRATION']
     all_sub_cols = subc_cols+suba_cols+['InfMethod']
     sub_layer_name = 'Subcatchments Layer'
     check_columns(
@@ -95,7 +98,11 @@ def get_subcatchments_from_shapefile(subcatchments_df, main_infiltration_method)
     subcatchments_df['SnowPack'] = subcatchments_df['SnowPack'].fillna('')
     subcatchments_df['PctRouted'] = subcatchments_df['PctRouted'].fillna(100)
     subcatchments_df = subcatchments_df.reset_index(drop=True)
-    return(subcatchments_df)
+    # select columns
+    infiltration_df = subcatchments_df[inf_cols]
+    subareas_df = subcatchments_df[suba_cols]
+    subcatchments_df = subcatchments_df[subc_cols]
+    return subcatchments_df, subareas_df, infiltration_df
 
 def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all_infiltr, main_infiltration_method):
     """
