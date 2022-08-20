@@ -749,7 +749,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-
+                print(rain_gages_df)
                 rg_layer = create_layer_from_table(
                     rain_gages_df,
                     'RAINGAGES',
@@ -1217,7 +1217,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_subareas = build_df_for_section('SUBAREAS',dict_all_raw_vals)
                 all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
                 all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill missing Methods
-                all_infiltr = build_df_from_vals_list(all_infiltr, list(def_sections_dict['INFILTRATION'].keys()))
+                all_infiltr = build_df_from_vals_list(all_infiltr, def_sections_dict['INFILTRATION'])
                 all_subcatchments  = create_subcatchm_attributes_from_inp_df(
                     all_subcatchments,
                     all_subareas, 

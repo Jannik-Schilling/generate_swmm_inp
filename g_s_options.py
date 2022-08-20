@@ -31,54 +31,57 @@ import pandas as pd
 from datetime import datetime, time
 from qgis.core import QgsProcessingException
 
+
+def_options_dtypes ={
+    'START_DATE':[[datetime],'%m/%d/%Y'],
+    'REPORT_START_DATE':[[datetime],'%m/%d/%Y'],
+    'END_DATE':[[datetime],'%m/%d/%Y'],
+    'SWEEP_START':[[datetime],'%m/%d'],
+    'SWEEP_END':[[datetime],'%m/%d'],
+    'START_TIME':[[time, datetime],'%H:%M:%S'],
+    'REPORT_START_TIME':[[time, datetime],'%H:%M:%S'],
+    'END_TIME':[[time, datetime],'%H:%M:%S'],
+    'REPORT_STEP':[[time, datetime],'%H:%M:%S'],
+    'WET_STEP':[[time, datetime],'%H:%M:%S'],
+    'DRY_STEP':[[time, datetime],'%H:%M:%S'],
+    'ROUTING_STEP':[[time, datetime],'%H:%M:%S'],
+    'RULE_STEP':[[time, datetime],'%H:%M:%S'],
+    'FLOW_UNITS':[[str],['CFS','GPM','MGD','CMS','LPS','MLD']],
+    'INFILTRATION':[[str], ['HORTON','MODIFIED_HORTON','GREEN_AMPT','MODIFIED_GREEN_AMPT','CURVE_NUMBER']],
+    'FLOW_ROUTING':[[str],['STEADY','KINWAVE','DYNWAVE']],
+    'LINK_OFFSETS':[[str],['DEPTH','ELEVATION']],
+    'FORCE_MAIN_EQUATION':[[str],['H-W','D-W']],
+    'IGNORE_RAINFALL':[[str],['YES','NO']],
+    'IGNORE_SNOWMELT':[[str],['YES','NO']],
+    'IGNORE_GROUNDWATER':[[str],['YES','NO']],
+    'IGNORE_RDII':[[str],['YES','NO']],
+    'IGNORE_ROUTING':[[str],['YES','NO']],
+    'IGNORE_QUALITY':[[str],['YES','NO']],
+    'ALLOW_PONDING':[[str],['YES','NO']],
+    'SKIP_STEADY_STATE':[[str],['YES','NO']],
+    'SYS_FLOW_TOL':[[int,float]], 
+    'LAT_FLOW_TOL':[[int,float]], 
+    'DRY_DAYS':[[int]],
+    'LENGTHENING_STEP':[[int,float]],
+    'VARIABLE_STEP':[[int,float]],
+    'MINIMUM_STEP':[[int,float]],
+    'INERTIAL_DAMPING':[[str],['NONE','PARTIAL','FULL']],
+    'NORMAL_FLOW_LIMITED':[[str],['SLOPE','FROUDE','BOTH']],
+    'MIN_SURFAREA':[[int,float]], 
+    'MIN_SLOPE':[[int,float]], 
+    'MAX_TRIALS':[[int]], 
+    'HEAD_TOLERANCE':[[int,float]], 
+    'THREADS':[[int]],
+    'TEMPDIR':[[str]]
+}
+
 def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback = None):
     """
     converts datetime formats to string and vice versa
     :param str opt_key
     :param any opt_val
     :param str opt_source: 'table' (source is the options table) or 'input' (source is the SWMM input file)
-    """        
-    def_options_dtypes ={'START_DATE':[[datetime],'%m/%d/%Y'],
-                        'REPORT_START_DATE':[[datetime],'%m/%d/%Y'],
-                        'END_DATE':[[datetime],'%m/%d/%Y'],
-                        'SWEEP_START':[[datetime],'%m/%d'],
-                        'SWEEP_END':[[datetime],'%m/%d'],
-                        'START_TIME':[[time, datetime],'%H:%M:%S'],
-                        'REPORT_START_TIME':[[time, datetime],'%H:%M:%S'],
-                        'END_TIME':[[time, datetime],'%H:%M:%S'],
-                        'REPORT_STEP':[[time, datetime],'%H:%M:%S'],
-                        'WET_STEP':[[time, datetime],'%H:%M:%S'],
-                        'DRY_STEP':[[time, datetime],'%H:%M:%S'],
-                        'ROUTING_STEP':[[time, datetime],'%H:%M:%S'],
-                        'RULE_STEP':[[time, datetime],'%H:%M:%S'],
-                        'FLOW_UNITS':[[str],['CFS','GPM','MGD','CMS','LPS','MLD']],
-                        'INFILTRATION':[[str], ['HORTON','MODIFIED_HORTON','GREEN_AMPT','MODIFIED_GREEN_AMPT','CURVE_NUMBER']],
-                        'FLOW_ROUTING':[[str],['STEADY','KINWAVE','DYNWAVE']],
-                        'LINK_OFFSETS':[[str],['DEPTH','ELEVATION']],
-                        'FORCE_MAIN_EQUATION':[[str],['H-W','D-W']],
-                        'IGNORE_RAINFALL':[[str],['YES','NO']],
-                        'IGNORE_SNOWMELT':[[str],['YES','NO']],
-                        'IGNORE_GROUNDWATER':[[str],['YES','NO']],
-                        'IGNORE_RDII':[[str],['YES','NO']],
-                        'IGNORE_ROUTING':[[str],['YES','NO']],
-                        'IGNORE_QUALITY':[[str],['YES','NO']],
-                        'ALLOW_PONDING':[[str],['YES','NO']],
-                        'SKIP_STEADY_STATE':[[str],['YES','NO']],
-                        'SYS_FLOW_TOL':[[int,float]], 
-                        'LAT_FLOW_TOL':[[int,float]], 
-                        'DRY_DAYS':[[int]],
-                        'LENGTHENING_STEP':[[int,float]],
-                        'VARIABLE_STEP':[[int,float]],
-                        'MINIMUM_STEP':[[int,float]],
-                        'INERTIAL_DAMPING':[[str],['NONE','PARTIAL','FULL']],
-                        'NORMAL_FLOW_LIMITED':[[str],['SLOPE','FROUDE','BOTH']],
-                        'MIN_SURFAREA':[[int,float]], 
-                        'MIN_SLOPE':[[int,float]], 
-                        'MAX_TRIALS':[[int]], 
-                        'HEAD_TOLERANCE':[[int,float]], 
-                        'THREADS':[[int]],
-                        'TEMPDIR':[[str]]
-                      }
+    """
     d_type_val = type(opt_val)
     d_type_def = def_options_dtypes[opt_key][0]
     if opt_source == 'table':
@@ -113,8 +116,13 @@ def get_options_from_table(options_df):
     converts datetime formats to string
     :param pd.DataFrame options_df
     """
-    options_dict = {k:adjust_options_dtypes(k,v,'table') for k,v in zip(options_df['Option'],options_df['Value'])}
-    return options_dict
+    options_df['Value'] = [adjust_options_dtypes(k,v,'table') for k,v in zip(options_df['Option'],options_df['Value'])]
+    if 'INFILTRATION' in options_df['Option'].values:
+        main_infiltration_method = options_df.loc[options_df['Option'] == 'INFILTRATION','Value']
+    else:
+        main_infiltration_method = None
+    return options_df, main_infiltration_method
+    
     
 def convert_options_format_for_import(dict_options, feedback):
     '''
