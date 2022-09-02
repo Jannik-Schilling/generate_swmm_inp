@@ -107,11 +107,12 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             version_prefix = 'empty'
             
         alg_params = {
-            'DATA_CRS': QgsCoordinateReferenceSystem('epsg:25833'),
-            'GEODATA_DRIVER': 1,  # GPKG
-            'INP_FILE': read_file,
-            'PREFIX': version_prefix,
-            'SAVE_FOLDER': data_save_folder,
+            'DATA_CRS':QgsCoordinateReferenceSystem('epsg:25833'),
+            'GEODATA_DRIVER':1,  # GPKG
+            'TABLE_TYPE':0, # Table
+            'INP_FILE':read_file,
+            'PREFIX':version_prefix,
+            'SAVE_FOLDER':data_save_folder,
             'CREATE_EMPTY':create_empty
         }
         subalg_outputs = processing.run('GenSwmmInp:ImportInpFile', alg_params, context=context, feedback=feedback, is_child_algorithm=True)

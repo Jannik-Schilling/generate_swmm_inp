@@ -34,6 +34,7 @@ from qgis.core import (NULL,
                        QgsFeature,
                        QgsField,
                        QgsProcessingException,
+                       QgsProject,
                        QgsVectorFileWriter,
                        QgsVectorLayer)
 
@@ -88,14 +89,15 @@ def read_layers_direct(raw_layers_dict):
     
 
 
-def create_feature_from_df(df, pr):
+def create_feature_from_df(df, pr, geom_type):
     """
     creates a QgsFeature from data in df
     :param pd.DataFrame df
     :param QgsVectorLayer.dataProvider() pr
     """
     f = QgsFeature()
-    f.setGeometry(df.geometry)
+    if geom_type != 'NoGeometry':
+        f.setGeometry(df.geometry)
     f.setAttributes(df.tolist()[:-1])
     pr.addFeature(f)
 
@@ -107,38 +109,48 @@ def create_layer_from_table(
     layer_name, 
     crs_result,
     folder_save,
-    geodata_driver_num):
+    geodata_driver_num,
+    custom_fields = None):
 
     """
     creates a QgsVectorLayer from data in data_df
     :param pd.DataFrame data_df
     :param str section_name: name of SWMM section
     :param str layer_name
+    :param str crs_result: epsg code of the desired CRS
+    :param str folder_save
+    :param int geodata_driver_num: key of driver in def_ogr_driver_dict
+    :param dict costum fields
     """
-    # driver
+    # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
     
-    #layer creation
+    # set geometry type and provider
     geom_type = def_sections_geoms_dict[section_name]
     vector_layer = QgsVectorLayer(geom_type,layer_name,'memory')
     v_l_crs = vector_layer.crs()
     v_l_crs.createFromUserInput(crs_result)
     vector_layer.setCrs(v_l_crs)
     pr = vector_layer.dataProvider()
+    
+    # set fields
     field_types_dict = {'Double':QVariant.Double,
                         'String':QVariant.String,
                         'Int':QVariant.Int,
                         'Bool': QVariant.Bool}
-
     layer_fields = def_qgis_fields_dict[section_name]
+    if custom_fields is not None:
+        layer_fields.update(custom_fields)
     for col in layer_fields:
         field_type_string = layer_fields[col]
         field_type = field_types_dict[field_type_string]
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
-    data_df.apply(lambda x: create_feature_from_df(x, pr), axis =1)
-    vector_layer.updateExtents() 
+    data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis =1)
+    vector_layer.updateExtents()
+    
+    # create layer
     try:
         options = QgsVectorFileWriter.SaveVectorOptions()
         options.fileEnconding = 'utf-8'
@@ -198,13 +210,22 @@ def read_data_from_table_direct(file, sheet=0):
     return data_df
     
     
-""" Excel files """
-def dict_to_excel(data_dict, save_name, folder_save, feedback, res_prefix = '', desired_format = None):
+# Tables (Excel files or gpkg)
+def dict_to_excel(
+    data_dict,
+    save_name,
+    folder_save,
+    feedback,
+    res_prefix = '',
+    desired_format = None):
     """
     writes an excel file from a data_dict
     :param dict data_dict
     :param str save_name
+    :param str folder_save
+    :param QgsProcessingFeedback feedback
     :param str res_prefix: prefix for file name
+    :param str desired_format
     """
     if res_prefix != '':
         save_name = res_prefix+'_'+save_name
@@ -236,3 +257,57 @@ def dict_to_excel(data_dict, save_name, folder_save, feedback, res_prefix = '', 
                             df.to_excel(writer, sheet_name=sheet_name,index = False)
                 except:
                     raise QgsProcessingException(self.tr('Could not write tables in .xlsx, .xls, or .ods format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
+
+def dict_to_gpkg(
+    data_dict,
+    save_name,
+    folder_save,
+    feedback,
+    res_prefix = ''):
+    if res_prefix != '':
+        save_name = res_prefix+'_'+save_name
+
+    field_types_dict = {'Double':QVariant.Double,
+                        'String':QVariant.String,
+                        'Int':QVariant.Int,
+                        'Bool': QVariant.Bool}
+    
+    
+    # create layer
+    transform_context = QgsProject.instance().transformContext()
+    file_path = os.path.join(folder_save,save_name+'.gpkg')
+    options = QgsVectorFileWriter.SaveVectorOptions()
+    options.fileEnconding = 'utf-8'
+    options.driverName = 'GPKG'
+    options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer 
+    
+    first_loop = True
+    for sheet_name, df in data_dict.items():
+        if first_loop == False:
+            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
+        else: 
+            first_loop = False
+        vector_layer = QgsVectorLayer(
+            'NoGeometry',
+            sheet_name,
+            'memory'
+        )
+        pr = vector_layer.dataProvider()
+        
+        layer_fields = df.columns
+        print(df.dtypes)
+        for col in layer_fields:
+            field_type_string = 'String' ##########anpassen
+            field_type = field_types_dict[field_type_string]
+            pr.addAttributes([QgsField(col, field_type)])
+            vector_layer.updateFields()
+        df.apply(lambda x: create_feature_from_df(x, pr, 'NoGeometry'), axis =1)
+        
+        options.layerName = sheet_name
+        QgsVectorFileWriter.writeAsVectorFormatV3(
+            vector_layer,
+            file_path,
+            transform_context,
+            options
+        )
+

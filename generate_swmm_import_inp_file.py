@@ -53,12 +53,17 @@ from qgis.core import (
 from qgis.PyQt.QtCore import QCoreApplication
 import shutil
 from .g_s_defaults import (
+    def_resulting_tables_dict,
     def_sections_dict,
     def_ogr_driver_dict,
     def_ogr_driver_names
 )
 from .g_s_various_functions import field_to_value_map
-from .g_s_read_write_data  import dict_to_excel, create_layer_from_table
+from .g_s_read_write_data  import (
+    create_layer_from_table,
+    dict_to_excel,
+    dict_to_gpkg
+)
 pluginPath = os.path.dirname(__file__)
 
 
@@ -68,6 +73,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
     """
     INP_FILE = 'INP_FILE'
     GEODATA_DRIVER = 'GEODATA_DRIVER'
+    TABLE_TYPE = 'TABLE_TYPE'
     SAVE_FOLDER = 'SAVE_FOLDER'
     PREFIX = 'PREFIX'
     DATA_CRS = 'DATA_CRS'
@@ -91,6 +97,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 self.GEODATA_DRIVER,
                 self.tr("Which format should be used for geodata"),
                 def_ogr_driver_names,
+                defaultValue=[0]
+            )
+        )
+        
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.TABLE_TYPE,
+                self.tr("Which format should be used for tabular Data"),
+                ['Table (xlsx,odf, etc.)','GPKG'],
                 defaultValue=[0]
             )
         )
@@ -164,6 +179,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+        table_type_num = self.parameterAsEnum(parameters, self.TABLE_TYPE, context)
+        if table_type_num == 1:
+            table_file_type = 'GPKG'
+        else:
+            table_file_type = 'Table'
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
 
 
@@ -180,6 +200,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(1)
         except:
             raise QgsProcessingException(self.tr('Could not add style files to chosen folder'))
+        
         
         #reading input text file
         feedback.setProgressText(self.tr('reading inp ...'))
@@ -221,7 +242,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # make a dict of sections to extract
         dict_search = {section_list[i]:[pos_start_list[i],pos_end_list[i]] for i in range(len(section_list))}
 
-
+        # several functions to convert the lines of the input file
         def concat_quoted_vals(text_line):
             """
             finds quoted text and cocatenates text strings if 
@@ -253,7 +274,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 text_line_new = text_line
             return text_line_new
             
-        #descriptions_dict = {}
+        
         def extract_section_vals_from_text(text_limits, section_key):
             """
             extracts sections from inp_text
@@ -269,8 +290,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             return section_vals_clean
-
-        dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k], k) for k in dict_search.keys()}
+        
 
         def build_df_from_vals_list(section_vals, col_names):
             """
@@ -356,46 +376,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
             return data_list
                 
 
-        """ Excel files """
-        def dict_to_excel(data_dict, save_name, feedback, res_prefix = '', desired_format = None):
-            """
-            writes an excel file from a data_dict
-            :param dict data_dict
-            :param str save_name
-            :param str res_prefix: prefix for file name
-            """
-            if res_prefix != '':
-                save_name = res_prefix+'_'+save_name
-            if desired_format is not None:
-                try:
-                    save_name = save_name+desired_format
-                    with pd.ExcelWriter(os.path.join(folder_save, save_name)) as writer:
-                        for sheet_name, df in data_dict.items():
-                            df.to_excel(writer, sheet_name=sheet_name,index = False)
-                except:
-                    raise QgsProcessingException(self.tr('Could not write tables in the desired file format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
-            else:
-                try:
-                    save_name_xlsx = save_name+'.xlsx'
-                    with pd.ExcelWriter(os.path.join(folder_save, save_name_xlsx)) as writer:
-                        for sheet_name, df in data_dict.items():
-                            df.to_excel(writer, sheet_name=sheet_name,index = False)
-                except:
-                    try:
-                        save_name_xls = save_name+'.xls'
-                        with pd.ExcelWriter(os.path.join(folder_save, save_name_xls)) as writer:
-                            for sheet_name, df in data_dict.items():
-                                df.to_excel(writer, sheet_name=sheet_name,index = False)
-                    except:
-                        try:
-                            save_name_ods = save_name+'.ods'
-                            with pd.ExcelWriter(os.path.join(folder_save, save_name_ods)) as writer:
-                                for sheet_name, df in data_dict.items():
-                                    df.to_excel(writer, sheet_name=sheet_name,index = False)
-                        except:
-                            raise QgsProcessingException(self.tr('Could not write tables in .xlsx, .xls, or .ods format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
-
-
         def adjust_column_types(df, col_types):
             """
             converts column types in df according to col_types
@@ -442,8 +422,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     return [time_conversion(x) for x in col]
             df = df.apply(col_conversion, axis = 0)
             return df
+            
+        # dicts for raw and resulting data
+        #descriptions_dict = {}
+        dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k], k) for k in dict_search.keys()} # raw values for every section
+        dict_res_table = {}
 
-        """ options section"""  
+        # sections which will be converted into tables
+        # --------------------------------------------
+        ## options section 
         if 'OPTIONS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating options file ...'))
             feedback.setProgress(8)
@@ -451,10 +438,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             df_options = build_df_for_section('OPTIONS',dict_all_raw_vals)
             dict_options = {k:v for k,v in zip(df_options['Option'],df_options['Value'])}
             df_options_converted = convert_options_format_for_import(dict_options, feedback)
-            dict_to_excel({'OPTIONS':df_options_converted},
-                          'gisswmm_options',
-                          feedback,
-                          result_prefix)
+            dict_res_table['OPTIONS'] = {'OPTIONS':df_options_converted}
             try:
                 main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION','Value'].values[0]
             except:
@@ -462,7 +446,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         else: 
             main_infiltration_method = 'HORTON' #assumption for main infiltration method if not in options
     
-        """ inflows section"""
+        ## inflows section
         feedback.setProgressText(self.tr('generating inflows file ...'))
         feedback.setProgress(12)
         if 'INFLOWS' in dict_all_raw_vals.keys():
@@ -475,12 +459,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
             df_dry_weather = build_df_from_vals_list([], def_sections_dict['DWF'])
         dict_inflows = {'Direct':df_inflows,
                         'Dry_Weather':df_dry_weather}
-        dict_to_excel(dict_inflows,
-                     'gisswmm_inflows',
-                     feedback,
-                     result_prefix)
+        dict_res_table['INFLOWS'] = dict_inflows
 
-        """ patterns section"""
+
+        ## patterns section
         pattern_times={
             'HOURLY':[
                 '0:00','1:00','2:00','3:00',
@@ -554,12 +536,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_patterns[pattern_type].columns = pattern_cols[pattern_type]
             else:
                 all_patterns[pattern_type] = build_df_from_vals_list([], pattern_cols[pattern_type])
-        dict_to_excel(all_patterns,
-                     'gisswmm_patterns',
-                     feedback,
-                     result_prefix)
+        dict_res_table['PATTERNS'] = all_patterns
 
-        """ curves section """
+
+        ## curves section 
         curve_cols_dict = {
             'Pump1': ['Name','Volume','Flow'],
             'Pump2': ['Name','Depth','Flow'],
@@ -594,12 +574,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 all_curves[curve_type] = build_df_from_vals_list([], curve_cols_dict[curve_type])
             all_curves[curve_type]['Notes']=np.nan
-        dict_to_excel(all_curves,
-                     'gisswmm_curves',
-                     feedback,
-                     result_prefix)
+        dict_res_table['CURVES'] = all_curves
 
-        """ quality section """
+
+        ## quality section
         feedback.setProgressText(self.tr('generating quality file ...'))
         feedback.setProgress(28)
         quality_cols_dict = {k:def_sections_dict[k] for k in ['POLLUTANTS','LANDUSES','COVERAGES','LOADINGS','BUILDUP','WASHOFF']}
@@ -625,12 +603,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         all_quality['LANDUSES'] = landuses
         del all_quality['BUILDUP']
         del all_quality['WASHOFF']
-        dict_to_excel(all_quality,
-                     'gisswmm_quality',
-                     feedback,
-                     result_prefix)
-
-        """ timeseries section """
+        dict_res_table['QUALITY'] = all_quality
+        
+        
+        ## timeseries section
         ts_cols_dict = {
             'Name':'String',
             'Date':'Date',
@@ -638,7 +614,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'Value':'Double',
             'File_Name':'String',
             'Description':'String'
-            }
+        }
         if 'TIMESERIES' in dict_all_raw_vals.keys():
             
             all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
@@ -650,13 +626,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         else:
             all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
-        dict_to_excel({'Table1':all_time_series},
-                      'gisswmm_timeseries',
-                      feedback,
-                      result_prefix)
-            
+        dict_res_table['TIMESERIES'] = {'Table1':all_time_series}
         
-        """streets and inlets section"""
+        
+        ## streets and inlets section
         if 'STREETS' in dict_all_raw_vals.keys() or 'INLETS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating streets and inlets file ...'))
             feedback.setProgress(35)
@@ -665,7 +638,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 if len(dict_all_raw_vals['STREETS']) == 0:
                     street_data['STREETS'] = build_df_from_vals_list([], list(def_sections_dict['STREETS'].keys()))
                 else:
-                    street_data['STREETS'] = build_df_from_vals_list(dict_all_raw_vals['STREETS'], list(def_sections_dict['STREETS'].keys()))
+                    street_data['STREETS'] = build_df_from_vals_list(
+                        dict_all_raw_vals['STREETS'],
+                        list(def_sections_dict['STREETS'].keys())
+                    )
             else:
                 street_data['STREETS'] = build_df_from_vals_list([], list(def_sections_dict['STREETS'].keys()))
             
@@ -683,15 +659,35 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     street_data['INLET_USAGE'] = build_df_from_vals_list(dict_all_raw_vals['INLET_USAGE'], list(def_sections_dict['INLET_USAGE'].keys()))
             else:
                 street_data['INLET_USAGE'] = build_df_from_vals_list([], list(def_sections_dict['INLET_USAGE'].keys()))
-            dict_to_excel(street_data,
-                          'gisswmm_streets',
-                          feedback,
-                          result_prefix)
-            
-            
-        """ geodata (e.g. shapefiles)  """
+            dict_res_table['STREETS'] = street_data
         
-
+        
+        ## writing tables:
+        def write_result_table(k, table_dict):
+            '''saves the tables in dict_res_table'''
+            save_name = def_resulting_tables_dict[k]
+            if table_file_type == 'GPKG':
+                dict_to_gpkg(
+                    table_dict,
+                    save_name,
+                    folder_save,
+                    feedback,
+                    result_prefix
+                )
+            if table_file_type == 'Table':
+                dict_to_excel(
+                    table_dict,
+                    save_name,
+                    folder_save,
+                    feedback,
+                    result_prefix
+                )
+        for k,v in dict_res_table.items():
+            write_result_table(k,v)
+            
+            
+        # sections which will be converted as geodata (e.g. shapefiles)
+        # -------------------------------------------------------------
         def replace_nan_null(data):
             """replaces np.nan or asterisk with NULL"""
             if pd.isna(data):
@@ -723,13 +719,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
             context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
             
         
-        """ POINTS"""
+        ## POINTS
+        ## ------
         coords = build_df_for_section('COORDINATES',dict_all_raw_vals)
         from .g_s_various_functions import get_point_from_x_y
         all_geoms = [get_point_from_x_y(coords.loc[i,:]) for i in coords.index] # point geometries
         all_geoms = pd.DataFrame(all_geoms, columns = ['Name', 'geometry']).set_index('Name')
         
-        """raingages section"""
+        ### raingages section
         if 'RAINGAGES' in dict_all_raw_vals.keys():
             inp_section = 'RAINGAGES'
             feedback.setProgressText(self.tr('generating raingages file ...'))
@@ -749,7 +746,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                print(rain_gages_df)
                 rg_layer = create_layer_from_table(
                     rain_gages_df,
                     'RAINGAGES',
@@ -1029,20 +1025,28 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_tr_vals_df['Station'] = [float(x) for x in all_tr_vals_df['Station']]
                 all_tr_vals_df['Elevation'] = [float(x) for x in all_tr_vals_df['Elevation']]
                 all_tr_dats_df = build_df_from_vals_list(all_tr_dats, transects_columns)
-                all_tr_dats_df = all_tr_dats_df[['TransectName',
-                                 'RoughnessLeftBank',
-                                 'RoughnessRightBank',
-                                 'RoughnessChannel',
-                                 'BankStationLeft',
-                                 'BankStationRight',
-                                 'ModifierStations',
-                                 'ModifierElevations',
-                                 'ModifierMeander']]# order of columns according to swmm interface
-                transects_dict = {'Data':all_tr_dats_df, 'XSections':all_tr_vals_df}
-                dict_to_excel(transects_dict,
-                             'gisswmm_transects',
-                             feedback,
-                             result_prefix)
+                all_tr_dats_df = all_tr_dats_df[[
+                    'TransectName',
+                    'RoughnessLeftBank',
+                    'RoughnessRightBank',
+                    'RoughnessChannel',
+                    'BankStationLeft',
+                    'BankStationRight',
+                    'ModifierStations',
+                    'ModifierElevations',
+                    'ModifierMeander'
+                ]]# order of columns according to swmm interface
+                transects_dict = {
+                    'Data':all_tr_dats_df,
+                    'XSections':all_tr_vals_df
+                }
+                dict_to_excel(
+                    transects_dict,
+                    'gisswmm_transects',
+                    folder_save,
+                    feedback,
+                    result_prefix
+                )
 
         """outlets section """
         def adjust_outlets_list(outl_list_i):

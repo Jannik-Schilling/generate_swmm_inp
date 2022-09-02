@@ -328,6 +328,21 @@ def_sections_dict={
     'TAGS': None
 }
 
+
+
+# names of the imported tables
+def_resulting_tables_dict = {
+    'OPTIONS':'gisswmm_options',
+    'INFLOWS':'gisswmm_inflows',
+    'PATTERNS':'gisswmm_patterns',
+    'CURVES':'gisswmm_curves',
+    'QUALITY':'gisswmm_quality',
+    'TIMESERIES':'gisswmm_timeseries',
+    'STREETS':'gisswmm_streets'
+}
+
+
+
 # geometries for the import function
 def_sections_geoms_dict = {
     'RAINGAGES':'Point',
@@ -342,7 +357,6 @@ def_sections_geoms_dict = {
     'WEIRS':'LineString',
     'OUTLETS':'LineString'
 }
-
 # all possible fields qgis file for creation of layers
 def_qgis_fields_dict = {
     'RAINGAGES':{
