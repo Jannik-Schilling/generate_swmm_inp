@@ -43,14 +43,22 @@ from .g_s_defaults import (
     def_ogr_driver_names,
     def_ogr_driver_dict,
     def_sections_geoms_dict,
+    def_tables_dict,
     def_qgis_fields_dict
 )
 
+# helper functions
+def replace_null_nan(attr_value):
+    """replaces NULL with np.nan"""
+    if attr_value == NULL:
+        return np.nan
+    else:
+        return attr_value
 
-
+# read functions
+## layers with geometry
 def read_layers_direct(raw_layers_dict):
     """reads layers from swmm model"""
-    
     def del_none_bool(df):
         """
         replaces None or NULL with np.nan
@@ -59,11 +67,6 @@ def read_layers_direct(raw_layers_dict):
         :param pd.DataFrame df
         """
         df[df.columns[:-1]] =  df[df.columns[:-1]].fillna(value=np.nan)
-        def replace_null_nan(atrr_value):
-            if atrr_value == NULL:
-                return np.nan
-            else:
-                return atrr_value
         df = df.applymap(replace_null_nan)
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
@@ -84,11 +87,56 @@ def read_layers_direct(raw_layers_dict):
     data_dict_out = {n:d for n, d in data_dict.items() if len(d) > 0}
     data_dict_out = {n:del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
     return data_dict_out
-    
-    
-    
+
+## tables
+def read_data_from_table_direct(file, sheet=0): 
+    '''reads curves or other tables from excel or csv'''
+    filename, file_extension = os.path.splitext(file)
+    if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
+        try:
+            sheets = list(pd.read_excel(file,None,engine='openpyxl').keys())
+        except:
+            sheets = pd.ExcelFile(file).sheet_names
+        if sheet == 0:
+            s_n = 0
+        else:
+            if sheet in sheets:
+                s_n = sheet
+            elif str(sheet).upper() in sheets:
+                s_n = str(sheet).upper()
+            elif str(sheet).lower() in sheets:
+                s_n = str(sheet).lower()
+            elif str(sheet).capitalize() in sheets:
+                s_n = str(sheet).capitalize()
+            else:
+                s_n = None
+        if s_n is not None:
+            try:
+                data_df = pd.read_excel(file,sheet_name = s_n)
+            except:
+                data_df = pd.read_excel(file,sheet_name = s_n, engine='openpyxl')
+        else:
+            data_df = pd.DataFrame()
+    if file_extension == '.gpkg':
+        if sheet == 0:
+            gpkg_layers = QgsVectorLayer(file,'NoGeometry','ogr')
+            gpkg_provider = gpkg_layers.dataProvider()
+            sublayer_0 = gpkg_provider.subLayers()[0]
+            name_separator = gpkg_provider.sublayerSeparator()
+            sheet = sublayer_0.split(name_separator)[1]
+        read_file = file+'|layername='+str(sheet)
+        vlayer = QgsVectorLayer(read_file,'NoGeometry','ogr')
+        cols = [f.name() for f in vlayer.fields()]
+        datagen = ([f[col] for col in cols] for f in vlayer.getFeatures())
+        data_df = pd.DataFrame.from_records(data=datagen, columns=cols)
+        data_df = data_df.applymap(replace_null_nan)
+        data_df = data_df.drop(columns=['fid'])
+    return data_df
 
 
+
+
+# write functions and helpers
 def create_feature_from_df(df, pr, geom_type):
     """
     creates a QgsFeature from data in df
@@ -98,10 +146,12 @@ def create_feature_from_df(df, pr, geom_type):
     f = QgsFeature()
     if geom_type != 'NoGeometry':
         f.setGeometry(df.geometry)
-    f.setAttributes(df.tolist()[:-1])
+        f.setAttributes(df.tolist()[:-1])
+    else:
+        f.setAttributes(df.tolist())
     pr.addFeature(f)
 
-                                                     
+
 
 def create_layer_from_table(
     data_df,
@@ -120,7 +170,7 @@ def create_layer_from_table(
     :param str crs_result: epsg code of the desired CRS
     :param str folder_save
     :param int geodata_driver_num: key of driver in def_ogr_driver_dict
-    :param dict costum fields
+    :param dict costum fields: additional fields
     """
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
@@ -142,8 +192,7 @@ def create_layer_from_table(
     layer_fields = def_qgis_fields_dict[section_name]
     if custom_fields is not None:
         layer_fields.update(custom_fields)
-    for col in layer_fields:
-        field_type_string = layer_fields[col]
+    for col, field_type_string in layer_fields.items():
         field_type = field_types_dict[field_type_string]
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
@@ -172,48 +221,12 @@ def create_layer_from_table(
             driverName=geodata_driver_name
         )
     return vector_layer
-            
-            
-            
-            
-    
-def read_data_from_table_direct(file, sheet=0): 
-    '''reads curves or other tables from excel or csv'''
-    filename, file_extension = os.path.splitext(file)
-    try:
-        sheets = list(pd.read_excel(file,None,engine='openpyxl').keys())
-    except:
-        sheets = pd.ExcelFile(file).sheet_names
-    if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
-        if sheet == 0:
-            s_n = 0
-        else:
-            if sheet in sheets:
-                s_n = sheet
-            elif str(sheet).upper() in sheets:
-                s_n = str(sheet).upper()
-            elif str(sheet).lower() in sheets:
-                s_n = str(sheet).lower()
-            elif str(sheet).capitalize() in sheets:
-                s_n = str(sheet).capitalize()
-            else:
-                s_n = None
-        if s_n is not None:
-            try:
-                data_df = pd.read_excel(file,sheet_name = s_n)
-            except:
-                data_df = pd.read_excel(file,sheet_name = s_n, engine='openpyxl')
-        else:
-            data_df = pd.DataFrame()
-    if file_extension == '.csv':
-        data_df = pd.read_csv(file)
-    return data_df
-    
-    
+
+
 # Tables (Excel files or gpkg)
 def dict_to_excel(
     data_dict,
-    save_name,
+    file_key,
     folder_save,
     feedback,
     res_prefix = '',
@@ -227,6 +240,7 @@ def dict_to_excel(
     :param str res_prefix: prefix for file name
     :param str desired_format
     """
+    save_name = def_tables_dict[file_key]['filename']
     if res_prefix != '':
         save_name = res_prefix+'_'+save_name
     if desired_format is not None:
@@ -260,18 +274,21 @@ def dict_to_excel(
 
 def dict_to_gpkg(
     data_dict,
-    save_name,
+    file_key,
     folder_save,
     feedback,
     res_prefix = ''):
+    save_name = def_tables_dict[file_key]['filename']
     if res_prefix != '':
         save_name = res_prefix+'_'+save_name
 
-    field_types_dict = {'Double':QVariant.Double,
-                        'String':QVariant.String,
-                        'Int':QVariant.Int,
-                        'Bool': QVariant.Bool}
-    
+    field_types_dict = {
+        'Bool': QVariant.Bool,
+        'Double':QVariant.Double,
+        'Date':QVariant.Date,
+        'Int':QVariant.Int,
+        'String':QVariant.String
+    }
     
     # create layer
     transform_context = QgsProject.instance().transformContext()
@@ -281,6 +298,7 @@ def dict_to_gpkg(
     options.driverName = 'GPKG'
     options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer 
     
+    # loop for every table/layer in gpkg file
     first_loop = True
     for sheet_name, df in data_dict.items():
         if first_loop == False:
@@ -293,14 +311,18 @@ def dict_to_gpkg(
             'memory'
         )
         pr = vector_layer.dataProvider()
-        
-        layer_fields = df.columns
-        print(df.dtypes)
-        for col in layer_fields:
-            field_type_string = 'String' ##########anpassen
+        layer_fields = def_tables_dict[file_key]['tables'][sheet_name]
+        for col, field_type_string in layer_fields.items():
+            if field_type_string == 'Time' or field_type_string == 'Date':
+                field_type_string = 'String'
             field_type = field_types_dict[field_type_string]
             pr.addAttributes([QgsField(col, field_type)])
             vector_layer.updateFields()
+        if file_key == 'TIMESERIES':
+            df['Date'] = [str(x) for x in df['Date']]
+            df['Time'] = [x.strftime('%H:%M') for x in df['Time']]
+        if file_key == 'OPTIONS':
+            df['Value'] = [str(x) for x in df['Value']]
         df.apply(lambda x: create_feature_from_df(x, pr, 'NoGeometry'), axis =1)
         
         options.layerName = sheet_name

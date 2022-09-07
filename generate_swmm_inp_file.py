@@ -177,8 +177,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_OPTIONS,
                 self.tr('Options table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
                 
         self.addParameter(
@@ -186,8 +186,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_CURVES,
                 self.tr('Curves table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
 
         self.addParameter(
@@ -195,8 +195,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_PATTERNS,
                 self.tr('Patterns table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
                 
 
@@ -205,8 +205,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_TIMESERIES,
                 self.tr('Timeseries table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
                 
         self.addParameter(
@@ -214,8 +214,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_INFLOWS,
                 self.tr('Inflows table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
 
         self.addParameter(
@@ -223,8 +223,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_QUALITY,
                 self.tr('Quality table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
                 
         self.addParameter(
@@ -232,8 +232,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_TRANSECTS,
                 self.tr('Transects table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
                 
         self.addParameter(
@@ -241,18 +241,20 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_STREETS,
                 self.tr('Streets and Inlets table file'),
                 QgsProcessingParameterFile.File,
-                'xlsx',
-                optional = True
+                optional = True,
+                fileFilter = 'Tables (*.xslx *.xsl *odf);;Geopackage (*.gpkg)'
                 ))
 
 
     def processAlgorithm(self, parameters, context, feedback):  
-        """input file name and path"""
+        """
+        """
+        # input file name and path"
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
         project_dir = os.path.dirname(inp_file_path)
 
-        """initializing the input dictionary and error text"""
+        # initializing the input dictionary and error text
         inp_dict = dict()
         inp_dict['TITLE'] = pd.DataFrame(['test'])
         inp_dict['JUNCTIONS'] = pd.DataFrame()
@@ -261,7 +263,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['XSECTIONS'] = pd.DataFrame()
         inp_dict['VERTICES'] = {}
 
-        """ reading geodata"""
+        # reading geodata
         feedback.setProgressText(self.tr('Reading shapfiles'))
         feedback.setProgress(1)
         file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
@@ -287,12 +289,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             'orifices_raw':file_orifices,
             'outlets_raw':file_outlets,
             'dividers_raw':file_dividers
-            }
+        }
         raw_data_dict = read_layers_direct(raw_layers_dict)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(12)
 
-        """reading data in tables (curves, patterns, inflows ...)"""
+        # reading data in tables (curves, patterns, inflows ...)
         feedback.setProgressText(self.tr('Reading tables'))
         file_curves = self.parameterAsString(parameters, self.FILE_CURVES, context)
         file_patterns = self.parameterAsString(parameters, self.FILE_PATTERNS, context)
@@ -304,33 +306,45 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_streets = self.parameterAsString(parameters, self.FILE_STREETS, context)
         
         
-        """options table"""
-        if file_options != '': #check if parameter is given as a string
-            raw_data_dict['options_df'] = read_data_from_table_direct(file_options)
-        """curves table"""
+        ## options table
+        if file_options != '': 
+            raw_data_dict['options_df'] = read_data_from_table_direct(
+                file_options,
+                sheet = 'OPTIONS'
+            )
+
+        ## curves table
         if file_curves != '':
             raw_data_dict['curves'] = {}
             for curve_type in def_curve_types:
-                curve_df = read_data_from_table_direct(file_curves,
-                                                       sheet = curve_type)
+                curve_df = read_data_from_table_direct(
+                    file_curves,
+                    sheet = curve_type
+                )
                 if len(curve_df)>0:
                     raw_data_dict['curves'][curve_type] = curve_df
-        """patterns table"""
+        ## patterns table
         if file_patterns != '':
             raw_data_dict['patterns'] = {}
             for pattern_type in ['HOURLY','DAILY','MONTHLY','WEEKEND']:
-                raw_data_dict['patterns'][pattern_type] = read_data_from_table_direct(file_patterns,
-                                                                                      sheet = pattern_type)
-        """inflows table"""
+                raw_data_dict['patterns'][pattern_type] = read_data_from_table_direct(
+                    file_patterns,
+                    sheet = pattern_type
+            )
+        ## inflows table
         if file_inflows != '':
             raw_data_dict['inflows'] = {}
             for inflow_type in ['Direct','Dry_Weather']:
-                 raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(file_inflows,
-                                                                                     sheet = inflow_type)
-        """timeseries table"""
+                raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(
+                    file_inflows,
+                    sheet = inflow_type
+                )
+        ## timeseries table
         if file_timeseries != '':
-            raw_data_dict['timeseries'] = read_data_from_table_direct(file_timeseries)   
-        """quality table"""
+            raw_data_dict['timeseries'] = read_data_from_table_direct(
+                file_timeseries #'TIMESERIES'
+            )
+        ## quality table
         if file_quality != '':
             raw_data_dict['quality'] = {}
             for quality_param in['POLLUTANTS', 'LANDUSES', 'COVERAGES','LOADINGS']:
