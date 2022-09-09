@@ -474,25 +474,24 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 '12:00','13:00','14:00','15:00',
                 '16:00','17:00','18:00','19:00',
                 '20:00','21:00','22:00','23:00'
-                ],
+            ],
             'DAILY':['So','Mo','Tu','We','Th','Fr','Sa'],
             'MONTHLY':[
                 'Jan','Feb','Mar','Apr','May','Jun',
                 'Jul','Aug','Sep','Oct','Nov','Dec'
-                ],
+            ],
             'WEEKEND':[
                 '0:00','1:00','2:00','3:00','4:00',
                 '5:00','6:00','7:00','8:00','9:00',
                 '10:00','11:00','12:00','13:00','14:00',
                 '15:00','16:00','17:00','18:00','19:00',
-                '20:00','21:00','22:00','23:00']
-            }
-        pattern_cols={
-            'HOURLY':['Name','Time','Factor'],
-            'DAILY':['Name','Day','Factor'],
-            'MONTHLY':['Name','Month','Factor'],
-            'WEEKEND':['Name','Time','Factor']
-            }
+                '20:00','21:00','22:00','23:00'
+            ]
+        }
+
+        pattern_types = list(def_tables_dict['PATTERNS']['tables'].keys())
+        pattern_cols = {k:list(v.keys())for k,v in def_tables_dict['PATTERNS']['tables'].items()}
+
                       
         if 'PATTERNS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating patterns file ...'))
@@ -501,7 +500,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(all_patterns) == 0:
                 all_patterns = dict()
             else:
-                occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(['HOURLY','DAILY','MONTHLY','WEEKEND']),[0,1]].set_index(0)
+                occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(pattern_types),[0,1]].set_index(0)
                 occuring_patterns_types.columns = ["PatternType"]
                 all_patterns = all_patterns.fillna(np.nan)
                 all_patterns = all_patterns.replace({'HOURLY':np.nan,'DAILY':np.nan,'MONTHLY':np.nan,'WEEKEND':np.nan})
@@ -829,11 +828,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num
                 )
-                from .g_s_nodes import outfall_field_vals
-                add_layer_on_completion(folder_save,
-                                        outfalls_layer_name,
-                                        'style_outfalls.qml',
-                                        outfall_field_vals)
+                #from .g_s_nodes import outfall_field_vals
+                add_layer_on_completion(
+                    folder_save,
+                    outfalls_layer_name,
+                    'style_outfalls.qml'
+                )
         
         """ dividers section """
         if 'DIVIDERS' in dict_all_raw_vals.keys():
@@ -867,7 +867,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     dividers_layer_name,
                     'style_dividers.qml'
-                    )
+                )
 
         """LINES"""
         feedback.setProgressText(self.tr('extracting vertices ...'))
@@ -942,12 +942,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num,
                 )
-                from .g_s_links import conduit_field_vals
                 add_layer_on_completion(
                     folder_save,
                     conduits_layer_name,
-                    'style_conduits.qml',
-                    conduit_field_vals
+                    'style_conduits.qml'
                 )
         
         

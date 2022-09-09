@@ -314,9 +314,15 @@ def_sections_dict = {
         'Baseline',
         'Baseline_Pattern'
     ],
-    'DWF':['Name','Constituent','Average_Value',
-    'Time_Pattern1','Time_Pattern2',
-    'Time_Pattern3','Time_Pattern4'],
+    'DWF':[
+        'Name',
+        'Constituent',
+        'Average_Value',
+        'Time_Pattern1',
+        'Time_Pattern2',
+        'Time_Pattern3',
+        'Time_Pattern4'
+    ],
     'RDII':None,
     'HYDROGRAPHS':None,
     'CURVES':['Name','XVal','YVal'],
