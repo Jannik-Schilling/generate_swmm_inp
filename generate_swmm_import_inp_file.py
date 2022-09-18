@@ -617,7 +617,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_time_series['Description'] = ''
         else:
             all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
-        all_time_series = all_time_series.fillna('')
+        #all_time_series = all_time_series.fillna('')
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_res_table['TIMESERIES'] = {'TIMESERIES':all_time_series}
         
@@ -1048,12 +1048,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num
                 )
-                from .g_s_links import outlet_field_vals
                 add_layer_on_completion(
                     folder_save,
                     outlets_layer_name,
-                    'style_regulators.qml',
-                    outlet_field_vals
+                    'style_outlets.qml'
                 )
 
         """pumps section """
@@ -1110,14 +1108,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num
-
                 )
-                from .g_s_links import weir_field_vals
                 add_layer_on_completion(
                     folder_save,
                     weirs_layer_name,
-                    'style_regulators.qml',
-                    weir_field_vals
+                    'style_weirs.qml'
                 )
             
             
@@ -1146,12 +1141,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num
                 )
-                from .g_s_links import orifice_field_vals
                 add_layer_on_completion(
                     folder_save,
                     orifices_layer_name,
-                    'style_regulators.qml',
-                    orifice_field_vals
+                    'style_orifices.qml'
                 )
 
         """ POLYGONS """
