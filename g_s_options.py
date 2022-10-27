@@ -75,6 +75,11 @@ def_options_dtypes ={
     'TEMPDIR':[[str]]
 }
 
+# for options in gpkg format
+options_gpkg_fields = {k:'String' if (v[0][0] in (datetime, time, str)) else v[0][0] for k,v in def_options_dtypes.items()}
+options_gpkg_fields = {k:'Double' if (v in (float,int)) else v for k,v in options_gpkg_fields.items()}
+options_time_formats = {k:v[1] for k,v in def_options_dtypes.items() if (v[0][0] in (datetime, time))}
+
 def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback = None):
     """
     converts datetime formats to string and vice versa

@@ -223,7 +223,7 @@ def create_layer_from_table(
     return vector_layer
 
 
-# Tables (Excel files or gpkg)
+# Tables to Excel files
 def dict_to_excel(
     data_dict,
     file_key,
@@ -271,65 +271,4 @@ def dict_to_excel(
                             df.to_excel(writer, sheet_name=sheet_name,index = False)
                 except:
                     raise QgsProcessingException(self.tr('Could not write tables in .xlsx, .xls, or .ods format. Please install the package "openpyxl" (or alternatively the package "odf"). Instructions can be found on the in the documentation or on GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'))
-
-def dict_to_gpkg(
-    data_dict,
-    file_key,
-    folder_save,
-    feedback,
-    res_prefix = ''):
-    save_name = def_tables_dict[file_key]['filename']
-    if res_prefix != '':
-        save_name = res_prefix+'_'+save_name
-
-    field_types_dict = {
-        'Bool': QVariant.Bool,
-        'Double':QVariant.Double,
-        'Date':QVariant.Date,
-        'Int':QVariant.Int,
-        'String':QVariant.String
-    }
-    
-    # create layer
-    transform_context = QgsProject.instance().transformContext()
-    file_path = os.path.join(folder_save,save_name+'.gpkg')
-    options = QgsVectorFileWriter.SaveVectorOptions()
-    options.fileEnconding = 'utf-8'
-    options.driverName = 'GPKG'
-    options.EditionCapability = QgsVectorFileWriter.CanAddNewLayer 
-    
-    # loop for every table/layer in gpkg file
-    first_loop = True
-    for sheet_name, df in data_dict.items():
-        if first_loop == False:
-            options.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteLayer
-        else: 
-            first_loop = False
-        vector_layer = QgsVectorLayer(
-            'NoGeometry',
-            sheet_name,
-            'memory'
-        )
-        pr = vector_layer.dataProvider()
-        layer_fields = def_tables_dict[file_key]['tables'][sheet_name]
-        for col, field_type_string in layer_fields.items():
-            if field_type_string == 'Time' or field_type_string == 'Date':
-                field_type_string = 'String'
-            field_type = field_types_dict[field_type_string]
-            pr.addAttributes([QgsField(col, field_type)])
-            vector_layer.updateFields()
-        if file_key == 'TIMESERIES':
-            df['Date'] = [str(x) for x in df['Date']]
-            df['Time'] = [x.strftime('%H:%M') for x in df['Time']]
-        if file_key == 'OPTIONS':
-            df['Value'] = [str(x) for x in df['Value']]
-        df.apply(lambda x: create_feature_from_df(x, pr, 'NoGeometry'), axis =1)
-        
-        options.layerName = sheet_name
-        QgsVectorFileWriter.writeAsVectorFormatV3(
-            vector_layer,
-            file_path,
-            transform_context,
-            options
-        )
 

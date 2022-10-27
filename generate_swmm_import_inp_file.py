@@ -61,8 +61,7 @@ from .g_s_defaults import (
 from .g_s_various_functions import field_to_value_map
 from .g_s_read_write_data  import (
     create_layer_from_table,
-    dict_to_excel,
-    dict_to_gpkg
+    dict_to_excel
 )
 pluginPath = os.path.dirname(__file__)
 
@@ -73,7 +72,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
     """
     INP_FILE = 'INP_FILE'
     GEODATA_DRIVER = 'GEODATA_DRIVER'
-    TABLE_TYPE = 'TABLE_TYPE'
     SAVE_FOLDER = 'SAVE_FOLDER'
     PREFIX = 'PREFIX'
     DATA_CRS = 'DATA_CRS'
@@ -97,15 +95,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 self.GEODATA_DRIVER,
                 self.tr("Which format should be used for geodata"),
                 def_ogr_driver_names,
-                defaultValue=[0]
-            )
-        )
-        
-        self.addParameter(
-            QgsProcessingParameterEnum(
-                self.TABLE_TYPE,
-                self.tr("Which format should be used for tabular Data"),
-                ['Table (xlsx,odf, etc.)','GPKG'],
                 defaultValue=[0]
             )
         )
@@ -138,6 +127,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             self.tr('Create Empty?'),
             defaultValue = False,
         )
+        # Hide the parameter CREATE_EMPTY , because it´s only for the default data to
         self.addParameter(empt_param)
         empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
         
@@ -179,11 +169,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-        table_type_num = self.parameterAsEnum(parameters, self.TABLE_TYPE, context)
-        if table_type_num == 1:
-            table_file_type = 'GPKG'
-        else:
-            table_file_type = 'Table'
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
 
 
@@ -641,26 +626,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         
         ## writing tables:
-        def write_result_table(file_key, table_dict):
-            '''saves the tables in dict_res_table'''
-            if table_file_type == 'GPKG':
-                dict_to_gpkg(
-                    table_dict,
-                    file_key,
-                    folder_save,
-                    feedback,
-                    result_prefix
-                )
-            if table_file_type == 'Table':
-                dict_to_excel(
-                    table_dict,
-                    file_key,
-                    folder_save,
-                    feedback,
-                    result_prefix
-                )
         for k,v in dict_res_table.items():
-            write_result_table(k,v)
+            dict_to_excel(
+                v,
+                k,
+                folder_save,
+                feedback,
+                result_prefix
+            )
             
             
         # sections which will be converted as geodata (e.g. shapefiles)
@@ -1010,7 +983,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     'Data':all_tr_dats_df,
                     'XSections':all_tr_vals_df
                 }
-                write_result_table('TRANSECTS', transects_dict)
+                
+                dict_to_excel(
+                    transects_dict,
+                    'TRANSECTS',
+                    folder_save,
+                    feedback,
+                    result_prefix
+                )
 
 
         """outlets section """
