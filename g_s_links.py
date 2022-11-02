@@ -28,7 +28,10 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 from qgis.core import QgsProcessingException
-from .g_s_defaults import def_sections_dict
+from .g_s_defaults import (
+    def_qgis_fields_dict,
+    def_sections_dict
+)
 from .g_s_various_functions import check_columns
 
 
@@ -46,13 +49,13 @@ def get_conduits_from_shapefile(conduits_raw):
     :param pd.DataFrame conduits_raw
     """
     # check if all columns exist
-    conduits_cols = list(def_sections_dict['CONDUITS'].keys())
-    xsections_cols =  list(def_sections_dict['XSECTIONS'].keys())
-    losses_cols = list(def_sections_dict['LOSSES'].keys())
+    qgis_conduits_cols = list(def_qgis_fields_dict['CONDUITS'].keys())
+    conduits_cols =  def_sections_dict['CONDUITS']
+    xsections_cols =  def_sections_dict['XSECTIONS']
+    losses_cols = def_sections_dict['LOSSES']
     cond_layer_name = 'Conduits Layer'
-    all_conduits_cols = conduits_cols + xsections_cols +losses_cols
     check_columns(cond_layer_name,
-                  all_conduits_cols,
+                  qgis_conduits_cols,
                   conduits_raw.keys())
                
     conduits_df = conduits_raw[conduits_cols].copy()
@@ -80,36 +83,6 @@ def get_conduits_from_shapefile(conduits_raw):
     losses_df['Kexit'] = losses_df['Kexit'].fillna('0')
     losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
-
-# conduit widgets
-conduit_field_vals = {
-    'FlapGate':{t.value:t.value for t in SwmmFlapGate},
-    'Shape':{
-        'ARCH':'ARCH',
-        'BASKETHANDLE':'BASKETHANDLE',
-        'CATENARY':'CATENARY',
-        'CIRCULAR':'CIRCULAR',
-        'CUSTOM':'CUSTOM',
-        'EGG':'EGG',
-        'FILLED_CIRCULAR':'FILLED_CIRCULAR',
-        'FORCE_MAIN':'FORCE_MAIN',
-        'GOTHIC':'GOTHIC',
-        'HORIZ_ELLIPSE':'HORIZ_ELLIPSE',
-        'HORSESHOE':'HORSESHOE',
-        'IRREGULAR':'IRREGULAR',
-        'MODBASKETHANDLE':'MODBASKETHANDLE',
-        'PARABOLIC':'PARABOLIC',
-        'POWER':'POWER',
-        'RECT_CLOSED':'RECT_CLOSED',
-        'RECT_ROUND':'RECT_ROUND',
-        'RECT_OPEN':'RECT_OPEN',
-        'RECT_TRIANGULAR':'RECT_TRIANGULAR',
-        'SEMICIRCULAR':'SEMICIRCULAR',
-        'SEMIELLIPTICAL':'SEMIELLIPTICAL',
-        'STREET':'STREET',
-        'TRAPEZOIDAL':'TRAPEZOIDAL',
-        'TRIANGULAR':'TRIANGULAR',
-        'VERT_ELLIPSE':'VERT_ELLIPSE'}}
 
 # Inlets
 inl_types_def = {

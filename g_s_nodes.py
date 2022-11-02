@@ -26,8 +26,14 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import numpy as np
 import pandas as pd
-from .g_s_defaults import def_sections_dict
-from .g_s_various_functions import check_columns, get_coords_from_geometry
+from .g_s_defaults import (
+    def_qgis_fields_dict,
+    def_tables_dict
+)
+from .g_s_various_functions import (
+    check_columns, 
+    get_coords_from_geometry
+)
 
 
 
@@ -42,16 +48,6 @@ def get_outfalls_from_shapefile(outfalls_raw):
     outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
     return outfalls_raw
 
-outfall_field_vals = {
-    'FlapGate':{
-        'NO':'NO',
-        'YES':'YES'},
-    'Type':{
-        'FIXED':'FIXED',
-        'FREE':'FREE',
-        'NORMAL':'NORMAL',
-        'TIMESERIES':'TIMESERIES',
-        'TIDAL':'TIDAL'}}
 
 
 
@@ -62,7 +58,8 @@ st_types_def = {
     'PYRAMIDAL':['MajorAxis','MinorAxis','SideSlope'],
     'PARABOLIC':['MajorAxis','MinorAxis','SurfHeight'],
     'CONICAL':['MajorAxis','MinorAxis','SideSlope'],
-    'CYLINDRICAL':['MajorAxis','MinorAxis']}
+    'CYLINDRICAL':['MajorAxis','MinorAxis']
+}
 all_st_type_cols = [
     'Curve',
     'Coeff',
@@ -71,9 +68,8 @@ all_st_type_cols = [
     'MajorAxis',
     'MinorAxis',
     'SideSlope',
-    'SurfHeight']
-
-
+    'SurfHeight'
+]
 def get_storages_from_geodata(storages_raw):
     '''creates a df for storages from raw storage data'''
     storages_layer_name = 'Storages Layer'
@@ -84,7 +80,7 @@ def get_storages_from_geodata(storages_raw):
     occuring_storage_types = list(set(storages_raw['Type']))
     st_types_needed = list(set([col for s_t in occuring_storage_types for col in st_types_def[s_t]]))
     st_types_not_needed = [col for col in all_st_type_cols if col not in st_types_needed]
-    storages_cols = list(def_sections_dict['STORAGE'].keys())
+    storages_cols = list(def_qgis_fields_dict['STORAGE'].keys())
     storages_cols_needed = [col for col in storages_cols if col not in st_types_not_needed]
     check_columns(storages_layer_name,
                   storages_cols_needed,
@@ -107,7 +103,10 @@ def get_storages_from_geodata(storages_raw):
     return storage_df
 
 def get_storages_from_inp(st_raw_line):
-    '''adjusts '''
+    '''
+    adjusts the inp line according to the storage type
+    :param list st_raw_line
+    :return list'''
     init_elems = st_raw_line[:5]
     st_type_i = st_raw_line[4]
     st_cols_i = st_types_def[st_type_i]
@@ -133,37 +132,44 @@ def get_inflows_from_table(inflows_raw,all_nodes):
     '''
     generates a dict for direct inflow and
     dry weather inflow from tables in "inflows_raw"
+    :param dict inflows_raw
+    :param list all_nodes
     '''
     def compose_infl_dict(inflow,i,inf_type):
         if inf_type == 'Direct':
-            i_dict = {'Name':i,
-               'Constituent':inflow['Constituent'],
-               'Time_Series':inflow['Time_Series'],
-               'Type':inflow['Type'],
-               'Mfactor':inflow['Units_Factor'],
-               'Sfactor':inflow['Scale_Factor'],
-               'Baseline':inflow['Baseline'],
-               'Pattern':inflow['Baseline_Pattern']}
+            i_dict = {
+                'Name':i,
+                'Constituent':inflow['Constituent'],
+                'Time_Series':inflow['Time_Series'],
+                'Type':inflow['Type'],
+                'Mfactor':inflow['Units_Factor'],
+                'Sfactor':inflow['Scale_Factor'],
+                'Baseline':inflow['Baseline'],
+                'Pattern':inflow['Baseline_Pattern']
+            }
         else:
-            i_dict = {'Name':i,
-                      'Constituent':inflow['Constituent'],
-                      'Baseline':inflow['Average_Value'],
-                      'Patterns':' '.join([inflow['Time_Pattern1'],
-                                           inflow['Time_Pattern2'],
-                                           inflow['Time_Pattern3'],
-                                           inflow['Time_Pattern4']])}
+            i_dict = {
+                'Name':i,
+                'Constituent':inflow['Constituent'],
+                'Baseline':inflow['Average_Value'],
+                'Patterns':' '.join([
+                    inflow['Time_Pattern1'],
+                    inflow['Time_Pattern2'],
+                    inflow['Time_Pattern3'],
+                    inflow['Time_Pattern4']
+                ])
+            }
         return i_dict
     for inflow_type in ['Direct','Dry_Weather']:
         # check if all columns exits
         inflow_df = inflows_raw[inflow_type]
-        if inflow_type == 'Direct':
-            inflow_cols_needed = list(def_sections_dict['INFLOWS'])
-        if inflow_type == 'Dry_Weather':
-            inflow_cols_needed = list(def_sections_dict['DWF'])
+        inflow_cols_needed = list(def_tables_dict['INFLOWS']['tables'][inflow_type].keys())
         table_name = inflow_type+' table'
-        check_columns(table_name,
-                      inflow_cols_needed,
-                      inflow_df.columns)
+        check_columns(
+            table_name,
+            inflow_cols_needed,
+            inflow_df.columns
+        )
         # delete inflows for nodes which do no exist
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
         inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]

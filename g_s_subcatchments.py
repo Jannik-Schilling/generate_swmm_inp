@@ -30,7 +30,7 @@ import pandas as pd
 import numpy as np
 from qgis.core import QgsProcessingException
 from .g_s_various_functions import check_columns
-from .g_s_defaults import def_sections_dict
+from .g_s_defaults import def_qgis_fields_dict, def_sections_dict
 
 
 
@@ -40,10 +40,7 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     reads subcatchment shapefile
     """
     # check if all columns exist
-    subc_cols = def_sections_dict['SUBCATCHMENTS']
-    suba_cols = def_sections_dict['SUBAREAS']
-    inf_cols = def_sections_dict['INFILTRATION']
-    all_sub_cols = subc_cols+suba_cols+['InfMethod']
+    all_sub_cols = def_qgis_fields_dict['SUBCATCHMENTS']
     sub_layer_name = 'Subcatchments Layer'
     check_columns(
         sub_layer_name,
@@ -99,9 +96,9 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     subcatchments_df['PctRouted'] = subcatchments_df['PctRouted'].fillna(100)
     subcatchments_df = subcatchments_df.reset_index(drop=True)
     # select columns
-    infiltration_df = subcatchments_df[inf_cols]
-    subareas_df = subcatchments_df[suba_cols]
-    subcatchments_df = subcatchments_df[subc_cols]
+    infiltration_df = subcatchments_df[def_sections_dict['INFILTRATION']]
+    subareas_df = subcatchments_df[def_sections_dict['SUBAREAS']]
+    subcatchments_df = subcatchments_df[def_sections_dict['SUBCATCHMENTS']]
     return subcatchments_df, subareas_df, infiltration_df
 
 def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all_infiltr, main_infiltration_method):
@@ -124,26 +121,32 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
         if pd.isna(infiltr_row['InfMethod']):
             infiltr_row['InfMethod'] = main_infilt_method
         if infiltr_row['InfMethod'] in ['GREEN_AMPT','MODIFIED_GREEN_AMPT']:
-            infiltr_row = infiltr_row.rename({'Param1':'SuctHead',
-                               'Param2':'Conductiv',
-                               'Param3':'InitDef'})
+            infiltr_row = infiltr_row.rename({
+                'Param1':'SuctHead',
+                'Param2':'Conductiv',
+                'Param3':'InitDef'
+            })
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
             cols_not_in_infilt =[k for k in InfiltrDtypes if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] in ['HORTON','MODIFIED_HORTON']:
-            infiltr_row = infiltr_row.rename({'Param1':'MaxRate',
-                                   'Param2':'MinRate',
-                                   'Param3':'Decay',
-                                   'Param4':'DryTime',
-                                   'Param5':'MaxInf'})
+            infiltr_row = infiltr_row.rename({
+                'Param1':'MaxRate',
+                'Param2':'MinRate',
+                'Param3':'Decay',
+                'Param4':'DryTime',
+                'Param5':'MaxInf'
+            })
             cols_not_in_infilt =[k for k in InfiltrDtypes if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
-            infiltr_row = infiltr_row.rename({'Param1':'CurveNum',
-                               'Param2':'Conductiv',
-                               'Param3':'DryTime'})
+            infiltr_row = infiltr_row.rename({
+                'Param1':'CurveNum',
+                'Param2':'Conductiv',
+                'Param3':'DryTime'
+            })
             infiltr_row = infiltr_row.drop(['Param4','Param5'])
             cols_not_in_infilt =[k for k in InfiltrDtypes if k not in infiltr_row.index]# missing columns
             for c in cols_not_in_infilt:
@@ -154,19 +157,6 @@ def create_subcatchm_attributes_from_inp_df(all_subcatchments, all_subareas, all
     all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on = 'Name')
     all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on = 'Name')
     return all_subcatchments
-
-subc_field_vals = {
-    'RouteTo':{
-        'OUTLET':'OUTLET',
-        'PERVIOUS':'PERVIOUS',
-        'IMPERVIOUS':'IMPERVIOUS'},
-    'InfMethod':{
-        'HORTON':'HORTON',
-        'MODIFIED_HORTON':'MODIFIED_HORTON',
-        'GREEN_AMPT':'GREEN_AMPT',
-        'MODIFIED_GREEN_AMPT':'MODIFIED_GREEN_AMPT',
-        'CURVE_NUMBER':'CURVE_NUMBER'}}
-
 
 
 
@@ -179,7 +169,6 @@ def get_raingages(rg_features_df, feedback, rg_ts_dict = None, rg_pos_default = 
     """
     rg_dict = {}
     temp_rg_ts = {}
-    #SwmmRainGage[]
     if rg_ts_dict is not None:
         for v in rg_ts_dict.values():
             v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)

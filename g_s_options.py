@@ -75,6 +75,7 @@ def_options_dtypes ={
     'TEMPDIR':[[str]]
 }
 
+
 def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback = None):
     """
     converts datetime formats to string and vice versa
@@ -109,7 +110,7 @@ def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback = None):
     return opt_val
 
 
-    
+# export from table to inp file
 def get_options_from_table(options_df): 
     """
     converts file_options_df to dict and 
@@ -123,7 +124,7 @@ def get_options_from_table(options_df):
         main_infiltration_method = None
     return options_df, main_infiltration_method
     
-    
+# import from inp file
 def convert_options_format_for_import(dict_options, feedback):
     '''
     converts formats in dict_options for the options file

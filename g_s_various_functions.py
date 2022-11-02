@@ -37,6 +37,7 @@ from qgis.core import (
 )
 
 
+
 ## geometry functions
 def get_coords_from_geometry(df):
     """
@@ -153,10 +154,11 @@ def get_patterns_from_table(patterns_raw, name_col):
     :param pd.DataFrame patterns_raw
     :param str name_col
     """
-    pattern_cols = ['Name','Factor']
-    pattern_types = ['HOURLY','DAILY','MONTHLY','WEEKEND']
+    from .g_s_defaults import def_tables_dict
+    pattern_types = def_tables_dict['tables'].keys()
     pattern_dict = {}
     for pattern_type in pattern_types:
+        pattern_cols = def_tables_dict['tables'][pattern_type].keys()
         pattern_df = patterns_raw[pattern_type]
         check_columns('Patterns Table', pattern_cols, pattern_df.columns)
         pattern_df = pattern_df[pattern_df[name_col] != ";"]
@@ -172,10 +174,35 @@ def get_patterns_from_table(patterns_raw, name_col):
                 pattern_dict[i] = {'Name':i, 'Type':pattern_type,'Factors':pattern}
     return(pattern_dict)
     
+def adjust_datetime(
+    dt_column, 
+    str_input_formats,
+    str_output_format):
+    """
+    converts time values (tries different formats) into another time string
+    :param list or series dt_column: column in which the date or time is written
+    :param list str_input_formats
+    :param str str_output_format
+    """
+    try:
+        # if already in a date or time format
+        dt_column = [t.strftime(str_output_format) for t in dt_column]
+        return dt_column
+    except:
+        # if given as string
+        for st in str_input_formats:
+            try:
+                dt_column = [datetime.strptime(str(t),st) for t in dt_column]
+                dt_column = [t.strftime(str_output_format) for t in dt_column]
+            except:
+                dt_column = [str(t) for t in dt_column]
+            else:
+                return dt_column
+                break
     
 def get_timeseries_from_table(ts_raw, name_col, feedback):
     """
-    enerates a timeseries dict for the input file from tables (ts_raw)
+    generates a timeseries dict for the input file from tables (ts_raw)
     :param pd.DataFrame ts_raw
     :param str name_col
     :param QgsProcessingFeedback feedback
@@ -187,7 +214,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
         feedback.setProgressText('No external file is used in time series')
     #deprecated:
     if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
-        feedback.reportError('Warning: The columns \"Type\" and \"Format\" will not be used any longer in future versions of the plugin. Creating rain gages from timeseries only is deprcated. Please create a rain gage layer instead. You can get an examplary layer from the default data set or have a look at the documentation file.')
+        feedback.reportError('Warning: The columns \"Type\" and \"Format\" will not be used any longer in future versions of the plugin. Creating rain gages from timeseries only is deprecated. Please create a rain gage layer instead. You can get an examplary layer from the default data set or have a look at the documentation file.')
     if ts_raw.empty:
         pass
     else:
@@ -198,23 +225,16 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                     ts_df['Time'] = ts_df['File_Name']
                     ts_df['Value'] = ''
             else:
-                try:
-                    ts_df['Date']= [t.strftime('%m/%d/%Y') for t in ts_df['Date']]
-                except:
-                    ts_df['Date'] = [str(t) for t in ts_df['Date']]
-                try:
-                    ts_df['Time'] = [t.strftime('%H:%M') for t in ts_df['Time']]
-                except:
-                    # if string or numeric
-                    str_formats = ['%H:%M:%S', '%H:%M', '%H']
-                    for st in str_formats:
-                        try:
-                            ts_df['Time'] = [datetime.strptime(str(t),st) for t in ts_df['Time']]
-                            ts_df['Time'] = [t.strftime('%H:%M') for t in ts_df['Time']]
-                        except:
-                            ts_df['Time'] = [str(t) for t in ts_df['Time']]
-                        else:
-                            break
+                ts_df['Date'] = adjust_datetime(
+                    ts_df['Date'],
+                    ['%Y-%m-%d','%d/%m/%Y','%d.%m.%Y'],
+                    '%m/%d/%Y'
+                )
+                ts_df['Time'] = adjust_datetime(
+                    ts_df['Time'],
+                    ['%H:%M:%S', '%H:%M', '%H'],
+                    '%H:%M'
+                )
             ts_description= ts_df['Description'].fillna('').unique()[0]
             ts_dict[i] = {
                 'Name':i,
