@@ -291,8 +291,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 col_names = def_sections_dict[section_name]
             if def_sections_dict[section_name] is None:
                 col_names = None
-            if type(def_sections_dict[section_name]) == dict:
-                col_names = list(def_sections_dict[section_name].keys())
             if (not section_name in dict_all_raw_vals.keys()) or (len(dict_all_raw_vals[section_name])==0):
                 df = pd.DataFrame(columns = col_names)
             else:
@@ -541,6 +539,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'Shape':['Name','Depth', 'Width'],
             'Weir': ['Name','Head','Coefficient']
             }
+
         
         if 'CURVES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating curves file ...'))
