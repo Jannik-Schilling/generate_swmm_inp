@@ -57,8 +57,17 @@ def replace_null_nan(attr_value):
 
 # read functions
 ## layers with geometry
-def read_layers_direct(raw_layers_dict):
-    """reads layers from swmm model"""
+def read_layers_direct(
+    raw_layers_dict,
+    select_cols = [],
+    with_id = False
+    ):
+    """
+    reads layers from swmm model
+    :param dict raw_layers_dict
+    :param list select_cols
+    :param bool with_id 
+    """
     def del_none_bool(df):
         """
         replaces None or NULL with np.nan
@@ -70,20 +79,35 @@ def read_layers_direct(raw_layers_dict):
         df = df.applymap(replace_null_nan)
         df[df.columns[:-1]] =  df[df.columns[:-1]].replace('True','YES').replace('False','NO')
         return df
-    def load_layer_to_df(vlayer):
+    def load_layer_to_df(
+        vlayer,
+        select_cols = [],
+        with_id = False
+        ):
         """
         reads layer attributes and geometries
         :param QgsVectorLayer vlayer
+        :param list select_cols
+        :param bool with_id 
         """
         cols = [f.name() for f in vlayer.fields()]
+        if len(select_cols) > 0:
+            if all([x in cols for x in select_cols]):
+                cols = select_cols
+            else:
+                raise QgsProcessingException('Missing colums in layer')
         # check for null geometries
         if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
             name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
             raise QgsProcessingException('Failed to load layer: missing geometries in '+vlayer.name()+': '+', '.join(name_missing_geom))
-        datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
+        # data generator
+        if with_id == True:
+            datagen = ([f[col] for col in cols]+[f.geometry()+f.id()] for f in vlayer.getFeatures())
+        else: 
+            datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
-    data_dict = {n: load_layer_to_df(d) for n, d in raw_layers_dict.items() if d is not None}
+    data_dict = {n: load_layer_to_df(d, select_cols, with_id) for n, d in raw_layers_dict.items() if d is not None}
     data_dict_out = {n:d for n, d in data_dict.items() if len(d) > 0}
     data_dict_out = {n:del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
     return data_dict_out

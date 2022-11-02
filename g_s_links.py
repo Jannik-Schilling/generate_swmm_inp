@@ -148,7 +148,7 @@ def del_first_last_vt(link):
 def get_pumps_from_shapefile(pumps_raw):
     """prepares pumps data for writing an input file"""
     # check if all columns exist
-    pumps_cols = list(def_sections_dict['PUMPS'].keys())
+    pumps_cols = list(def_qgis_fields_dict['PUMPS'].keys())
     pumps_layer_name = 'Pumps Layer'
     check_columns(pumps_layer_name,
                   pumps_cols,
@@ -185,16 +185,12 @@ weir_field_vals = {
 def get_weirs_from_shapefile(weirs_raw):
     """prepares weirs data for writing an input file"""
     # check if all columns exist
-    weirs_cols = list(def_sections_dict['WEIRS'].keys())
-    all_weirs_cols = weirs_cols+['Height','Length','SideSlope','Type']
+    weirs_qgis_cols = list(def_qgis_fields_dict['WEIRS'].keys())
+    weirs_inp_cols = def_sections_dict['WEIRS']
     weirs_layer_name = 'Weirs Layer'
     check_columns(weirs_layer_name,
-                  all_weirs_cols,
+                  weirs_qgis_cols,
                   weirs_raw.columns)
-    
-    weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
-                                         'Length':'Geom2',
-                                         'SideSlope':'Geom3'})
     weirs_df = weirs_raw.copy()
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
     weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('*')
@@ -202,7 +198,11 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_df['CoeffCurve'] = weirs_df['CoeffCurve'].fillna('')
     weirs_df['EndContrac'] = weirs_df['EndContrac'].fillna('0')
     weirs_df['EndCoeff'] = weirs_df['EndCoeff'].fillna('0')
-    weirs_df=weirs_df[weirs_cols]
+    weirs_df=weirs_df[weirs_inp_cols]
+    
+    weirs_raw = weirs_raw.rename(columns={'Height':'Geom1',
+                                         'Length':'Geom2',
+                                         'SideSlope':'Geom3'})
     weirs_raw['Shape'] = [weirs_shape_dict[x] for x in weirs_raw['Type']]
     weirs_raw['Geom3'] = weirs_raw['Geom3'].fillna('0')
     weirs_raw['Geom4'] = weirs_raw['Geom3']
@@ -223,7 +223,7 @@ def get_orifices_from_shapefile(orifices_raw):
     param: pd.DataFrame orifices_raw
     """
     # check if columns exist
-    orifices_cols = list(def_sections_dict['ORIFICES'].keys())              
+    orifices_cols = list(def_qgis_fields_dict['ORIFICES'].keys())              
     all_orifices_cols = orifices_cols+['Height','Width','Shape']
     orifices_layer_name = 'Orifices Layer'
     check_columns(orifices_layer_name,
@@ -268,7 +268,7 @@ def get_outlets_from_shapefile(outlets_raw):
             return outl_row['CurveName']
             
     # check columns
-    outlets_cols = list(def_sections_dict['OUTLETS'].keys())
+    outlets_cols = list(def_qgis_fields_dict['OUTLETS'].keys())
     outlets_layer_name = 'Outlets Layer'
     check_columns(outlets_layer_name,
                   outlets_cols,

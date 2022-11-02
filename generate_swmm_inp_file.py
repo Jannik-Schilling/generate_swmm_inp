@@ -40,7 +40,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer)
 from .g_s_various_functions import check_columns, get_coords_from_geometry
-from .g_s_defaults import def_sections_dict, def_curve_types
+from .g_s_defaults import def_qgis_fields_dict, def_curve_types
 from .g_s_read_write_data  import read_data_from_table_direct, read_layers_direct
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
@@ -462,7 +462,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[JUNCTIONS] section'))
             junctions_df = raw_data_dict['junctions_raw'].copy()
             # check columns
-            junctions_cols = list(def_sections_dict['JUNCTIONS'].keys())
+            junctions_cols = list(def_qgis_fields_dict['JUNCTIONS'].keys())
             junctions_layer_name = 'Junctions Layer'
             check_columns(junctions_layer_name,
                           junctions_cols,
@@ -472,7 +472,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OUTFALLS] section'))
-            outfalls_cols = list(def_sections_dict['OUTFALLS'].keys())
+            outfalls_cols = list(def_qgis_fields_dict['OUTFALLS'].keys())
             outfalls_layer_name = 'Outfalls Layer'
             check_columns(outfalls_layer_name,
                           outfalls_cols,
@@ -494,7 +494,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             dividers_df = raw_data_dict['dividers_raw'].copy()
             dividers_df['X_Coord'],dividers_df['Y_Coord'] = get_coords_from_geometry(dividers_df)
             # check columns
-            dividers_cols = list(def_sections_dict['DIVIDERS'].keys())
+            dividers_cols = list(def_qgis_fields_dict['DIVIDERS'].keys())
             dividers_layer_name = 'Dividers Layer'
             check_columns(dividers_layer_name,
                           dividers_cols,

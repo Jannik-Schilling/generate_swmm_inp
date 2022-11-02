@@ -35,8 +35,7 @@ from qgis.core import (
     QgsProcessingException,
     QgsEditorWidgetSetup
 )
-
-
+from .g_s_defaults import def_tables_dict
 
 ## geometry functions
 def get_coords_from_geometry(df):
@@ -128,9 +127,9 @@ def get_curves_from_table(curves_raw, name_col):
     :param pd.DataFrame curve_raw
     :param str name_col
     """
-    from .g_s_defaults import def_curve_types
+    curve_types = list(def_tables_dict['CURVES']['tables'].keys())
     curve_dict = dict()
-    for curve_type in def_curve_types:
+    for curve_type in curve_types:
         if curve_type in curves_raw.keys():
             curve_df = curves_raw[curve_type]
             if len(curve_df.columns) > 3:
@@ -154,11 +153,10 @@ def get_patterns_from_table(patterns_raw, name_col):
     :param pd.DataFrame patterns_raw
     :param str name_col
     """
-    from .g_s_defaults import def_tables_dict
-    pattern_types = def_tables_dict['tables'].keys()
+    pattern_types = def_tables_dict['PATTERNS']['tables'].keys()
     pattern_dict = {}
     for pattern_type in pattern_types:
-        pattern_cols = def_tables_dict['tables'][pattern_type].keys()
+        pattern_cols = def_tables_dict['PATTERNS']['tables'][pattern_type].keys()
         pattern_df = patterns_raw[pattern_type]
         check_columns('Patterns Table', pattern_cols, pattern_df.columns)
         pattern_df = pattern_df[pattern_df[name_col] != ";"]
