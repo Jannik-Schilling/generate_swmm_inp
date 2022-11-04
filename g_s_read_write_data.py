@@ -57,6 +57,13 @@ def replace_null_nan(attr_value):
 
 # read functions
 ## layers with geometry
+def replace_null_nan(attr_value):
+    """replaces NULL with np.nan"""
+    if attr_value == NULL:
+        return np.nan
+    else:
+        return attr_value
+        
 def read_layers_direct(
     raw_layers_dict,
     select_cols = [],
@@ -102,10 +109,11 @@ def read_layers_direct(
             raise QgsProcessingException('Failed to load layer: missing geometries in '+vlayer.name()+': '+', '.join(name_missing_geom))
         # data generator
         if with_id == True:
-            datagen = ([f[col] for col in cols]+[f.geometry()+f.id()] for f in vlayer.getFeatures())
+            datagen = ([f[col] for col in cols]+[f.geometry()]+[f.id()] for f in vlayer.getFeatures())
+            df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry','id'])
         else: 
             datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
-        df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
+            df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
         return df
     data_dict = {n: load_layer_to_df(d, select_cols, with_id) for n, d in raw_layers_dict.items() if d is not None}
     data_dict_out = {n:d for n, d in data_dict.items() if len(d) > 0}

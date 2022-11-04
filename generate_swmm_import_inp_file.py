@@ -109,7 +109,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterString(
             self.PREFIX,
-            self.tr('Prefix for imported Data'),
+            self.tr('Prefix for imported data'),
             optional = True
             )
         )
