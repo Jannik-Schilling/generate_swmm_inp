@@ -102,7 +102,8 @@ def read_layers_direct(
             if all([x in cols for x in select_cols]):
                 cols = select_cols
             else:
-                raise QgsProcessingException('Missing colums in layer')
+                missing_cols = [x for x in select_cols if x not in cols]
+                raise QgsProcessingException('Missing colums in layer '+vlayer.name()+': '+', '.join(missing_cols))
         # check for null geometries
         if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
             name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
