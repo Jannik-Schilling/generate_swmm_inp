@@ -37,14 +37,19 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProject,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingContext,
                        QgsProcessingException,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterString,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterVectorLayer,
-                       QgsVectorFileWriter)
+                       QgsVectorFileWriter,
+                       QgsVectorLayer)
+
 from .g_s_read_write_data  import read_layers_direct
 from .g_s_defaults import def_ogr_driver_names, def_ogr_driver_dict
+
+
 
 class SelectSubModel(QgsProcessingAlgorithm):
     """
@@ -94,14 +99,6 @@ class SelectSubModel(QgsProcessingAlgorithm):
             )
         )
         
-        self.addParameter(
-            QgsProcessingParameterVectorLayer(
-                self.FILE_RAINGAGES,
-                self.tr('Rain gages Layer'),
-                types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_Raingagges'
-                ))
-                
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_JUNCTIONS,
@@ -182,14 +179,25 @@ class SelectSubModel(QgsProcessingAlgorithm):
                 types=[QgsProcessing.SourceType.TypeVectorLine],
                 optional = True#,defaultValue = 'SWMM_outlets'
                 ))
+        
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.FILE_RAINGAGES,
+                self.tr('Rain gages Layer'),
+                types=[QgsProcessing.SourceType.TypeVectorPoint],
+                optional = True#,defaultValue = 'SWMM_Raingagges'
+                ))
+                
                 
     def name(self):
         return 'SelectSubModel'
         
     def shortHelpString(self):
-        return self.tr(""" The tool selects a subset of features in the chosen SWMM layers in order to create a new model\n
-        Option 1: select features above a certain node \n
-        Option 2: everything except features from Option 1 \n
+        return self.tr(""" The tool creates a subset of features in the chosen SWMM layers in order to create a new model\n
+        Workflow:\n
+        1. select a Node (Junction, Storage, Divider, Outfall)
+        2. Choose a folder and prefix for the subset
+        3. run the tool with the existing layers
         """)
 
     def displayName(self):
@@ -216,6 +224,8 @@ class SelectSubModel(QgsProcessingAlgorithm):
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
             raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
         result_prefix = self.parameterAsString(parameters, self.PREFIX, context)
+        if result_prefix == '':
+            result_prefix = 'Subset'
         file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
         file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
@@ -228,7 +238,7 @@ class SelectSubModel(QgsProcessingAlgorithm):
         file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
         file_dividers = self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)
         
-        
+
         # create layer dictionaries
         nodes_layers_dict = {
             'junctions_raw':file_junctions,
@@ -237,6 +247,7 @@ class SelectSubModel(QgsProcessingAlgorithm):
             'dividers_raw':file_dividers
         }
         nodes_layers_dict = {k:v for k,v in nodes_layers_dict.items() if v is not None}
+        drivers_dict = {k:v.dataProvider().storageType() for k,v in nodes_layers_dict.items()}
         
         link_layers_dict = {
             'conduits_raw': file_conduits,
@@ -246,17 +257,22 @@ class SelectSubModel(QgsProcessingAlgorithm):
             'outlets_raw':file_outlets
         }
         link_layers_dict = {k:v for k,v in link_layers_dict.items() if v is not None}
+        drivers_dict.update({k:v.dataProvider().storageType() for k,v in link_layers_dict.items()})
+
         
         subcatch_layers_dict = {
             'subcatchments_raw':file_subcatchments
         }
         subcatch_layers_dict = {k:v for k,v in subcatch_layers_dict.items() if v is not None}
+        drivers_dict.update({k:v.dataProvider().storageType() for k,v in subcatch_layers_dict.items()})
 
         
         raingages_layer_dict = {
             'raingages_raw':file_raingages
         }
         raingages_layer_dict = {k:v for k,v in raingages_layer_dict.items() if v is not None}
+        drivers_dict.update({k:v.dataProvider().storageType() for k,v in raingages_layer_dict.items()})
+
         
         
         if len(nodes_layers_dict) == 0:
@@ -454,24 +470,58 @@ class SelectSubModel(QgsProcessingAlgorithm):
                     file_raingages.selectByIds(selSet, file_raingages.SelectBehavior(1))
                 feedback.setProgressText(self.tr('done'))
         
-        # vector_layer = file_conduits
-        # layer_name = 'test'
-        # geodata_driver_num = 0
-        # geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
-        # geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-        # # create layer
-        # options = QgsVectorFileWriter.SaveVectorOptions()
-        # options.fileEnconding = 'utf-8'
-        # options.driverName = geodata_driver_name
-        # options.onlySelectedFeatures = True
-        # transform_context = QgsProject.instance().transformContext()
-        # QgsVectorFileWriter.writeAsVectorFormatV3(
-            # vector_layer,
-            # os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
-            # transform_context,
-            # options
-        # )
         
+        # combine all dicts in order to save the selected parts
+        dict_all_layers = {}
+        dict_all_layers.update(nodes_layers_dict)
+        dict_all_layers.update(link_layers_dict)
+        dict_all_layers.update(subcatch_layers_dict)
+        dict_all_layers.update(raingages_layer_dict)
+        
+        def add_layer_on_completion(folder_save, layer_name, style_file, widget_setup = None):
+            """
+            adds the current layer on completen to canvas
+            :param str folder_save
+            :param str layer_name
+            :param str style_file: file name of the qml file
+            :param dict widget_setup: definititons for field widgets
+            """
+            layer_filename = layer_name+'.'+geodata_driver_extension
+            vlayer = QgsVectorLayer(os.path.join(folder_save, layer_filename), layer_name, "ogr")
+            #vlayer.loadNamedStyle(os.path.join(folder_save,style_file))
+            if widget_setup is None:
+                pass
+            else:
+                for k,v in widget_setup.items():
+                    field_to_value_map(vlayer, k, v)
+            context.temporaryLayerStore().addMapLayer(vlayer)
+            context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+        
+        
+        for k,v in dict_all_layers.items():
+            if v.selectedFeatureCount() > 0:
+                vector_layer = v
+                layer_name = str(result_prefix)+'_SWMM_'+k.split('_')[0]
+                geodata_driver_name = drivers_dict[k]
+                geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+                # create layer
+                options = QgsVectorFileWriter.SaveVectorOptions()
+                options.fileEnconding = 'utf-8'
+                options.driverName = geodata_driver_name
+                options.onlySelectedFeatures = True
+                transform_context = QgsProject.instance().transformContext()
+                QgsVectorFileWriter.writeAsVectorFormatV3(
+                    vector_layer,
+                    os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+                    transform_context,
+                    options
+                )
+                add_layer_on_completion(folder_save, layer_name, style_file = None)
+        
+        # to do:
+        # put layers in a group in the layer tree
+        # add a style to the layers
+        # add an outfall
         return {}
 
 
