@@ -34,22 +34,25 @@ import os
 import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProcessing,
+from qgis.core import (QgsProject,
+                       QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingException,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterString,
                        QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterVectorLayer)
+                       QgsProcessingParameterVectorLayer,
+                       QgsVectorFileWriter)
 from .g_s_read_write_data  import read_layers_direct
+from .g_s_defaults import def_ogr_driver_names, def_ogr_driver_dict
 
 class SelectSubModel(QgsProcessingAlgorithm):
     """
     generates a swmm input file from geodata and tables
     """
     OPTION_ABOVE_BELOW = 'OPTION_ABOVE_BELOW'
-    #SAVE_FOLDER = 'SAVE_FOLDER'
-    #PREFIX = 'PREFIX'
+    SAVE_FOLDER = 'SAVE_FOLDER'
+    PREFIX = 'PREFIX'
     FILE_RAINGAGES = 'FILE_RAINGAGES'
     FILE_CONDUITS = 'FILE_CONDUITS'
     FILE_JUNCTIONS = 'FILE_JUNCTIONS'
@@ -76,20 +79,20 @@ class SelectSubModel(QgsProcessingAlgorithm):
                 defaultValue = 0
                 ))
                 
-        # self.addParameter(
-            # QgsProcessingParameterFolderDestination(
-            # self.SAVE_FOLDER,
-            # self.tr('Folder in which the new model files will be saved.')
-            # )
-        # )
+        self.addParameter(
+            QgsProcessingParameterFolderDestination(
+            self.SAVE_FOLDER,
+            self.tr('Folder in which the new model files will be saved.')
+            )
+        )
         
-        # self.addParameter(
-            # QgsProcessingParameterString(
-            # self.PREFIX,
-            # self.tr('Prefix for new data'),
-            # optional = True
-            # )
-        # )
+        self.addParameter(
+            QgsProcessingParameterString(
+            self.PREFIX,
+            self.tr('Prefix for new data'),
+            optional = True
+            )
+        )
         
         self.addParameter(
             QgsProcessingParameterVectorLayer(
@@ -209,10 +212,10 @@ class SelectSubModel(QgsProcessingAlgorithm):
         # reading geodata
         feedback.setProgressText(self.tr('Reading layers'))
         feedback.setProgress(1)
-        # folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
-        # if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
-            # raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
-        # result_prefix = self.parameterAsString(parameters, self.PREFIX, context)
+        folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
+        if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
+            raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
+        result_prefix = self.parameterAsString(parameters, self.PREFIX, context)
         file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
         file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
@@ -440,7 +443,7 @@ class SelectSubModel(QgsProcessingAlgorithm):
                     
                 ## select raingages
                 required_rangages = list(np.unique(sc_for_selection['RainGage']))
-                features_for_selection = list(rg_df.loc[subc_df['Name'].isin(nodes_route),'id'])
+                features_for_selection = list(rg_df.loc[rg_df['Name'].isin(required_rangages),'id'])
                 sel=[]
                 while len(features_for_selection) != 0:
                     set1 = features_for_selection[:200]
@@ -450,7 +453,25 @@ class SelectSubModel(QgsProcessingAlgorithm):
                 for selSet in sel:
                     file_raingages.selectByIds(selSet, file_raingages.SelectBehavior(1))
                 feedback.setProgressText(self.tr('done'))
-            
+        
+        # vector_layer = file_conduits
+        # layer_name = 'test'
+        # geodata_driver_num = 0
+        # geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
+        # geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+        # # create layer
+        # options = QgsVectorFileWriter.SaveVectorOptions()
+        # options.fileEnconding = 'utf-8'
+        # options.driverName = geodata_driver_name
+        # options.onlySelectedFeatures = True
+        # transform_context = QgsProject.instance().transformContext()
+        # QgsVectorFileWriter.writeAsVectorFormatV3(
+            # vector_layer,
+            # os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+            # transform_context,
+            # options
+        # )
+        
         return {}
 
 
