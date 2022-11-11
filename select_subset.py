@@ -34,11 +34,11 @@ import os
 import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QColor
 from qgis.core import (QgsLayerTreeGroup,
                        QgsProject,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
-                       QgsProcessingContext,
                        QgsProcessingException,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterString,
@@ -242,40 +242,10 @@ class SelectSubModel(QgsProcessingAlgorithm):
         file_dividers = self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)
         pluginPath = os.path.dirname(__file__)
         
-        # def add_layer_on_completion2(folder_save, layer_name, style_file,geodata_driver_extension):
-            # """
-            # adds the current layer on completen to canvas
-            # :param str folder_save
-            # :param str layer_name
-            # :param str style_file: file name of the qml file
-            # """
-            # layer_filename = layer_name+'.'+geodata_driver_extension
-            # vlayer = QgsVectorLayer(
-                # os.path.join(
-                    # folder_save,
-                    # layer_filename
-                # ),
-                # layer_name,
-                # "ogr"
-            # )
-            # qml_file_path = os.path.join(
-                # pluginPath,
-                # def_stylefile_dict['st_files_path']
-            # )
-            # vlayer.loadNamedStyle(os.path.join(qml_file_path,style_file))
-            # context.temporaryLayerStore().addMapLayer(vlayer)
-            # context.addLayerToLoadOnCompletion(
-                # vlayer.id(), 
-                # QgsProcessingContext.LayerDetails(
-                    # "",
-                    # QgsProject.instance(),
-                    # ""
-                # )
-            # )
             
         def add_layer_on_completion2(folder_save, layer_name, style_file,geodata_driver_extension):
             """
-            adds the current layer on completen to canvas
+            adds the current layer on completen to canvas with color red
             :param str folder_save
             :param str layer_name
             :param str style_file: file name of the qml file
@@ -294,6 +264,7 @@ class SelectSubModel(QgsProcessingAlgorithm):
                 def_stylefile_dict['st_files_path']
             )
             vlayer.loadNamedStyle(os.path.join(qml_file_path,style_file))
+            vlayer.renderer().symbol().setColor(QColor('red'))
             QgsProject.instance().addMapLayer(vlayer, False)
             tree = QgsProject.instance().layerTreeRoot()
             if isinstance(tree.findGroup(result_prefix), QgsLayerTreeGroup):
@@ -505,6 +476,10 @@ class SelectSubModel(QgsProcessingAlgorithm):
             else:
                 feedback.setProgressText(self.tr('creating outfall node'))
                 ### get crs for outfall file from original outfall file or take the first crs from a node layer in the dict
+                layer_name = str(result_prefix)+'_SWMM_Outfalls'
+                fname = os.path.join(folder_save,layer_name+'.'+'gpkg')
+                if os.path.isfile(fname):
+                    raise QgsProcessingException('File '+fname+' already exists. Please choose another folder')
                 if file_outfalls is not None:
                     crs_result = file_outfalls.crs().authid()
                 else: 
@@ -518,7 +493,6 @@ class SelectSubModel(QgsProcessingAlgorithm):
                 outfalls_df.loc[0,'FlapGate'] = 'NO'
                 outfalls_df.loc[0,'RouteTo'] = ''
                 outfalls_df.loc[0,'geometry'] = start_point_geometry
-                layer_name = str(result_prefix)+'_SWMM_Outfalls'
                 list_move_to_group.append(layer_name)
                 create_layer_from_table(
                     outfalls_df,
@@ -611,9 +585,12 @@ class SelectSubModel(QgsProcessingAlgorithm):
                 options.driverName = geodata_driver_name
                 options.onlySelectedFeatures = True
                 transform_context = QgsProject.instance().transformContext()
+                fname = os.path.join(folder_save,layer_name+'.'+geodata_driver_extension)
+                if os.path.isfile(fname):
+                    raise QgsProcessingException('File '+fname+' already exists. Please choose another folder')
                 QgsVectorFileWriter.writeAsVectorFormatV3(
                     vector_layer,
-                    os.path.join(folder_save,layer_name+'.'+geodata_driver_extension),
+                    fname,
                     transform_context,
                     options
                 )
