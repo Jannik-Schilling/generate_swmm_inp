@@ -79,7 +79,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFileDestination(
                 self.QGIS_OUT_INP_FILE,
                 self.tr('Where should the inp file be saved?'),
-                'INP files (*.inp)', #defaultValue=['date.inp'] 
+                'INP files (*.inp)', 
             )
         )
         self.addParameter(
@@ -87,7 +87,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_RAINGAGES,
                 self.tr('Rain gages Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_Raingagges'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -95,7 +95,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_JUNCTIONS,
                 self.tr('Junctions Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_junctions'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -103,7 +103,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_CONDUITS,
                 self.tr('Conduits Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_conduits'
+                optional = True
                 ))
         
         self.addParameter(
@@ -111,7 +111,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_SUBCATCHMENTS,
                 self.tr('Subcatchments Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorAnyGeometry],
-                optional = True#,defaultValue = 'SWMM_subcatchments'
+                optional = True
                 ))
         
         self.addParameter(
@@ -119,7 +119,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_STORAGES,
                 self.tr('Storages Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_storages'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -127,7 +127,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_OUTFALLS,
                 self.tr('Outfalls Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_outfalls'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -135,7 +135,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_DIVIDERS,
                 self.tr('Dividers Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_dividers'
+                optional = True
                 ))
                 
                 
@@ -144,7 +144,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_PUMPS,
                 self.tr('Pumps Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_Pumps'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -152,7 +152,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_WEIRS,
                 self.tr('Weirs Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_weirs'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -160,7 +160,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_ORIFICES,
                 self.tr('Orifices Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_orifices'
+                optional = True
                 ))
                 
         self.addParameter(
@@ -168,7 +168,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.FILE_OUTLETS,
                 self.tr('Outlets Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_outlets'
+                optional = True
                 ))
         
         

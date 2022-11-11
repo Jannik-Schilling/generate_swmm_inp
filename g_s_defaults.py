@@ -25,6 +25,8 @@ __author__ = 'Jannik Schilling'
 __date__ = '2022-04-28'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
+import os
+
 def_curve_types = ['Control',
                    'Pump1',
                    'Pump2',
@@ -625,6 +627,24 @@ def_sections_geoms_dict = {
     'ORIFICES':'LineString',
     'WEIRS':'LineString',
     'OUTLETS':'LineString'
+}
+
+# style_file
+def_stylefile_dict = {
+    'st_files':{
+        'RAINGAGES':'style_raingages.qml',
+        'SUBCATCHMENTS': 'style_catchments.qml',
+        'JUNCTIONS':'style_junctions.qml',
+        'OUTFALLS':'style_outfalls.qml',
+        'DIVIDERS':'style_dividers.qml',
+        'STORAGE':'style_storages.qml',
+        'CONDUITS': 'style_conduits.qml',
+        'PUMPS':'style_pumpss.qml',
+        'ORIFICES':'style_orifices.qml',
+        'WEIRS':'style_weirs.qml',
+        'OUTLETS':'style_outlets.qml'
+    },
+    'st_files_path':os.path.join('test_data','swmm_data')
 }
 
 # all possible fields in qgis files for the creation of layers
