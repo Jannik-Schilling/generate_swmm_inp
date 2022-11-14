@@ -305,14 +305,31 @@ class SelectSubModel(QgsProcessingAlgorithm):
         subcatch_layers_dict = {'SUBCATCHMENTS':file_subcatchments}
         subcatch_layers_dict = {k:v for k,v in subcatch_layers_dict.items() if v is not None}
         drivers_dict.update({k:v.dataProvider().storageType() for k,v in subcatch_layers_dict.items()})
+        if len(subcatch_layers_dict) != 0:
+            needed_subc_attrs = ['Name','Outlet','RainGage']
+            subc_df_dict = read_layers_direct(
+                subcatch_layers_dict,
+                needed_subc_attrs,
+                with_id = True
+            )
+            subc_df = subc_df_dict['SUBCATCHMENTS'][needed_subc_attrs+['id']]
         
         ## raingages
         raingages_layer_dict = {'RAINGAGES':file_raingages}
         raingages_layer_dict = {k:v for k,v in raingages_layer_dict.items() if v is not None}
         drivers_dict.update({k:v.dataProvider().storageType() for k,v in raingages_layer_dict.items()})
+        if len(raingages_layer_dict) != 0:
+            ## load raingages layer as pd df
+            needed_rg_attrs = ['Name']
+            rg_df_dict = read_layers_direct(
+                raingages_layer_dict,
+                needed_rg_attrs,
+                with_id = True
+            )
+            rg_df = rg_df_dict['RAINGAGES'][needed_rg_attrs+['id']]
 
         
-        feedback.setProgressText(self.tr('identifying start node'))
+        feedback.setProgressText(self.tr('Identifying start node'))
         feedback.setProgress(6)
         
         if len(nodes_layers_dict) == 0:
@@ -357,10 +374,10 @@ class SelectSubModel(QgsProcessingAlgorithm):
 
         # links
         if len(link_layers_dict) == 0:
-            feedback.setProgressText(self.tr('no link layers -> select only node and subcatchments'))
+            feedback.setProgressText(self.tr('No link layers -> Selecting only node and subcatchments'))
             nodes_route = [start_point]
         else:
-            feedback.setProgressText(self.tr('routing along links'))
+            feedback.setProgressText(self.tr('Routing along links'))
             # load and merge link layers as pd.df
             needed_link_attrs = ['Name','FromNode','ToNode']
             links_df_dict = read_layers_direct(
@@ -417,8 +434,7 @@ class SelectSubModel(QgsProcessingAlgorithm):
             # check for "splitting" nodes
             splitting_nodes = [str(f) for f in nodes_route_2 if f in nodes_route]
             if len(splitting_nodes) > 0:
-                feedback.reportError("Warning: the network is splitting at :"+", ".join(splitting_nodes))
-            
+                feedback.pushWarning("Warning: the network is splitting at :"+", ".join(splitting_nodes)+"\n")
             if above_or_below == 1: # below
                 links_route = list(links_not_above['Name'])
                 nodes_route = nodes_route_2
@@ -474,12 +490,12 @@ class SelectSubModel(QgsProcessingAlgorithm):
             if start_layer_type == 'OUTFALLS':
                 file_outfalls.selectByIds(start_point_id, vector_layer.SelectBehavior(1))
             else:
-                feedback.setProgressText(self.tr('creating outfall node'))
+                feedback.setProgressText(self.tr('Creating outfall node'))
                 ### get crs for outfall file from original outfall file or take the first crs from a node layer in the dict
                 layer_name = str(result_prefix)+'_SWMM_Outfalls'
                 fname = os.path.join(folder_save,layer_name+'.'+'gpkg')
                 if os.path.isfile(fname):
-                    raise QgsProcessingException('File '+fname+' already exists. Please choose another folder')
+                    raise QgsProcessingException('File '+fname+' already exists. Submodel features will only be selected. Please choose another folder or prefix.')
                 if file_outfalls is not None:
                     crs_result = file_outfalls.crs().authid()
                 else: 
@@ -514,14 +530,6 @@ class SelectSubModel(QgsProcessingAlgorithm):
         # subcatchments
         if len(subcatch_layers_dict) != 0:
             feedback.setProgressText(self.tr('Selecting subcatchments'))
-            needed_subc_attrs = ['Name','Outlet','RainGage']
-            subc_df_dict = read_layers_direct(
-                subcatch_layers_dict,
-                needed_subc_attrs,
-                with_id = True
-            )
-            subc_df = subc_df_dict['SUBCATCHMENTS'][needed_subc_attrs+['id']]
-            
             ## select subcatchments
             sc_for_selection = subc_df.loc[subc_df['Outlet'].isin(nodes_route),:]
             features_for_selection = list(sc_for_selection['id'])
@@ -539,16 +547,7 @@ class SelectSubModel(QgsProcessingAlgorithm):
             
             # raingages
             if len(raingages_layer_dict) != 0:
-                feedback.setProgressText(self.tr('Selecting raingages'))
-                ## load raingages layer as pd df
-                needed_rg_attrs = ['Name']
-                rg_df_dict = read_layers_direct(
-                    raingages_layer_dict,
-                    needed_rg_attrs,
-                    with_id = True
-                )
-                rg_df = rg_df_dict['RAINGAGES'][needed_rg_attrs+['id']]
-                    
+                feedback.setProgressText(self.tr('Selecting raingages'))                    
                 ## select raingages
                 required_rangages = list(np.unique(sc_for_selection['RainGage']))
                 features_for_selection = list(rg_df.loc[rg_df['Name'].isin(required_rangages),'id'])

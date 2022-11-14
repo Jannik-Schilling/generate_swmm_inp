@@ -254,7 +254,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_file_name = os.path.basename(inp_file_path)
         project_dir = os.path.dirname(inp_file_path)
 
-        # initializing the input dictionary and error text
+        # initializing the input dictionary
         inp_dict = dict()
         inp_dict['TITLE'] = pd.DataFrame(['test'])
         inp_dict['JUNCTIONS'] = pd.DataFrame()

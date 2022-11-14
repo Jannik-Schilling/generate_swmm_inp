@@ -212,7 +212,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
         feedback.setProgressText('No external file is used in time series')
     #deprecated:
     if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
-        feedback.reportError('Warning: The columns \"Type\" and \"Format\" will not be used any longer in future versions of the plugin. Creating rain gages from timeseries only is deprecated. Please create a rain gage layer instead. You can get an examplary layer from the default data set or have a look at the documentation file.')
+        feedback.reportError('Warning: The columns \"Type\" and \"Format\" are not used any longer in future versions of the plugin. Creating rain gages from timeseries only is deprecated. Please create a rain gage layer instead. You can get an examplary layer from the default data set or have a look at the documentation file.')
     if ts_raw.empty:
         pass
     else:

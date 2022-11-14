@@ -4,6 +4,12 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 ## Documentation
 [Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) to the documentation file
 
+## Provided tools:
+1. **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
+2. **2_GenerateSwmmInpFile**: Create an input file for a SWMM simulation from your QGIS layers
+3. **3_ImportInpFile**: Import an existing SWMM model into QGIS
+4. **4_SelectSubModel**: Create a submodel (of an existing set SWMM layers in QGIS) below or above a certain node
+
 ## Recommended Workflow
 ### 0 Install 
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
@@ -14,7 +20,7 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 
 ### 1 Load the default data set
-...with the first tool (**1_GenerateDefaultData**). Alternatively you can import existing models into QGIS (**step 5**). Separate layers are provided for the main infrastructures:
+...with the first tool. Alternatively you can import existing models into QGIS (**step 5**). Separate layers are provided for the main infrastructures:
 - rain gages (SWMM_raingages.gpkg)
 - junctions (SWMM_junctions.gpkg)
 - conduits (SWMM_conduits.gpkg)
@@ -50,6 +56,7 @@ If you start from scratch, a useful tool to create a network from a line layer i
 You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended. You can choose a prefix (e.g. "v2") which will be added and the data format (.shp, .gpkg, .gml, .kml, .geojson).
 
 Some formats seem to have problems with certain coordinate reference systems. GPKG and SHP worked fine so far
+
 
 ## Further useful packages
 Python:

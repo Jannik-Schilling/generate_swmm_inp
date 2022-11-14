@@ -639,7 +639,7 @@ def_stylefile_dict = {
         'DIVIDERS':'style_dividers.qml',
         'STORAGE':'style_storages.qml',
         'CONDUITS': 'style_conduits.qml',
-        'PUMPS':'style_pumpss.qml',
+        'PUMPS':'style_pumps.qml',
         'ORIFICES':'style_orifices.qml',
         'WEIRS':'style_weirs.qml',
         'OUTLETS':'style_outlets.qml'
