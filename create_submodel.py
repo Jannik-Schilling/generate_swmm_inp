@@ -47,9 +47,8 @@ from qgis.core import (QgsLayerTreeGroup,
                        QgsVectorFileWriter,
                        QgsVectorLayer)
 
-from .g_s_read_write_data  import read_layers_direct, create_layer_from_table
+from .g_s_read_write_data import read_layers_direct, create_layer_from_table
 from .g_s_defaults import def_ogr_driver_dict, def_stylefile_dict
-
 
 
 class CreateSubModel(QgsProcessingAlgorithm):
@@ -67,11 +66,10 @@ class CreateSubModel(QgsProcessingAlgorithm):
     FILE_OUTFALLS = 'FILE_OUTFALLS'
     FILE_OUTLETS = 'FILE_OUTLETS'
     FILE_STORAGES = 'FILE_STORAGES'
-    FILE_PUMPS    = 'FILE_PUMPS'
-    FILE_SUBCATCHMENTS= 'FILE_SUBCATCHMENTS'
+    FILE_PUMPS = 'FILE_PUMPS'
+    FILE_SUBCATCHMENTS = 'FILE_SUBCATCHMENTS'
     FILE_WEIRS = 'FILE_WEIRS'
-    
-    
+
     def initAlgorithm(self, config):
         """
         inputs and output of the algorithm
@@ -80,119 +78,118 @@ class CreateSubModel(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 self.OPTION_ABOVE_BELOW,
                 self.tr('Selection type'),
-                ['Model parts above selected node','Exclude model parts above selected node'],
-                optional = False,
-                defaultValue = 0
+                [
+                    'Model parts above selected node',
+                    'Exclude model parts above selected node'
+                ],
+                optional=False,
+                defaultValue=0
                 ))
-                
         self.addParameter(
             QgsProcessingParameterFolderDestination(
-            self.SAVE_FOLDER,
-            self.tr('Folder in which the new model files will be saved.')
+                self.SAVE_FOLDER,
+                self.tr('Folder in which the new model files will be saved.')
             )
         )
-        
         self.addParameter(
             QgsProcessingParameterString(
-            self.PREFIX,
-            self.tr('Prefix for new data'),
-            optional = True
+                self.PREFIX,
+                self.tr('Prefix for new data'),
+                optional=True
             )
         )
-        
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_JUNCTIONS,
                 self.tr('Junctions Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_junctions'
-                ))
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_CONDUITS,
                 self.tr('Conduits Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_conduits'
-                ))
-        
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_SUBCATCHMENTS,
                 self.tr('Subcatchments Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorAnyGeometry],
-                optional = True#,defaultValue = 'SWMM_subcatchments'
-                ))
-        
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_STORAGES,
                 self.tr('Storages Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_storages'
-                ))
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_OUTFALLS,
                 self.tr('Outfalls Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_outfalls'
-                ))
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_DIVIDERS,
                 self.tr('Dividers Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_dividers'
-                ))
-                
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_PUMPS,
                 self.tr('Pumps Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_Pumps'
-                ))
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_WEIRS,
                 self.tr('Weirs Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_weirs'
-                ))
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_ORIFICES,
                 self.tr('Orifices Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_orifices'
-                ))
-                
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_OUTLETS,
                 self.tr('Outlets Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorLine],
-                optional = True#,defaultValue = 'SWMM_outlets'
-                ))
-        
+                optional=True
+            )
+        )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.FILE_RAINGAGES,
                 self.tr('Rain gages Layer'),
                 types=[QgsProcessing.SourceType.TypeVectorPoint],
-                optional = True#,defaultValue = 'SWMM_Raingagges'
-                ))
-                
-                
+                optional=True
+            )
+        )
+
     def name(self):
         return 'CreateSubModel'
-        
+
     def shortHelpString(self):
         return self.tr(""" The tool creates a subset of features in the chosen SWMM layers in order to create a new model\n
         Workflow:\n
@@ -215,35 +212,93 @@ class CreateSubModel(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return CreateSubModel()
-        
-    def processAlgorithm(self, parameters, context, feedback):  
-        above_or_below = self.parameterAsInt(parameters, self.OPTION_ABOVE_BELOW, context) # 0=above, 1=below
-        
-        # reading geodata
+
+    def processAlgorithm(self, parameters, context, feedback):
+        above_or_below = self.parameterAsInt(
+            parameters,
+            self.OPTION_ABOVE_BELOW, context
+        )  # 0=above, 1=below
         feedback.setProgressText(self.tr('Reading layers'))
         feedback.setProgress(1)
-        
-        folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
+        folder_save = self.parameterAsString(
+            parameters,
+            self.SAVE_FOLDER,
+            context
+        )
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
-            raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
-        result_prefix = self.parameterAsString(parameters, self.PREFIX, context)
+            raise QgsProcessingException(
+                'The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy'
+            )
+        result_prefix = self.parameterAsString(
+            parameters,
+            self.PREFIX,
+            context
+        )
         if result_prefix == '':
             result_prefix = 'Subset'
-        file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
-        file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
-        file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
-        file_subcatchments = self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)
-        file_conduits = self.parameterAsVectorLayer(parameters, self.FILE_CONDUITS, context)
-        file_junctions = self.parameterAsVectorLayer(parameters, self.FILE_JUNCTIONS, context)
-        file_pumps = self.parameterAsVectorLayer(parameters, self.FILE_PUMPS, context)
-        file_weirs = self.parameterAsVectorLayer(parameters, self.FILE_WEIRS, context)
-        file_orifices = self.parameterAsVectorLayer(parameters, self.FILE_ORIFICES, context)
-        file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
-        file_dividers = self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)
+        file_raingages = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_RAINGAGES,
+            context
+        )
+        file_outfalls = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_OUTFALLS,
+            context
+        )
+        file_storages = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_STORAGES,
+            context
+        )
+        file_subcatchments = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_SUBCATCHMENTS,
+            context
+        )
+        file_conduits = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_CONDUITS,
+            context
+        )
+        file_junctions = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_JUNCTIONS,
+            context
+        )
+        file_pumps = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_PUMPS,
+            context
+        )
+        file_weirs = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_WEIRS,
+            context
+        )
+        file_orifices = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_ORIFICES,
+            context
+        )
+        file_outlets = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_OUTLETS,
+            context
+        )
+        file_dividers = self.parameterAsVectorLayer(
+            parameters,
+            self.FILE_DIVIDERS,
+            context
+        )
         pluginPath = os.path.dirname(__file__)
-        
-            
-        def add_layer_on_completion2(folder_save, layer_name, style_file,geodata_driver_extension):
+
+        def add_layer_on_completion2(
+            folder_save,
+            layer_name,
+            style_file,
+            geodata_driver_extension
+        ):
             """
             adds the current layer on completen to canvas with color red
             :param str folder_save
@@ -263,75 +318,72 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 pluginPath,
                 def_stylefile_dict['st_files_path']
             )
-            vlayer.loadNamedStyle(os.path.join(qml_file_path,style_file))
+            vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
             vlayer.renderer().symbol().setColor(QColor('red'))
             QgsProject.instance().addMapLayer(vlayer, False)
             tree = QgsProject.instance().layerTreeRoot()
             if isinstance(tree.findGroup(result_prefix), QgsLayerTreeGroup):
                 pass
             else:
-                tree.insertGroup(0,result_prefix)
+                tree.insertGroup(0, result_prefix)
             res_group = tree.findGroup(result_prefix)
-            res_group.addLayer(vlayer)        
-        
+            res_group.addLayer(vlayer)
+
         feedback.setProgressText(self.tr('Loading layers...'))
-            
         # list for all layer names which will be added to the project after the tool is executed
         list_move_to_group = []
-        
+
         # create layer dictionaries
-        ## nodes
+        # nodes
         nodes_layers_dict = {
-            'JUNCTIONS':file_junctions,
-            'OUTFALLS':file_outfalls,
-            'STORAGE':file_storages,
-            'DIVIDERS':file_dividers
+            'JUNCTIONS': file_junctions,
+            'OUTFALLS': file_outfalls,
+            'STORAGE': file_storages,
+            'DIVIDERS': file_dividers
         }
-        nodes_layers_dict = {k:v for k,v in nodes_layers_dict.items() if v is not None}
-        drivers_dict = {k:v.dataProvider().storageType() for k,v in nodes_layers_dict.items()}
-        
-        ## links
+        nodes_layers_dict = {k: v for k, v in nodes_layers_dict.items() if v is not None}
+        drivers_dict = {k: v.dataProvider().storageType() for k, v in nodes_layers_dict.items()}
+
+        # links
         link_layers_dict = {
             'CONDUITS': file_conduits,
-            'PUMPS':file_pumps,
-            'WEIRS':file_weirs,
-            'ORIFICES':file_orifices,
-            'OUTLETS':file_outlets
+            'PUMPS': file_pumps,
+            'WEIRS': file_weirs,
+            'ORIFICES': file_orifices,
+            'OUTLETS': file_outlets
         }
-        link_layers_dict = {k:v for k,v in link_layers_dict.items() if v is not None}
-        drivers_dict.update({k:v.dataProvider().storageType() for k,v in link_layers_dict.items()})
-        
-        ## subcatchments
-        subcatch_layers_dict = {'SUBCATCHMENTS':file_subcatchments}
-        subcatch_layers_dict = {k:v for k,v in subcatch_layers_dict.items() if v is not None}
-        drivers_dict.update({k:v.dataProvider().storageType() for k,v in subcatch_layers_dict.items()})
+        link_layers_dict = {k: v for k, v in link_layers_dict.items() if v is not None}
+        drivers_dict.update({k: v.dataProvider().storageType() for k, v in link_layers_dict.items()})
+
+        # subcatchments
+        subcatch_layers_dict = {'SUBCATCHMENTS': file_subcatchments}
+        subcatch_layers_dict = {k: v for k, v in subcatch_layers_dict.items() if v is not None}
+        drivers_dict.update({k: v.dataProvider().storageType() for k, v in subcatch_layers_dict.items()})
         if len(subcatch_layers_dict) != 0:
-            needed_subc_attrs = ['Name','Outlet','RainGage']
+            needed_subc_attrs = ['Name', 'Outlet', 'RainGage']
             subc_df_dict = read_layers_direct(
                 subcatch_layers_dict,
                 needed_subc_attrs,
-                with_id = True
+                with_id=True
             )
             subc_df = subc_df_dict['SUBCATCHMENTS'][needed_subc_attrs+['id']]
-        
-        ## raingages
-        raingages_layer_dict = {'RAINGAGES':file_raingages}
-        raingages_layer_dict = {k:v for k,v in raingages_layer_dict.items() if v is not None}
-        drivers_dict.update({k:v.dataProvider().storageType() for k,v in raingages_layer_dict.items()})
+
+        # raingages
+        raingages_layer_dict = {'RAINGAGES': file_raingages}
+        raingages_layer_dict = {k: v for k, v in raingages_layer_dict.items() if v is not None}
+        drivers_dict.update({k: v.dataProvider().storageType() for k, v in raingages_layer_dict.items()})
         if len(raingages_layer_dict) != 0:
-            ## load raingages layer as pd df
+            # load raingages layer as pd df
             needed_rg_attrs = ['Name']
             rg_df_dict = read_layers_direct(
                 raingages_layer_dict,
                 needed_rg_attrs,
-                with_id = True
+                with_id=True
             )
             rg_df = rg_df_dict['RAINGAGES'][needed_rg_attrs+['id']]
 
-        
         feedback.setProgressText(self.tr('Identifying start node...'))
         feedback.setProgress(6)
-        
         if len(nodes_layers_dict) == 0:
             raise QgsProcessingException('You need at least one node layer')
         else:
@@ -340,13 +392,13 @@ class CreateSubModel(QgsProcessingAlgorithm):
             nodes_df_dict = read_layers_direct(
                 nodes_layers_dict,
                 needed_nodes_attrs,
-                with_id = True
+                with_id=True
             )
             # get startpoint...
             start_point = ''
             for k, p_f in nodes_layers_dict.items():
                 if feedback.isCanceled():
-                        break
+                    break
                 s_f_c = p_f.selectedFeatureCount()
                 if s_f_c == 1:
                     if start_point == '':
@@ -355,17 +407,17 @@ class CreateSubModel(QgsProcessingAlgorithm):
                         start_layer_type = k
                         if k == 'OUTFALLS':
                             start_point_id = p_f.selectedFeatureIds()
-                        else :
+                        else:
                             start_point_elvation = p_f.selectedFeatures()[0].attribute('Elevation')
                             start_point_geometry = p_f.selectedFeatures()[0].geometry()
                     else:
-                        raise QgsProcessingException('There is more than one point selected in total (in different layers): ' + str(start_point_file)+ ', '+str(p_f.name())+'. Only one selected point is allowed for this tool!')
+                        raise QgsProcessingException('There is more than one point selected in total (in different layers): ' + str(start_point_file) + ', '+str(p_f.name()) + '. Only one selected point is allowed for this tool!')
                 if s_f_c > 1:
-                    raise QgsProcessingException('There is more than one point selected in layer ' +str(p_f.name())+'. Only one selected point is allowed for this tool!')
+                    raise QgsProcessingException('There is more than one point selected in layer ' + str(p_f.name()) + '. Only one selected point is allowed for this tool!')
             if start_point == '':
                 raise QgsProcessingException('No selected Node. Please select one node in the node layers')
             # merge node layers as pd.df
-            all_nodes_df = pd.concat([l for l in nodes_df_dict.values()])
+            all_nodes_df = pd.concat([i for i in nodes_df_dict.values()])
             all_nodes_df = all_nodes_df[needed_nodes_attrs+['id']]
             all_nodes_df = all_nodes_df.reset_index()
 
@@ -379,89 +431,84 @@ class CreateSubModel(QgsProcessingAlgorithm):
         else:
             feedback.setProgressText(self.tr('Routing along links...'))
             # load and merge link layers as pd.df
-            needed_link_attrs = ['Name','FromNode','ToNode']
+            needed_link_attrs = ['Name', 'FromNode', 'ToNode']
             links_df_dict = read_layers_direct(
                 link_layers_dict,
                 needed_link_attrs,
-                with_id = True
+                with_id=True
             )
-            all_links_df = pd.concat([l for l in links_df_dict.values()])
+            all_links_df = pd.concat([i for i in links_df_dict.values()])
             all_links_df = all_links_df[needed_link_attrs+['id']]
             all_links_df = all_links_df.reset_index()
-            
-            
-            # initialize lists and Markerfor routing
-            links_route = [] 
-            nodes_route = []
-            Marker = start_point # Name of first segment
-            safe=["X"] #a list to save segments when the net separates; "X" indicates an empty list and works as a Marker for the while loop below
 
+            # initialize lists and Markerfor routing
+            links_route = []
+            nodes_route = []
+            Marker = start_point  # Name of first segment
+            safe = ["X"]  # a list to save segments when the net separates; "X" indicates an empty list and works as a Marker for the while loop below
 
             while str(Marker) != 'X':
                 if feedback.isCanceled():
                     break
                 next_rows = np.where(Marker == all_links_df['ToNode'])[0].tolist()
-                if len (next_rows) > 0:
+                if len(next_rows) > 0:
                     for Z in next_rows:
-                        if all_links_df.loc[Z,'Name'] in links_route:
+                        if all_links_df.loc[Z, 'Name'] in links_route:
                             # sometimes segments are saved in links_route...then they are deleted
                             next_rows.remove(Z)
-                    links_route = links_route + all_links_df.loc[next_rows,'Name'].tolist()
-                    nodes_from_names = all_links_df.loc[next_rows,'FromNode'].tolist()
+                    links_route = links_route + all_links_df.loc[next_rows, 'Name'].tolist()
+                    nodes_from_names = all_links_df.loc[next_rows, 'FromNode'].tolist()
                     nodes_route = nodes_route + nodes_from_names
                 if len(next_rows) > 1:
-                    Marker = all_links_df.loc[next_rows[0],'FromNode']
-                    safe = safe + all_links_df.loc[next_rows[1:],'FromNode'].tolist()
+                    Marker = all_links_df.loc[next_rows[0], 'FromNode']
+                    safe = safe + all_links_df.loc[next_rows[1:], 'FromNode'].tolist()
                 if len(next_rows) == 1:
-                    Marker = all_links_df.loc[next_rows[0],'FromNode']
+                    Marker = all_links_df.loc[next_rows[0], 'FromNode']
                 if len(next_rows) == 0:
-                    Marker = safe[-1] 
-                    safe=safe[:-1] 
-            
+                    Marker = safe[-1]
+                    safe = safe[:-1]
+
             feedback.setProgressText(self.tr('done \n'))
             feedback.setProgress(40)
-            
+
             # delete duplicate nodes
             nodes_route = list(np.unique(nodes_route))
-            
+
             # check for splitting nodes
-            links_not_above = all_links_df.loc[~np.isin(all_links_df['Name'].to_list(), links_route),:]
-            
+            links_not_above = all_links_df.loc[~np.isin(all_links_df['Name'].to_list(), links_route), :]
+
             # required nodes for 'not_above'
             nodes_route_2 = list(links_not_above['FromNode'])+list(links_not_above['ToNode'])
             nodes_route_2 = list(np.unique(nodes_route_2))
-        
+
             # check for "splitting" nodes
             splitting_nodes = [str(f) for f in nodes_route_2 if f in nodes_route]
             if len(splitting_nodes) > 0:
                 feedback.pushWarning("Warning: the network is splitting at :"+", ".join(splitting_nodes)+"\n")
-            if above_or_below == 1: # below
+            if above_or_below == 1:  # below
                 links_route = list(links_not_above['Name'])
                 nodes_route = nodes_route_2
 
-            
-            
         # check if all requires nodes are in nodes_route
         feedback.setProgressText(self.tr('Checking if all required nodes exist...'))
         feedback.setProgress(45)
-        nodes_exist_dict = {n:(n in all_nodes_df['Name'].to_list()) for n in nodes_route}
+        nodes_exist_dict = {n: (n in all_nodes_df['Name'].to_list()) for n in nodes_route}
         if all(nodes_exist_dict.values()):
             pass
         else:
-            missing_nodes = [str(k) for k,v in nodes_exist_dict.items() if not v]
+            missing_nodes = [str(k) for k, v in nodes_exist_dict.items() if not v]
             raise QgsProcessingException('Missing nodes for submodel: '+', '.join(missing_nodes)+'. Please check if all required layers were selected')
-
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(50)
-        
+
         # select links layers
         if len(link_layers_dict) == 0:
             pass
         else:
             for layer_n, vector_layer in link_layers_dict.items():
                 layer_n_attrs = links_df_dict[layer_n]
-                features_for_selection = list(layer_n_attrs.loc[layer_n_attrs['Name'].isin(links_route),'id'])
-                sel=[]
+                features_for_selection = list(layer_n_attrs.loc[layer_n_attrs['Name'].isin(links_route), 'id'])
+                sel = []
                 while len(features_for_selection) != 0:
                     if feedback.isCanceled():
                         break
@@ -470,13 +517,16 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     features_for_selection = features_for_selection[200:]
                 vector_layer.removeSelection()
                 for selSet in sel:
-                    vector_layer.selectByIds(selSet, vector_layer.SelectBehavior(1))
-        
+                    vector_layer.selectByIds(
+                        selSet,
+                        vector_layer.SelectBehavior(1)
+                    )
+
         # select node layers
         for layer_n, vector_layer in nodes_layers_dict.items():
             layer_n_attrs = nodes_df_dict[layer_n]
-            features_for_selection = list(layer_n_attrs.loc[layer_n_attrs['Name'].isin(nodes_route),'id'])
-            sel=[]
+            features_for_selection = list(layer_n_attrs.loc[layer_n_attrs['Name'].isin(nodes_route), 'id'])
+            sel = []
             while len(features_for_selection) != 0:
                 set1 = features_for_selection[:200]
                 sel = sel+[set1]
@@ -484,31 +534,31 @@ class CreateSubModel(QgsProcessingAlgorithm):
             vector_layer.removeSelection()
             for selSet in sel:
                 vector_layer.selectByIds(selSet, vector_layer.SelectBehavior(1))
-                
+
         if above_or_below == 0:
-            ## add_outfall_node if start_layer_type is not OUTFALLS
+            # add_outfall_node if start_layer_type is not OUTFALLS
             if start_layer_type == 'OUTFALLS':
                 file_outfalls.selectByIds(start_point_id, vector_layer.SelectBehavior(1))
             else:
                 feedback.setProgressText(self.tr('Creating outfall node...'))
-                ### get crs for outfall file from original outfall file or take the first crs from a node layer in the dict
+                # get crs for outfall file from original outfall file or take the first crs from a node layer in the dict
                 layer_name = str(result_prefix)+'_SWMM_Outfalls'
-                fname = os.path.join(folder_save,layer_name+'.'+'gpkg')
+                fname = os.path.join(folder_save, layer_name+'.'+'gpkg')
                 if os.path.isfile(fname):
                     raise QgsProcessingException('File '+fname+' already exists. Submodel features will only be selected. Please choose another folder or prefix.')
                 if file_outfalls is not None:
                     crs_result = file_outfalls.crs().authid()
-                else: 
+                else:
                     crs_result = list(nodes_layers_dict.values())[0].crs().authid()
-                outfalls_df =  pd.DataFrame()
-                outfalls_df.loc[0,'Name'] = start_point
-                outfalls_df.loc[0,'Elevation'] = start_point_elvation
-                outfalls_df.loc[0,'Type'] = 'FREE'
-                outfalls_df.loc[0,'FixedStage'] = 0
-                outfalls_df.loc[0,'Curve_TS'] = ''
-                outfalls_df.loc[0,'FlapGate'] = 'NO'
-                outfalls_df.loc[0,'RouteTo'] = ''
-                outfalls_df.loc[0,'geometry'] = start_point_geometry
+                outfalls_df = pd.DataFrame()
+                outfalls_df.loc[0, 'Name'] = start_point
+                outfalls_df.loc[0, 'Elevation'] = start_point_elvation
+                outfalls_df.loc[0, 'Type'] = 'FREE'
+                outfalls_df.loc[0, 'FixedStage'] = 0
+                outfalls_df.loc[0, 'Curve_TS'] = ''
+                outfalls_df.loc[0, 'FlapGate'] = 'NO'
+                outfalls_df.loc[0, 'RouteTo'] = ''
+                outfalls_df.loc[0, 'geometry'] = start_point_geometry
                 list_move_to_group.append(layer_name)
                 create_layer_from_table(
                     outfalls_df,
@@ -526,32 +576,34 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 )
                 feedback.setProgressText(self.tr('done \n'))
                 feedback.setProgress(55)
-            
+
         # subcatchments
         if len(subcatch_layers_dict) != 0:
             feedback.setProgressText(self.tr('Selecting subcatchments...'))
-            ## select subcatchments
-            sc_for_selection = subc_df.loc[subc_df['Outlet'].isin(nodes_route),:]
+            # select subcatchments
+            sc_for_selection = subc_df.loc[subc_df['Outlet'].isin(nodes_route), :]
             features_for_selection = list(sc_for_selection['id'])
-            sel=[]
+            sel = []
             while len(features_for_selection) != 0:
                 set1 = features_for_selection[:200]
                 sel = sel+[set1]
                 features_for_selection = features_for_selection[200:]
             file_subcatchments.removeSelection()
             for selSet in sel:
-                file_subcatchments.selectByIds(selSet, file_subcatchments.SelectBehavior(1))
+                file_subcatchments.selectByIds(
+                    selSet,
+                    file_subcatchments.SelectBehavior(1)
+                )
             feedback.setProgressText(self.tr('done \n'))
             feedback.setProgress(60)
-            
-            
+
             # raingages
             if len(raingages_layer_dict) != 0:
                 feedback.setProgressText(self.tr('Selecting raingages...'))
-                ## select raingages
+                # select raingages
                 required_rangages = list(np.unique(sc_for_selection['RainGage']))
-                features_for_selection = list(rg_df.loc[rg_df['Name'].isin(required_rangages),'id'])
-                sel=[]
+                features_for_selection = list(rg_df.loc[rg_df['Name'].isin(required_rangages), 'id'])
+                sel = []
                 while len(features_for_selection) != 0:
                     set1 = features_for_selection[:200]
                     sel = sel+[set1]
@@ -561,18 +613,17 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     file_raingages.selectByIds(selSet, file_raingages.SelectBehavior(1))
                 feedback.setProgressText(self.tr('done \n'))
                 feedback.setProgress(70)
-        
-        
+
         # combine all dicts in order to save the selected parts
         dict_all_layers = {}
         dict_all_layers.update(nodes_layers_dict)
         dict_all_layers.update(link_layers_dict)
         dict_all_layers.update(subcatch_layers_dict)
         dict_all_layers.update(raingages_layer_dict)
-        
+
         # add layers to canvas
         feedback.setProgressText(self.tr('Adding layerst to canvas...'))
-        for k,v in dict_all_layers.items():
+        for k, v in dict_all_layers.items():
             if v.selectedFeatureCount() > 0:
                 vector_layer = v
                 layer_name = str(result_prefix)+'_SWMM_'+k.capitalize()
@@ -584,7 +635,9 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 options.driverName = geodata_driver_name
                 options.onlySelectedFeatures = True
                 transform_context = QgsProject.instance().transformContext()
-                fname = os.path.join(folder_save,layer_name+'.'+geodata_driver_extension)
+                fname = os.path.join(
+                    folder_save, layer_name+'.'+geodata_driver_extension
+                )
                 if os.path.isfile(fname):
                     raise QgsProcessingException('File '+fname+' already exists. Submodel features will only be selected. Please choose another folder or prefix.')
                 QgsVectorFileWriter.writeAsVectorFormatV3(
@@ -603,7 +656,5 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 list_move_to_group.append(layer_name)
         feedback.setProgress(95)
         feedback.setProgressText(self.tr('done \n'))
-
-        # put layers in a group in the layer tree
 
         return {}

@@ -41,13 +41,13 @@ def_curve_types = ['Control',
                    'Shape']
 
 
-# all possible columns in the input file 
+# all possible columns in the input file
 def_sections_dict = {
-    'TITLE':None,
-    'OPTIONS':['Option', 'Value'],
-    'REPORT':None,
+    'TITLE': None,
+    'OPTIONS': ['Option', 'Value'],
+    'REPORT': None,
     'FILES': None,
-    'RAINGAGES':[
+    'RAINGAGES': [
         'Name',
         'Format',
         'Interval',
@@ -57,21 +57,21 @@ def_sections_dict = {
         'StationID',
         'RainUnits'
      ],
-    'EVAPORATION':None,
-    'TEMPERATURE':None,
-    'ADJUSTMENTS':None,
-    'SUBCATCHMENTS':[
+    'EVAPORATION': None,
+    'TEMPERATURE': None,
+    'ADJUSTMENTS': None,
+    'SUBCATCHMENTS': [
         'Name',
-        'RainGage', 
+        'RainGage',
         'Outlet',
-        'Area', 
+        'Area',
         'Imperv',
         'Width',
         'Slope',
         'CurbLen',
         'SnowPack'
-     ], 
-    'SUBAREAS':[
+     ],
+    'SUBAREAS': [
         'Name',
         'N_Imperv',
         'N_Perv',
@@ -81,30 +81,30 @@ def_sections_dict = {
         'RouteTo',
         'PctRouted'
     ],
-    'INFILTRATION':[
+    'INFILTRATION': [
         'Name',
-        'Param1', 
+        'Param1',
         'Param2',
         'Param3',
         'Param4',
         'Param5',
         'InfMethod'
     ],
-    'LID_CONTROLS':None,
-    'LID_USAGE':None,
-    'AQUIFERS':None,
-    'GROUNDWATER':None,
-    'GWF':None,
-    'SNOWPACKS':None,
-    'JUNCTIONS':[
+    'LID_CONTROLS': None,
+    'LID_USAGE': None,
+    'AQUIFERS': None,
+    'GROUNDWATER': None,
+    'GWF': None,
+    'SNOWPACKS': None,
+    'JUNCTIONS': [
         'Name',
         'Elevation',
         'MaxDepth',
         'InitDepth',
-        'SurDepth', 
+        'SurDepth',
         'Aponded'
     ],
-    'OUTFALLS':[
+    'OUTFALLS': [
         'Name',
         'Elevation',
         'Type',
@@ -112,8 +112,8 @@ def_sections_dict = {
         'Curve_TS',
         'FlapGate',
         'RouteTo'
-    ], 
-    'DIVIDERS':[
+    ],
+    'DIVIDERS': [
         'Name',
         'Elevation',
         'DivertLink',
@@ -128,7 +128,7 @@ def_sections_dict = {
         'SurDepth',
         'Aponded'
     ],
-    'STORAGE':[
+    'STORAGE': [
         'Name',
         'Elevation',
         'MaxDepth',
@@ -148,7 +148,7 @@ def_sections_dict = {
         'Ksat',
         'IMD'
     ],
-    'CONDUITS':[
+    'CONDUITS': [
         'Name',
         'FromNode',
         'ToNode',
@@ -159,7 +159,7 @@ def_sections_dict = {
         'InitFlow',
         'MaxFlow'
     ],
-    'PUMPS':[
+    'PUMPS': [
         'Name',
         'FromNode',
         'ToNode',
@@ -168,7 +168,7 @@ def_sections_dict = {
         'Startup',
         'Shutoff'
     ],
-    'ORIFICES':[
+    'ORIFICES': [
         'Name',
         'FromNode',
         'ToNode',
@@ -178,7 +178,7 @@ def_sections_dict = {
         'FlapGate',
         'CloseTime'
     ],
-    'WEIRS':[
+    'WEIRS': [
         'Name',
         'FromNode',
         'ToNode',
@@ -193,7 +193,7 @@ def_sections_dict = {
         'RoadSurf',
         'CoeffCurve'
     ],
-    'OUTLETS':[
+    'OUTLETS': [
         'Name',
         'FromNode',
         'ToNode',
@@ -204,7 +204,7 @@ def_sections_dict = {
         'FlapGate',
         'CurveName'
     ],
-    'XSECTIONS':[
+    'XSECTIONS': [
         'Name',
         'Shape',
         'Geom1',
@@ -214,7 +214,7 @@ def_sections_dict = {
         'Barrels',
         'Culvert'
     ],
-    'STREETS':[
+    'STREETS': [
         'Name',
         'RoadWidth',
         'CurbHeigth',
@@ -227,7 +227,7 @@ def_sections_dict = {
         'BackSlope',
         'BackRoughn'
     ],
-    'INLETS':[
+    'INLETS': [
         'Name',
         'Type',
         'Length',
@@ -237,7 +237,7 @@ def_sections_dict = {
         'OpenFract',
         'SplashVel'
     ],
-    'INLET_USAGE':[
+    'INLET_USAGE': [
         'Conduit',
         'Inlet',
         'CaptNode',
@@ -248,7 +248,7 @@ def_sections_dict = {
         'DeprWidth',
         'Placement'
     ],
-    'TRANSECTS':None,
+    'TRANSECTS': None,
     'LOSSES': [
         'Name',
         'Kentry',
@@ -257,8 +257,8 @@ def_sections_dict = {
         'FlapGate',
         'Seepage'
     ],
-    'CONTROLS':None,
-    'POLLUTANTS':[
+    'CONTROLS': None,
+    'POLLUTANTS': [
         'Name',
         'Units',
         'RainConcentr',
@@ -271,42 +271,42 @@ def_sections_dict = {
         'DwfConcentr',
         'InitConcetr'
     ],
-    'LANDUSES':[
+    'LANDUSES': [
         'Name',
         'SweepingInterval',
-        'SweepingFractionAvailable', 
+        'SweepingFractionAvailable',
         'LastSwept'
     ],
-    'COVERAGES':[
+    'COVERAGES': [
         'Subcatchment',
         'Landuse',
         'Percent'
     ],
-    'LOADINGS':[
+    'LOADINGS': [
         'Subcatchment',
         'Pollutant',
         'InitialBuildup'
     ],
-    'BUILDUP':[
+    'BUILDUP': [
         'Name',
         'Pollutant',
-        'BuildupFunction', 
-        'BuildupMax', 
+        'BuildupFunction',
+        'BuildupMax',
         'BuildupRateConstant',
         'BuildupExponent_SatConst',
         'BuildupPerUnit'
     ],
-    'WASHOFF':[
-        'Name', 
+    'WASHOFF': [
+        'Name',
         'Pollutant',
         'WashoffFunction',
-        'WashoffpCoefficient', 
-        'WashoffExponenet', 
+        'WashoffpCoefficient',
+        'WashoffExponenet',
         'WashoffCleaninfEfficiency',
         'WashoffBmpEfficiency'
     ],
-    'TREATMENT':None,
-    'INFLOWS':[
+    'TREATMENT': None,
+    'INFLOWS': [
         'Name',
         'Constituent',
         'Time_Series',
@@ -316,7 +316,7 @@ def_sections_dict = {
         'Baseline',
         'Baseline_Pattern'
     ],
-    'DWF':[
+    'DWF': [
         'Name',
         'Constituent',
         'Average_Value',
@@ -325,504 +325,501 @@ def_sections_dict = {
         'Time_Pattern3',
         'Time_Pattern4'
     ],
-    'RDII':None,
-    'HYDROGRAPHS':None,
-    'CURVES':['Name','XVal','YVal'],
-    'TIMESERIES':['Name','Date','Time','Value','File_Name'],
-    'PATTERNS':None,
-    'COORDINATES':['Name','X_Coord','Y_Coord'],
-    'VERTICES':['Name','X_Coord','Y_Coord'],
-    'Polygons':['Name','X_Coord','Y_Coord'],
-    'SYMBOLS':['Name','X_Coord','Y_Coord'],
-    'LABELS':None,
-    'BACKDROP':None,
-    'PROFILES':None,
-    'MAP':None,
+    'RDII': None,
+    'HYDROGRAPHS': None,
+    'CURVES': ['Name', 'XVal', 'YVal'],
+    'TIMESERIES': ['Name', 'Date', 'Time', 'Value', 'File_Name'],
+    'PATTERNS': None,
+    'COORDINATES': ['Name', 'X_Coord', 'Y_Coord'],
+    'VERTICES': ['Name', 'X_Coord', 'Y_Coord'],
+    'Polygons': ['Name', 'X_Coord', 'Y_Coord'],
+    'SYMBOLS': ['Name', 'X_Coord', 'Y_Coord'],
+    'LABELS': None,
+    'BACKDROP': None,
+    'PROFILES': None,
+    'MAP': None,
     'TAGS': None
 }
 
 
-
 # names of the imported tables
 """
-    'file_key':{
-        'filename':'name_str',
-        'tables':{
-            'table_name':{
-                'column_name':'type_str',
-                'column_name':['excel_type_str, gpkg_type_str']
+    'file_key': {
+        'filename': 'name_str',
+        'tables': {
+            'table_name': {
+                'column_name': 'type_str',
+                'column_name': ['excel_type_str, gpkg_type_str']
             }
         }
     }
 """
 def_tables_dict = {
-    'OPTIONS':{
-        'filename':'gisswmm_options',
-        'tables':{
-            'OPTIONS':{
-                'Option':'String',
-                'Value':'String'
+    'OPTIONS': {
+        'filename': 'gisswmm_options',
+        'tables': {
+            'OPTIONS': {
+                'Option': 'String',
+                'Value': 'String'
             }
         }
      },
-    'INFLOWS':{
-        'filename':'gisswmm_inflows',
-        'tables':{
-            'Direct':{
-                'Name':'String',
-                'Constituent':'String',
-                'Time_Series':'String',
-                'Type':'String',
-                'Units_Factor':'Double',
-                'Scale_Factor':'Double',
-                'Baseline':'Double',
-                'Baseline_Pattern':'String'
+    'INFLOWS': {
+        'filename': 'gisswmm_inflows',
+        'tables': {
+            'Direct': {
+                'Name': 'String',
+                'Constituent': 'String',
+                'Time_Series': 'String',
+                'Type': 'String',
+                'Units_Factor': 'Double',
+                'Scale_Factor': 'Double',
+                'Baseline': 'Double',
+                'Baseline_Pattern': 'String'
             },
-            'Dry_Weather':{
-                'Name':'String',
-                'Constituent':'String',
-                'Average_Value':'Double',
-                'Time_Pattern1':'String',
-                'Time_Pattern2':'String',
-                'Time_Pattern3':'String',
-                'Time_Pattern4':'String'
+            'Dry_Weather': {
+                'Name': 'String',
+                'Constituent': 'String',
+                'Average_Value': 'Double',
+                'Time_Pattern1': 'String',
+                'Time_Pattern2': 'String',
+                'Time_Pattern3': 'String',
+                'Time_Pattern4': 'String'
             }
         }
      },
-    'PATTERNS':{
-        'filename':'gisswmm_patterns',
-        'tables':{
-            'HOURLY':{
-                'Name':'String',
-                'Time':'String',
-                'Factor':'Double'
+    'PATTERNS': {
+        'filename': 'gisswmm_patterns',
+        'tables': {
+            'HOURLY': {
+                'Name': 'String',
+                'Time': 'String',
+                'Factor': 'Double'
             },
-            'MONTHLY':{
-                'Name':'String',
-                'Month':'String',
-                'Factor':'Double'
+            'MONTHLY': {
+                'Name': 'String',
+                'Month': 'String',
+                'Factor': 'Double'
             },
-            'DAILY':{
-                'Name':'String',
-                'Day':'String',
-                'Factor':'Double'
+            'DAILY': {
+                'Name': 'String',
+                'Day': 'String',
+                'Factor': 'Double'
             },
-            'WEEKEND':{
-                'Name':'String',
-                'Time':'String',
-                'Factor':'Double'
+            'WEEKEND': {
+                'Name': 'String',
+                'Time': 'String',
+                'Factor': 'Double'
             }
         }
     },
-    'CURVES':{
-        'filename':'gisswmm_curves',
-        'tables':{
-            'Pump1':{
-                'Name':'String',
-                'Volume':'Double',
-                'Flow':'Double',
-                'Notes':'String'
+    'CURVES': {
+        'filename': 'gisswmm_curves',
+        'tables': {
+            'Pump1': {
+                'Name': 'String',
+                'Volume': 'Double',
+                'Flow': 'Double',
+                'Notes': 'String'
             },
-            'Pump2':{
-                'Name':'String',
-                'Depth':'Double',
-                'Flow':'Double',
-                'Notes':'String'
+            'Pump2': {
+                'Name': 'String',
+                'Depth': 'Double',
+                'Flow': 'Double',
+                'Notes': 'String'
             },
             'Pump3': {
-                'Name':'String',
-                'Head':'Double',
-                'Flow':'Double',
-                'Notes':'String'
+                'Name': 'String',
+                'Head': 'Double',
+                'Flow': 'Double',
+                'Notes': 'String'
             },
             'Pump4': {
-                'Name':'String',
-                'Depth':'Double',
-                'Flow':'Double',
-                'Notes':'String'
+                'Name': 'String',
+                'Depth': 'Double',
+                'Flow': 'Double',
+                'Notes': 'String'
             },
-            'Pump5':{
-                'Name':'String',
-                'Head':'Double',
-                'Flow':'Double',
-                'Notes':'String'
+            'Pump5': {
+                'Name': 'String',
+                'Head': 'Double',
+                'Flow': 'Double',
+                'Notes': 'String'
             },
-            'Storage':{
-                'Name':'String',
-                'Depth':'Double',
-                'Area':'Double',
-                'Notes':'String'
+            'Storage': {
+                'Name': 'String',
+                'Depth': 'Double',
+                'Area': 'Double',
+                'Notes': 'String'
             },
             'Rating': {
-                'Name':'String',
-                'Head/Depth':'Double',
-                'Outflow':'Double',
-                'Notes':'String'
+                'Name': 'String',
+                'Head/Depth': 'Double',
+                'Outflow': 'Double',
+                'Notes': 'String'
             },
-            'Tidal':{
-                'Name':'String',
-                'Hour_of_Day':'Int',
-                'Stage':'Double',
-                'Notes':'String'
+            'Tidal': {
+                'Name': 'String',
+                'Hour_of_Day': 'Int',
+                'Stage': 'Double',
+                'Notes': 'String'
             },
-            'Control':{
-                'Name':'String',
-                'Value':'Double',
-                'Setting':'Double',
-                'Notes':'String'
+            'Control': {
+                'Name': 'String',
+                'Value': 'Double',
+                'Setting': 'Double',
+                'Notes': 'String'
             },
-            'Diversion':{
-                'Name':'String',
-                'Inflow':'Double',
-                'Outflow':'Double',
-                'Notes':'String'
+            'Diversion': {
+                'Name': 'String',
+                'Inflow': 'Double',
+                'Outflow': 'Double',
+                'Notes': 'String'
             },
-            'Shape':{
-                'Name':'String',
-                'Depth':'Double',
-                'Width':'Double',
-                'Notes':'String'
+            'Shape': {
+                'Name': 'String',
+                'Depth': 'Double',
+                'Width': 'Double',
+                'Notes': 'String'
             },
             'Weir': {
-                'Name':'String',
-                'Head':'Double',
-                'Coefficient':'Double',
-                'Notes':'String'
+                'Name': 'String',
+                'Head': 'Double',
+                'Coefficient': 'Double',
+                'Notes': 'String'
             }
         }
     },
-    'QUALITY':{
-        'filename':'gisswmm_quality',
-        'tables':{
-            'POLLUTANTS':{
-                'Name':'String',
-                'Units':'String',
-                'RainConcentr':'Double',
-                'GwConcentr':'Double',
-                'IiConcentr':'Double',
-                'DecayCoeff':'Double',
-                'SnowOnly':'String',
-                'CoPollutant':'String',
-                'CoFraction':'Double',
-                'DwfConcentr':'Double',
-                'InitConcetr':'Double'
+    'QUALITY': {
+        'filename': 'gisswmm_quality',
+        'tables': {
+            'POLLUTANTS': {
+                'Name': 'String',
+                'Units': 'String',
+                'RainConcentr': 'Double',
+                'GwConcentr': 'Double',
+                'IiConcentr': 'Double',
+                'DecayCoeff': 'Double',
+                'SnowOnly': 'String',
+                'CoPollutant': 'String',
+                'CoFraction': 'Double',
+                'DwfConcentr': 'Double',
+                'InitConcetr': 'Double'
             },
-            'LANDUSES':{
-                'Name':'String',
-                'SweepingInterval':'Double',
-                'SweepingFractionAvailable':'Double',
-                'LastSwept':'Double',
-                'Pollutant':'String',
-                'BuildupFunction':'String',
-                'BuildupMax':'Double',
-                'BuildupRateConstant':'Double',
-                'BuildupExponent_SatConst':'Double',
-                'BuildupPerUnit':'String',
-                'WashoffFunction':'String',
-                'WashoffpCoefficient':'Double',
-                'WashoffExponenet':'Double',
-                'WashoffCleaninfEfficiency':'Double',
-                'WashoffBmpEfficiency':'Double'
+            'LANDUSES': {
+                'Name': 'String',
+                'SweepingInterval': 'Double',
+                'SweepingFractionAvailable': 'Double',
+                'LastSwept': 'Double',
+                'Pollutant': 'String',
+                'BuildupFunction': 'String',
+                'BuildupMax': 'Double',
+                'BuildupRateConstant': 'Double',
+                'BuildupExponent_SatConst': 'Double',
+                'BuildupPerUnit': 'String',
+                'WashoffFunction': 'String',
+                'WashoffpCoefficient': 'Double',
+                'WashoffExponenet': 'Double',
+                'WashoffCleaninfEfficiency': 'Double',
+                'WashoffBmpEfficiency': 'Double'
             },
-            'COVERAGES':{
-                'Subcatchment':'String',
-                'Landuse':'String',
-                'Percent':'Double'
+            'COVERAGES': {
+                'Subcatchment': 'String',
+                'Landuse': 'String',
+                'Percent': 'Double'
             },
-            'LOADINGS':{
-                'Subcatchment':'String',
-                'Pollutant':'String',
-                'InitialBuildup':'Double'
+            'LOADINGS': {
+                'Subcatchment': 'String',
+                'Pollutant': 'String',
+                'InitialBuildup': 'Double'
             }
         }
     },
-    'TIMESERIES':{
-        'filename':'gisswmm_timeseries',
-        'tables':{
-            'TIMESERIES':{
-                'Name':'String',
-                'Date':'Date',
-                'Time':'Time',
-                'Value':'Double',
-                'File_Name':'String',
-                'Description':'String'
+    'TIMESERIES': {
+        'filename': 'gisswmm_timeseries',
+        'tables': {
+            'TIMESERIES': {
+                'Name': 'String',
+                'Date': 'Date',
+                'Time': 'Time',
+                'Value': 'Double',
+                'File_Name': 'String',
+                'Description': 'String'
             }
         }
     },
-    'TRANSECTS':{
-        'filename':'gisswmm_transects',
-        'tables':{
-            'Data':{
-                'TransectName':'String',
-                'RoughnessLeftBank':'Double',
-                'RoughnessRightBank':'Double',
-                'RoughnessChannel':'Double',
-                'BankStationLeft':'Double',
-                'BankStationRight':'Double',
-                'ModifierStations':'Double',
-                'ModifierElevations':'Double',
-                'ModifierMeander':'Double'
+    'TRANSECTS': {
+        'filename': 'gisswmm_transects',
+        'tables': {
+            'Data': {
+                'TransectName': 'String',
+                'RoughnessLeftBank': 'Double',
+                'RoughnessRightBank': 'Double',
+                'RoughnessChannel': 'Double',
+                'BankStationLeft': 'Double',
+                'BankStationRight': 'Double',
+                'ModifierStations': 'Double',
+                'ModifierElevations': 'Double',
+                'ModifierMeander': 'Double'
             },
-            'XSections':{
-                'TransectName':'String',
-                'Station':'Double',
-                'Elevation':'Double'
+            'XSections': {
+                'TransectName': 'String',
+                'Station': 'Double',
+                'Elevation': 'Double'
             }
         }
     },
-    'STREETS':{
-        'filename':'gisswmm_streets',
-        'tables':{
-            'STREETS':{
-                'Name':'String',
-                'RoadWidth':'Double',
-                'CurbHeigth':'Double',
-                'CurbSlope':'Double',
-                'RoadRoughn':'Double',
-                'GuttDepres':'Double',
-                'GuttWidth':'Double',
-                'Sides':'Int',
-                'BackWidth':'Double',
-                'BackSlope':'Double',
-                'BackRoughn':'Double'
+    'STREETS': {
+        'filename': 'gisswmm_streets',
+        'tables': {
+            'STREETS': {
+                'Name': 'String',
+                'RoadWidth': 'Double',
+                'CurbHeigth': 'Double',
+                'CurbSlope': 'Double',
+                'RoadRoughn': 'Double',
+                'GuttDepres': 'Double',
+                'GuttWidth': 'Double',
+                'Sides': 'Int',
+                'BackWidth': 'Double',
+                'BackSlope': 'Double',
+                'BackRoughn': 'Double'
             },
-            'INLETS':{
-                'Name':'String',
-                'Type':'String',
-                'Length':'Double',
-                'Width':'Double',
-                'Heigth':'Double',
-                'Shape':'String',
-                'OpenFract':'Double',
-                'SplashVel':'Double'
+            'INLETS': {
+                'Name': 'String',
+                'Type': 'String',
+                'Length': 'Double',
+                'Width': 'Double',
+                'Heigth': 'Double',
+                'Shape': 'String',
+                'OpenFract': 'Double',
+                'SplashVel': 'Double'
             },
-            'INLET_USAGE':{
-                'Conduit':'String',
-                'Inlet':'String',
-                'CaptNode':'String',
-                'Number':'Int',
-                'PercClog':'Double',
-                'MaxFlow':'Double',
-                'DeprHeigth':'Double',
-                'DeprWidth':'Double',
-                'Placement':'String'
+            'INLET_USAGE': {
+                'Conduit': 'String',
+                'Inlet': 'String',
+                'CaptNode': 'String',
+                'Number': 'Int',
+                'PercClog': 'Double',
+                'MaxFlow': 'Double',
+                'DeprHeigth': 'Double',
+                'DeprWidth': 'Double',
+                'Placement': 'String'
             }
         }
     }
 }
 
 
-
-
 # geometries of SWMM layers in QGIS
 def_sections_geoms_dict = {
-    'RAINGAGES':'Point',
+    'RAINGAGES': 'Point',
     'SUBCATCHMENTS': 'Polygon',
-    'JUNCTIONS':'Point',
-    'OUTFALLS':'Point',
-    'DIVIDERS':'Point',
-    'STORAGE':'Point',
+    'JUNCTIONS': 'Point',
+    'OUTFALLS': 'Point',
+    'DIVIDERS': 'Point',
+    'STORAGE': 'Point',
     'CONDUITS': 'LineString',
-    'PUMPS':'LineString',
-    'ORIFICES':'LineString',
-    'WEIRS':'LineString',
-    'OUTLETS':'LineString'
+    'PUMPS': 'LineString',
+    'ORIFICES': 'LineString',
+    'WEIRS': 'LineString',
+    'OUTLETS': 'LineString'
 }
 
 # style_file
 def_stylefile_dict = {
-    'st_files':{
-        'RAINGAGES':'style_raingages.qml',
+    'st_files': {
+        'RAINGAGES': 'style_raingages.qml',
         'SUBCATCHMENTS': 'style_catchments.qml',
-        'JUNCTIONS':'style_junctions.qml',
-        'OUTFALLS':'style_outfalls.qml',
-        'DIVIDERS':'style_dividers.qml',
-        'STORAGE':'style_storages.qml',
+        'JUNCTIONS': 'style_junctions.qml',
+        'OUTFALLS': 'style_outfalls.qml',
+        'DIVIDERS': 'style_dividers.qml',
+        'STORAGE': 'style_storages.qml',
         'CONDUITS': 'style_conduits.qml',
-        'PUMPS':'style_pumps.qml',
-        'ORIFICES':'style_orifices.qml',
-        'WEIRS':'style_weirs.qml',
-        'OUTLETS':'style_outlets.qml'
+        'PUMPS': 'style_pumps.qml',
+        'ORIFICES': 'style_orifices.qml',
+        'WEIRS': 'style_weirs.qml',
+        'OUTLETS': 'style_outlets.qml'
     },
-    'st_files_path':os.path.join('test_data','swmm_data')
+    'st_files_path': os.path.join('test_data', 'swmm_data')
 }
 
 # all possible fields in qgis files for the creation of layers
 def_qgis_fields_dict = {
-    'RAINGAGES':{
-        'Name':'String',
-        'Format':'String',
-        'Interval':'String',
-        'SCF':'Double',
-        'DataSource':'String',
-        'SeriesName':'String',
-        'FileName':'String',
-        'StationID':'String',
-        'RainUnits':'String'
+    'RAINGAGES': {
+        'Name': 'String',
+        'Format': 'String',
+        'Interval': 'String',
+        'SCF': 'Double',
+        'DataSource': 'String',
+        'SeriesName': 'String',
+        'FileName': 'String',
+        'StationID': 'String',
+        'RainUnits': 'String'
     },
-    'SUBCATCHMENTS':{
-        'Name':'String',
-        'RainGage':'String', 
-        'Outlet':'String',
-        'Area':'Double', 
-        'Imperv':'Double',
-        'Width':'Double',
-        'Slope':'Double',
-        'CurbLen':'Double',
-        'SnowPack':'String',
-        'N_Imperv':'Double',
-        'N_Perv':'Double',
-        'S_Imperv':'Double',
-        'S_Perv':'Double',
-        'PctZero':'Double',
-        'RouteTo':'String',
-        'PctRouted':'Double',
-        'InfMethod':'String',
-        'SuctHead':'Double',
-        'Conductiv':'Double',
-        'InitDef':'Double',
-        'MaxRate':'Double',
-        'MinRate':'Double',
-        'Decay':'Double',
-        'DryTime':'Double',
-        'MaxInf':'Double',
-        'CurveNum':'Double'
+    'SUBCATCHMENTS': {
+        'Name': 'String',
+        'RainGage': 'String',
+        'Outlet': 'String',
+        'Area': 'Double',
+        'Imperv': 'Double',
+        'Width': 'Double',
+        'Slope': 'Double',
+        'CurbLen': 'Double',
+        'SnowPack': 'String',
+        'N_Imperv': 'Double',
+        'N_Perv': 'Double',
+        'S_Imperv': 'Double',
+        'S_Perv': 'Double',
+        'PctZero': 'Double',
+        'RouteTo': 'String',
+        'PctRouted': 'Double',
+        'InfMethod': 'String',
+        'SuctHead': 'Double',
+        'Conductiv': 'Double',
+        'InitDef': 'Double',
+        'MaxRate': 'Double',
+        'MinRate': 'Double',
+        'Decay': 'Double',
+        'DryTime': 'Double',
+        'MaxInf': 'Double',
+        'CurveNum': 'Double'
     },
-    'JUNCTIONS':{
-        'Name':'String',
-        'Elevation':'Double',
-        'MaxDepth':'Double', 
-        'InitDepth':'Double',
-        'SurDepth':'Double', 
-        'Aponded':'Double'
+    'JUNCTIONS': {
+        'Name': 'String',
+        'Elevation': 'Double',
+        'MaxDepth': 'Double',
+        'InitDepth': 'Double',
+        'SurDepth': 'Double',
+        'Aponded': 'Double'
     },
-    'OUTFALLS':{
-        'Name':'String',
-        'Elevation':'Double',
-        'Type':'String',
-        'FixedStage':'Double',
-        'Curve_TS':'String',
-        'FlapGate':'String',
-        'RouteTo':'String'
+    'OUTFALLS': {
+        'Name': 'String',
+        'Elevation': 'Double',
+        'Type': 'String',
+        'FixedStage': 'Double',
+        'Curve_TS': 'String',
+        'FlapGate': 'String',
+        'RouteTo': 'String'
     },
-    'DIVIDERS':{
-        'Name':'String',
-        'Elevation':'Double',
-        'DivertLink':'String',
-        'Type':'String',
-        'CutoffFlow':'Double',
-        'Curve':'String',
-        'WeirMinFlo':'Double',
-        'WeirMaxDep':'Double',
-        'WeirCoeff':'Double',
-        'MaxDepth':'Double',
-        'InitDepth':'Double',
-        'SurDepth':'Double',
-        'Aponded':'Double'
+    'DIVIDERS': {
+        'Name': 'String',
+        'Elevation': 'Double',
+        'DivertLink': 'String',
+        'Type': 'String',
+        'CutoffFlow': 'Double',
+        'Curve': 'String',
+        'WeirMinFlo': 'Double',
+        'WeirMaxDep': 'Double',
+        'WeirCoeff': 'Double',
+        'MaxDepth': 'Double',
+        'InitDepth': 'Double',
+        'SurDepth': 'Double',
+        'Aponded': 'Double'
     },
-    'STORAGE':{
-        'Name':'String',
-        'Elevation':'Double',
-        'MaxDepth':'Double',
-        'InitDepth':'Double',
-        'Type':'String',
-        'Curve':'String',
-        'Coeff':'Double',
-        'Exponent':'Double',
-        'Constant':'Double',
-        'MajorAxis':'Double',
-        'MinorAxis':'Double',
-        'SideSlope':'Double',
-        'SurfHeight':'Double',
-        'SurDepth':'Double',
-        'Fevap':'Double',
-        'Psi':'Double',
-        'Ksat':'Double',
-        'IMD':'Double'
+    'STORAGE': {
+        'Name': 'String',
+        'Elevation': 'Double',
+        'MaxDepth': 'Double',
+        'InitDepth': 'Double',
+        'Type': 'String',
+        'Curve': 'String',
+        'Coeff': 'Double',
+        'Exponent': 'Double',
+        'Constant': 'Double',
+        'MajorAxis': 'Double',
+        'MinorAxis': 'Double',
+        'SideSlope': 'Double',
+        'SurfHeight': 'Double',
+        'SurDepth': 'Double',
+        'Fevap': 'Double',
+        'Psi': 'Double',
+        'Ksat': 'Double',
+        'IMD': 'Double'
     },
     'CONDUITS': {
-        'Name':'String',
-        'FromNode':'String',
-        'ToNode':'String',
-        'Length':'Double',
-        'Roughness':'Double',
-        'InOffset':'Double',
-        'OutOffset':'Double',
-        'InitFlow':'Double',
-        'MaxFlow':'Double',
-        'Shape':'String',
-        'Geom1':'Double',
-        'Geom2':'Double',
-        'Geom3':'Double',
-        'Geom4':'Double',
-        'Barrels':'Double',
-        'Culvert':'String',
-        'Shp_Trnsct':'String',
-        'Kentry':'Double',
-        'Kexit':'Double',
-        'Kavg':'Double',
-        'FlapGate':'String',
-        'Seepage':'Double'
+        'Name': 'String',
+        'FromNode': 'String',
+        'ToNode': 'String',
+        'Length': 'Double',
+        'Roughness': 'Double',
+        'InOffset': 'Double',
+        'OutOffset': 'Double',
+        'InitFlow': 'Double',
+        'MaxFlow': 'Double',
+        'Shape': 'String',
+        'Geom1': 'Double',
+        'Geom2': 'Double',
+        'Geom3': 'Double',
+        'Geom4': 'Double',
+        'Barrels': 'Double',
+        'Culvert': 'String',
+        'Shp_Trnsct': 'String',
+        'Kentry': 'Double',
+        'Kexit': 'Double',
+        'Kavg': 'Double',
+        'FlapGate': 'String',
+        'Seepage': 'Double'
     },
-    'PUMPS':{
-        'Name':'String',
-        'FromNode':'String',
-        'ToNode':'String',
-        'PumpCurve':'String',
-        'Status':'String',
-        'Startup':'Double',
-        'Shutoff':'Double'
+    'PUMPS': {
+        'Name': 'String',
+        'FromNode': 'String',
+        'ToNode': 'String',
+        'PumpCurve': 'String',
+        'Status': 'String',
+        'Startup': 'Double',
+        'Shutoff': 'Double'
     },
-    'ORIFICES':{
-        'Name':'String',
-        'FromNode':'String',
-        'ToNode':'String',
-        'Type':'String',
-        'InOffset':'Double',
-        'Qcoeff':'Double',
-        'FlapGate':'String',
-        'CloseTime':'Double',
-        'Shape':'String',
-        'Height':'Double',
-        'Width':'Double'
+    'ORIFICES': {
+        'Name': 'String',
+        'FromNode': 'String',
+        'ToNode': 'String',
+        'Type': 'String',
+        'InOffset': 'Double',
+        'Qcoeff': 'Double',
+        'FlapGate': 'String',
+        'CloseTime': 'Double',
+        'Shape': 'String',
+        'Height': 'Double',
+        'Width': 'Double'
     },
-    'WEIRS':{
-        'Name':'String',
-        'FromNode':'String',
-        'ToNode':'String',
-        'Type':'String',
-        'CrestHeigh':'Double',
-        'Qcoeff':'Double',
-        'FlapGate':'String',
-        'EndContrac':'Double',
-        'EndCoeff':'Double',
-        'Surcharge':'String',
-        'RoadWidth':'Double',
-        'RoadSurf':'String',
-        'CoeffCurve':'String',
-        'Height':'Double',
-        'Length':'Double',
-        'SideSlope':'Double'
+    'WEIRS': {
+        'Name': 'String',
+        'FromNode': 'String',
+        'ToNode': 'String',
+        'Type': 'String',
+        'CrestHeigh': 'Double',
+        'Qcoeff': 'Double',
+        'FlapGate': 'String',
+        'EndContrac': 'Double',
+        'EndCoeff': 'Double',
+        'Surcharge': 'String',
+        'RoadWidth': 'Double',
+        'RoadSurf': 'String',
+        'CoeffCurve': 'String',
+        'Height': 'Double',
+        'Length': 'Double',
+        'SideSlope': 'Double'
     },
-    'OUTLETS':{
-        'Name':'String',
-        'FromNode':'String',
-        'ToNode':'String',
-        'InOffset':'Double',
-        'RateCurve':'String',
-        'Qcoeff':'Double',
-        'Qexpon':'Double',
-        'FlapGate':'String',
-        'CurveName':'String'
+    'OUTLETS': {
+        'Name': 'String',
+        'FromNode': 'String',
+        'ToNode': 'String',
+        'InOffset': 'Double',
+        'RateCurve': 'String',
+        'Qcoeff': 'Double',
+        'Qexpon': 'Double',
+        'FlapGate': 'String',
+        'CurveName': 'String'
     },
 }
 
-#driver list for the import function
+# driver list for the import function
 def_ogr_driver_dict = {
-    'ESRI Shapefile':'shp',
-    'GPKG':'gpkg',
-    'GML':'gml', 
-    'GeoJSON':'geojson',
-    'KML':'kml'
+    'ESRI Shapefile': 'shp',
+    'GPKG': 'gpkg',
+    'GML': 'gml',
+    'GeoJSON': 'geojson',
+    'KML': 'kml'
 }
 def_ogr_driver_names = list(def_ogr_driver_dict.keys())
