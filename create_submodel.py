@@ -39,6 +39,7 @@ from qgis.core import (QgsLayerTreeGroup,
                        QgsProject,
                        QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingContext,
                        QgsProcessingException,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterString,
@@ -293,7 +294,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
         )
         pluginPath = os.path.dirname(__file__)
 
-        def add_layer_on_completion2(
+        def add_layer_on_completion3(
             folder_save,
             layer_name,
             style_file,
@@ -304,6 +305,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
             :param str folder_save
             :param str layer_name
             :param str style_file: file name of the qml file
+            :param str geodata_driver_extension
             """
             layer_filename = layer_name+'.'+geodata_driver_extension
             vlayer = QgsVectorLayer(
@@ -320,17 +322,19 @@ class CreateSubModel(QgsProcessingAlgorithm):
             )
             vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
             vlayer.renderer().symbol().setColor(QColor('red'))
-            QgsProject.instance().addMapLayer(vlayer, False)
-            tree = QgsProject.instance().layerTreeRoot()
-            if isinstance(tree.findGroup(result_prefix), QgsLayerTreeGroup):
-                pass
-            else:
-                tree.insertGroup(0, result_prefix)
-            res_group = tree.findGroup(result_prefix)
-            res_group.addLayer(vlayer)
+            context.temporaryLayerStore().addMapLayer(vlayer)
+            context.addLayerToLoadOnCompletion(
+                vlayer.id(),
+                QgsProcessingContext.LayerDetails(
+                    "",
+                    QgsProject.instance(),
+                    ""
+                )
+            )
 
         feedback.setProgressText(self.tr('Loading layers...'))
-        # list for all layer names which will be added to the project after the tool is executed
+        # list for all layer names which will be added
+        # to the project after the tool is executed
         list_move_to_group = []
 
         # create layer dictionaries
@@ -568,7 +572,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     folder_save,
                     1
                 )
-                add_layer_on_completion2(
+                add_layer_on_completion3(
                     folder_save,
                     layer_name,
                     'style_outfalls.qml',
@@ -647,7 +651,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     options
                 )
                 style_file = def_stylefile_dict['st_files'][k]
-                add_layer_on_completion2(
+                add_layer_on_completion3(
                     folder_save,
                     layer_name,
                     style_file,
@@ -656,5 +660,10 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 list_move_to_group.append(layer_name)
         feedback.setProgress(95)
         feedback.setProgressText(self.tr('done \n'))
-
+        feedback.setProgressText(
+            self.tr(
+                'Layers saved to '+
+                str(folder_save)
+            )
+        )
         return {}

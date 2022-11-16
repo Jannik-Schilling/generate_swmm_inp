@@ -170,7 +170,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
-
+        pluginPath = os.path.dirname(__file__)
 
         
         #check if the selected folder is temporary
@@ -475,11 +475,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 '20:00','21:00','22:00','23:00'
             ]
         }
-
+        
         pattern_types = list(def_tables_dict['PATTERNS']['tables'].keys())
-        pattern_cols = {k:list(v.keys())for k,v in def_tables_dict['PATTERNS']['tables'].items()}
-
-                      
+        pattern_cols = {k: list(v.keys())for k, v in def_tables_dict['PATTERNS']['tables'].items()}
+        
         if 'PATTERNS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating patterns file ...'))
             feedback.setProgress(16)
@@ -487,10 +486,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(all_patterns) == 0:
                 all_patterns = dict()
             else:
-                occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(pattern_types),[0,1]].set_index(0)
+                occuring_patterns_types = all_patterns.loc[all_patterns[1].isin(pattern_types), [0, 1]].set_index(0)
                 occuring_patterns_types.columns = ["PatternType"]
                 all_patterns = all_patterns.fillna(np.nan)
-                all_patterns = all_patterns.replace({'HOURLY':np.nan,'DAILY':np.nan,'MONTHLY':np.nan,'WEEKEND':np.nan})
+                all_patterns = all_patterns.replace({
+                    'HOURLY': np.nan,
+                    'DAILY': np.nan,
+                    'MONTHLY': np.nan,
+                    'WEEKEND': np.nan
+                })
                 def adjust_patterns_df(pattern_row):
                     """
                     reorders a list of the patterns section for the input file
@@ -498,10 +502,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     :return: pd.DataFrame
                     """
                     pattern_adjusted = [[pattern_row[0],i] for i in pattern_row[1:] if pd.notna(i)]
-                    return (pd.DataFrame(pattern_adjusted, columns = ['Name','Factor']))
+                    return (pd.DataFrame(pattern_adjusted, columns = ['Name', 'Factor']))
                 all_patterns = pd.concat([adjust_patterns_df(all_patterns.loc[i,:]) for i in all_patterns.index])
                 all_patterns = all_patterns.join(occuring_patterns_types, on = 'Name')
-                all_patterns = {k:v.iloc[:,:-1] for k, v in all_patterns.groupby("PatternType")}
+                all_patterns = {k: v.iloc[:,:-1] for k, v in all_patterns.groupby("PatternType")}
         else:
             all_patterns = dict()
         def add_pattern_timesteps(pattern_type):
@@ -530,21 +534,21 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         ## curves section 
         curve_cols_dict = {
-            'Pump1': ['Name','Volume','Flow'],
-            'Pump2': ['Name','Depth','Flow'],
-            'Pump3': ['Name','Head','Flow'],
-            'Pump4': ['Name','Depth','Flow'],
-            'Pump5':['Name','Head','Flow'],
-            'Storage': ['Name','Depth','Area'],
-            'Rating': ['Name','Head/Depth','Outflow'],
-            'Tidal':['Name','Hour_of_Day','Stage'],
-            'Control':['Name','Value','Setting'],
-            'Diversion':['Name','Inflow','Outflow'],
-            'Shape':['Name','Depth', 'Width'],
-            'Weir': ['Name','Head','Coefficient']
+            'Pump1': ['Name', 'Volume', 'Flow'],
+            'Pump2': ['Name', 'Depth', 'Flow'],
+            'Pump3': ['Name', 'Head', 'Flow'],
+            'Pump4': ['Name', 'Depth', 'Flow'],
+            'Pump5': ['Name', 'Head', 'Flow'],
+            'Storage': ['Name', 'Depth', 'Area'],
+            'Rating': ['Name', 'Head/Depth', 'Outflow'],
+            'Tidal': ['Name', 'Hour_of_Day', 'Stage'],
+            'Control': ['Name', 'Value', 'Setting'],
+            'Diversion': ['Name', 'Inflow', 'Outflow'],
+            'Shape': ['Name', 'Depth', 'Width'],
+            'Weir': ['Name', 'Head', 'Coefficient']
             }
 
-        
+
         if 'CURVES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating curves file ...'))
             feedback.setProgress(22)
@@ -662,7 +666,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
             """
             layer_filename = layer_name+'.'+geodata_driver_extension
             vlayer = QgsVectorLayer(os.path.join(folder_save, layer_filename), layer_name, "ogr")
-            vlayer.loadNamedStyle(os.path.join(folder_save,style_file))
+            qml_file_path = os.path.join(
+                pluginPath,
+                def_stylefile_dict['st_files_path']
+            )
+            vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
             if widget_setup is None:
                 pass
             else:
