@@ -56,14 +56,15 @@ from .g_s_defaults import (
     def_sections_dict,
     def_ogr_driver_dict,
     def_ogr_driver_names,
-    def_tables_dict
+    def_tables_dict,
+    def_stylefile_dict
 )
 from .g_s_various_functions import field_to_value_map
 from .g_s_read_write_data  import (
     create_layer_from_table,
     dict_to_excel
 )
-pluginPath = os.path.dirname(__file__)
+
 
 
 class ImportInpFile (QgsProcessingAlgorithm):
@@ -130,10 +131,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # Hide the parameter CREATE_EMPTY , because it´s only for the default data to
         self.addParameter(empt_param)
         empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
-        
+
+
     def name(self):
         return 'ImportInpFile'
-        
+
     def shortHelpString(self):
         return self.tr(""" The tool imports a swmm inp file and saves the data in a folder selected by the user (temporary folders won´t work!).\n 
         You can add a prefix to the files. Try to aviod characters which could cause trouble with file systems (e.g. '.',',','\','/') \n
@@ -157,7 +159,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         return ImportInpFile()
 
     def processAlgorithm(self, parameters, context, feedback):
-        
+        pluginPath = os.path.dirname(__file__)
         #transfer of parameters
         folder_save = self.parameterAsString(parameters, self.SAVE_FOLDER, context)
         readfile = self.parameterAsString(parameters, self.INP_FILE, context)
@@ -165,28 +167,26 @@ class ImportInpFile (QgsProcessingAlgorithm):
         crs_result = self.parameterAsCrs(parameters, self.DATA_CRS, context)
         crs_result = str(crs_result.authid())
         default_data_path = os.path.join(pluginPath,'test_data','swmm_data')
-        files_list = [f for f in os.listdir(default_data_path) if f.endswith('qml')]
+        #files_list = [f for f in os.listdir(default_data_path) if f.endswith('qml')]
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
-        pluginPath = os.path.dirname(__file__)
 
-        
+
         #check if the selected folder is temporary
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
             raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
-            
-        try:
-            for f in files_list:
-                f2 = os.path.join(default_data_path,f)
-                shutil.copy(f2, folder_save)
-            feedback.setProgressText(self.tr('style files saved to folder '+folder_save))
-            feedback.setProgress(1)
-        except:
-            raise QgsProcessingException(self.tr('Could not add style files to chosen folder'))
-        
-        
+
+        # try:
+            # for f in files_list:
+                # f2 = os.path.join(default_data_path,f)
+                # shutil.copy(f2, folder_save)
+            # feedback.setProgressText(self.tr('style files saved to folder '+folder_save))
+            # feedback.setProgress(1)
+        # except:
+            # raise QgsProcessingException(self.tr('Could not add style files to chosen folder'))
+
         #reading input text file
         feedback.setProgressText(self.tr('reading inp ...'))
         feedback.setProgress(3)            
