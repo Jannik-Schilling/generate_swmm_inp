@@ -280,22 +280,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         #descriptions_dict = {}
         dict_all_raw_vals = {k:extract_section_vals_from_text(dict_search[k], k) for k in dict_search.keys()} # raw values for every section
         dict_res_table = {}
-        
-        def build_df_for_section(section_name):
-            """
-            builds dataframes for a section
-            :param str section_name: Name of the SWMM section in the input file
-            :return: pd.DataFrame
-            """
-            if type(def_sections_dict[section_name]) == list:
-                col_names = def_sections_dict[section_name]
-            if def_sections_dict[section_name] is None:
-                col_names = None
-            if (not section_name in dict_all_raw_vals.keys()) or (len(dict_all_raw_vals[section_name])==0):
-                df = pd.DataFrame(columns = col_names)
-            else:
-                df = build_df_from_vals_list(dict_all_raw_vals[section_name], col_names)
-            return df
+
 
         def build_df_from_vals_list(section_vals, col_names):
             """
@@ -314,6 +299,25 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     for i in col_names[col_len:]:
                         df[i]=np.nan
             return df
+
+
+        def build_df_for_section(section_name):
+            """
+            builds dataframes for a section
+            :param str section_name: Name of the SWMM section in the input file
+            :return: pd.DataFrame
+            """
+            if type(def_sections_dict[section_name]) == list:
+                col_names = def_sections_dict[section_name]
+            if def_sections_dict[section_name] is None:
+                col_names = None
+            # empty df with correct column
+            if (not section_name in dict_all_raw_vals.keys()) or (len(dict_all_raw_vals[section_name])==0):
+                df = pd.DataFrame(columns = col_names)
+            else:
+                df = build_df_from_vals_list(dict_all_raw_vals[section_name], col_names)
+            return df
+
 
         def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
             """

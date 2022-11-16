@@ -48,7 +48,7 @@ def write_inp(inp_file_name,
     
     
     # function to write
-    def df_to_inp_section(section_name):
+    def df_to_inp_section(section_name, print_cols = None):
         '''
         writes a input file section from pd.Dataframe to file1
         :param str section_name
@@ -56,6 +56,8 @@ def write_inp(inp_file_name,
         if section_name in inp_dict.keys():
             feedback.setProgressText('writing ['+section_name+']...')
             print_df = inp_dict[section_name]
+            if print_cols is not None:
+                print_df = print_df[print_cols]
             file1.write('['+section_name+']\n')
             file1.write(print_df.to_string(header = False, index = False))
             file1.write('\n')
