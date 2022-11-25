@@ -1,8 +1,8 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis simplifyLocal="1" simplifyAlgorithm="0" maxScale="0" simplifyDrawingTol="1" styleCategories="Symbology|Labeling|Rendering" minScale="0" simplifyDrawingHints="1" version="3.18.2-Zürich" hasScaleBasedVisibilityFlag="0" simplifyMaxScale="1" labelsEnabled="0">
-  <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0">
+<qgis minScale="0" labelsEnabled="0" simplifyDrawingHints="1" styleCategories="Symbology|Labeling|Fields|Forms|AttributeTable|Rendering" simplifyMaxScale="1" version="3.28.0-Firenze" simplifyDrawingTol="1" simplifyLocal="1" simplifyAlgorithm="0" symbologyReferenceScale="-1" hasScaleBasedVisibilityFlag="0" maxScale="0">
+  <renderer-v2 type="singleSymbol" symbollevels="0" referencescale="-1" forceraster="0" enableorderby="0">
     <symbols>
-      <symbol alpha="1" clip_to_extent="1" force_rhr="0" type="line" name="0">
+      <symbol frame_rate="10" alpha="1" clip_to_extent="1" is_animated="0" type="line" force_rhr="0" name="0">
         <data_defined_properties>
           <Option type="Map">
             <Option value="" type="QString" name="name"/>
@@ -30,31 +30,16 @@
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale"/>
             <Option value="MM" type="QString" name="offset_unit"/>
             <Option value="0" type="QString" name="ring_filter"/>
+            <Option value="0" type="QString" name="trim_distance_end"/>
+            <Option value="3x:0,0,0,0,0,0" type="QString" name="trim_distance_end_map_unit_scale"/>
+            <Option value="MM" type="QString" name="trim_distance_end_unit"/>
+            <Option value="0" type="QString" name="trim_distance_start"/>
+            <Option value="3x:0,0,0,0,0,0" type="QString" name="trim_distance_start_map_unit_scale"/>
+            <Option value="MM" type="QString" name="trim_distance_start_unit"/>
             <Option value="0" type="QString" name="tweak_dash_pattern_on_corners"/>
             <Option value="0" type="QString" name="use_custom_dash"/>
             <Option value="3x:0,0,0,0,0,0" type="QString" name="width_map_unit_scale"/>
           </Option>
-          <prop k="align_dash_pattern" v="0"/>
-          <prop k="capstyle" v="square"/>
-          <prop k="customdash" v="5;2"/>
-          <prop k="customdash_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="customdash_unit" v="MM"/>
-          <prop k="dash_pattern_offset" v="0"/>
-          <prop k="dash_pattern_offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="dash_pattern_offset_unit" v="MM"/>
-          <prop k="draw_inside_polygon" v="0"/>
-          <prop k="joinstyle" v="bevel"/>
-          <prop k="line_color" v="72,72,72,255"/>
-          <prop k="line_style" v="dot"/>
-          <prop k="line_width" v="0.26"/>
-          <prop k="line_width_unit" v="MM"/>
-          <prop k="offset" v="0"/>
-          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_unit" v="MM"/>
-          <prop k="ring_filter" v="0"/>
-          <prop k="tweak_dash_pattern_on_corners" v="0"/>
-          <prop k="use_custom_dash" v="0"/>
-          <prop k="width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
           <data_defined_properties>
             <Option type="Map">
               <Option value="" type="QString" name="name"/>
@@ -77,25 +62,11 @@
             <Option value="MM" type="QString" name="offset_along_line_unit"/>
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale"/>
             <Option value="MM" type="QString" name="offset_unit"/>
-            <Option value="centralpoint" type="QString" name="placement"/>
+            <Option value="true" type="bool" name="place_on_every_part"/>
+            <Option value="CentralPoint" type="QString" name="placements"/>
             <Option value="0" type="QString" name="ring_filter"/>
             <Option value="1" type="QString" name="rotate"/>
           </Option>
-          <prop k="average_angle_length" v="4"/>
-          <prop k="average_angle_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="average_angle_unit" v="MM"/>
-          <prop k="interval" v="3"/>
-          <prop k="interval_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="interval_unit" v="MM"/>
-          <prop k="offset" v="0"/>
-          <prop k="offset_along_line" v="0"/>
-          <prop k="offset_along_line_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_along_line_unit" v="MM"/>
-          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_unit" v="MM"/>
-          <prop k="placement" v="centralpoint"/>
-          <prop k="ring_filter" v="0"/>
-          <prop k="rotate" v="1"/>
           <data_defined_properties>
             <Option type="Map">
               <Option value="" type="QString" name="name"/>
@@ -103,7 +74,7 @@
               <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
-          <symbol alpha="1" clip_to_extent="1" force_rhr="0" type="marker" name="@0@1">
+          <symbol frame_rate="10" alpha="1" clip_to_extent="1" is_animated="0" type="marker" force_rhr="0" name="@0@1">
             <data_defined_properties>
               <Option type="Map">
                 <Option value="" type="QString" name="name"/>
@@ -114,6 +85,7 @@
             <layer class="SimpleMarker" enabled="1" locked="0" pass="0">
               <Option type="Map">
                 <Option value="0" type="QString" name="angle"/>
+                <Option value="square" type="QString" name="cap_style"/>
                 <Option value="74,74,74,255" type="QString" name="color"/>
                 <Option value="1" type="QString" name="horizontal_anchor_point"/>
                 <Option value="bevel" type="QString" name="joinstyle"/>
@@ -132,24 +104,6 @@
                 <Option value="MM" type="QString" name="size_unit"/>
                 <Option value="1" type="QString" name="vertical_anchor_point"/>
               </Option>
-              <prop k="angle" v="0"/>
-              <prop k="color" v="74,74,74,255"/>
-              <prop k="horizontal_anchor_point" v="1"/>
-              <prop k="joinstyle" v="bevel"/>
-              <prop k="name" v="circle"/>
-              <prop k="offset" v="0,0"/>
-              <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-              <prop k="offset_unit" v="MM"/>
-              <prop k="outline_color" v="35,35,35,255"/>
-              <prop k="outline_style" v="solid"/>
-              <prop k="outline_width" v="0"/>
-              <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-              <prop k="outline_width_unit" v="MM"/>
-              <prop k="scale_method" v="diameter"/>
-              <prop k="size" v="1.8"/>
-              <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-              <prop k="size_unit" v="MM"/>
-              <prop k="vertical_anchor_point" v="1"/>
               <data_defined_properties>
                 <Option type="Map">
                   <Option value="" type="QString" name="name"/>
@@ -180,25 +134,11 @@
             <Option value="MM" type="QString" name="offset_along_line_unit"/>
             <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale"/>
             <Option value="MM" type="QString" name="offset_unit"/>
-            <Option value="centralpoint" type="QString" name="placement"/>
+            <Option value="true" type="bool" name="place_on_every_part"/>
+            <Option value="CentralPoint" type="QString" name="placements"/>
             <Option value="0" type="QString" name="ring_filter"/>
             <Option value="1" type="QString" name="rotate"/>
           </Option>
-          <prop k="average_angle_length" v="5.2"/>
-          <prop k="average_angle_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="average_angle_unit" v="MM"/>
-          <prop k="interval" v="3"/>
-          <prop k="interval_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="interval_unit" v="MM"/>
-          <prop k="offset" v="0"/>
-          <prop k="offset_along_line" v="0"/>
-          <prop k="offset_along_line_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_along_line_unit" v="MM"/>
-          <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-          <prop k="offset_unit" v="MM"/>
-          <prop k="placement" v="centralpoint"/>
-          <prop k="ring_filter" v="0"/>
-          <prop k="rotate" v="1"/>
           <data_defined_properties>
             <Option type="Map">
               <Option value="" type="QString" name="name"/>
@@ -206,7 +146,7 @@
               <Option value="collection" type="QString" name="type"/>
             </Option>
           </data_defined_properties>
-          <symbol alpha="1" clip_to_extent="1" force_rhr="0" type="marker" name="@0@2">
+          <symbol frame_rate="10" alpha="1" clip_to_extent="1" is_animated="0" type="marker" force_rhr="0" name="@0@2">
             <data_defined_properties>
               <Option type="Map">
                 <Option value="" type="QString" name="name"/>
@@ -217,6 +157,7 @@
             <layer class="SimpleMarker" enabled="1" locked="0" pass="0">
               <Option type="Map">
                 <Option value="90" type="QString" name="angle"/>
+                <Option value="square" type="QString" name="cap_style"/>
                 <Option value="74,74,74,255" type="QString" name="color"/>
                 <Option value="1" type="QString" name="horizontal_anchor_point"/>
                 <Option value="bevel" type="QString" name="joinstyle"/>
@@ -235,24 +176,6 @@
                 <Option value="MM" type="QString" name="size_unit"/>
                 <Option value="1" type="QString" name="vertical_anchor_point"/>
               </Option>
-              <prop k="angle" v="90"/>
-              <prop k="color" v="74,74,74,255"/>
-              <prop k="horizontal_anchor_point" v="1"/>
-              <prop k="joinstyle" v="bevel"/>
-              <prop k="name" v="half_square"/>
-              <prop k="offset" v="0,-0.90000000000000024"/>
-              <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-              <prop k="offset_unit" v="MM"/>
-              <prop k="outline_color" v="35,35,35,255"/>
-              <prop k="outline_style" v="no"/>
-              <prop k="outline_width" v="0"/>
-              <prop k="outline_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-              <prop k="outline_width_unit" v="MM"/>
-              <prop k="scale_method" v="diameter"/>
-              <prop k="size" v="1.8"/>
-              <prop k="size_map_unit_scale" v="3x:0,0,0,0,0,0"/>
-              <prop k="size_unit" v="MM"/>
-              <prop k="vertical_anchor_point" v="1"/>
               <data_defined_properties>
                 <Option type="Map">
                   <Option value="" type="QString" name="name"/>
@@ -282,5 +205,192 @@
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
   <layerOpacity>1</layerOpacity>
+  <fieldConfiguration>
+    <field configurationFlags="None" name="fid">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="Name">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="FromNode">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="ToNode">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="PumpCurve">
+      <editWidget type="TextEdit">
+        <config>
+          <Option type="Map">
+            <Option value="false" type="bool" name="IsMultiline"/>
+            <Option value="false" type="bool" name="UseHtml"/>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="Status">
+      <editWidget type="ValueMap">
+        <config>
+          <Option type="Map">
+            <Option type="List" name="map">
+              <Option type="Map">
+                <Option value="OFF" type="QString" name="OFF"/>
+              </Option>
+              <Option type="Map">
+                <Option value="ON" type="QString" name="ON"/>
+              </Option>
+            </Option>
+          </Option>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="Startup">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+    <field configurationFlags="None" name="Shutoff">
+      <editWidget type="TextEdit">
+        <config>
+          <Option/>
+        </config>
+      </editWidget>
+    </field>
+  </fieldConfiguration>
+  <aliases>
+    <alias field="fid" index="0" name=""/>
+    <alias field="Name" index="1" name=""/>
+    <alias field="FromNode" index="2" name=""/>
+    <alias field="ToNode" index="3" name=""/>
+    <alias field="PumpCurve" index="4" name=""/>
+    <alias field="Status" index="5" name=""/>
+    <alias field="Startup" index="6" name=""/>
+    <alias field="Shutoff" index="7" name=""/>
+  </aliases>
+  <defaults>
+    <default expression="" field="fid" applyOnUpdate="0"/>
+    <default expression="" field="Name" applyOnUpdate="0"/>
+    <default expression="" field="FromNode" applyOnUpdate="0"/>
+    <default expression="" field="ToNode" applyOnUpdate="0"/>
+    <default expression="" field="PumpCurve" applyOnUpdate="0"/>
+    <default expression="" field="Status" applyOnUpdate="0"/>
+    <default expression="" field="Startup" applyOnUpdate="0"/>
+    <default expression="" field="Shutoff" applyOnUpdate="0"/>
+  </defaults>
+  <constraints>
+    <constraint unique_strength="1" field="fid" notnull_strength="1" constraints="3" exp_strength="0"/>
+    <constraint unique_strength="1" field="Name" notnull_strength="0" constraints="2" exp_strength="0"/>
+    <constraint unique_strength="0" field="FromNode" notnull_strength="0" constraints="0" exp_strength="0"/>
+    <constraint unique_strength="0" field="ToNode" notnull_strength="0" constraints="0" exp_strength="0"/>
+    <constraint unique_strength="0" field="PumpCurve" notnull_strength="0" constraints="0" exp_strength="0"/>
+    <constraint unique_strength="0" field="Status" notnull_strength="0" constraints="0" exp_strength="0"/>
+    <constraint unique_strength="0" field="Startup" notnull_strength="0" constraints="0" exp_strength="0"/>
+    <constraint unique_strength="0" field="Shutoff" notnull_strength="0" constraints="0" exp_strength="0"/>
+  </constraints>
+  <constraintExpressions>
+    <constraint desc="" exp="" field="fid"/>
+    <constraint desc="" exp="" field="Name"/>
+    <constraint desc="" exp="" field="FromNode"/>
+    <constraint desc="" exp="" field="ToNode"/>
+    <constraint desc="" exp="" field="PumpCurve"/>
+    <constraint desc="" exp="" field="Status"/>
+    <constraint desc="" exp="" field="Startup"/>
+    <constraint desc="" exp="" field="Shutoff"/>
+  </constraintExpressions>
+  <expressionfields/>
+  <attributetableconfig actionWidgetStyle="dropDown" sortExpression="" sortOrder="0">
+    <columns>
+      <column hidden="0" width="-1" type="field" name="fid"/>
+      <column hidden="0" width="-1" type="field" name="Name"/>
+      <column hidden="0" width="-1" type="field" name="FromNode"/>
+      <column hidden="0" width="-1" type="field" name="ToNode"/>
+      <column hidden="0" width="-1" type="field" name="PumpCurve"/>
+      <column hidden="0" width="-1" type="field" name="Status"/>
+      <column hidden="0" width="-1" type="field" name="Startup"/>
+      <column hidden="0" width="-1" type="field" name="Shutoff"/>
+      <column hidden="1" width="-1" type="actions"/>
+    </columns>
+  </attributetableconfig>
+  <conditionalstyles>
+    <rowstyles/>
+    <fieldstyles/>
+  </conditionalstyles>
+  <storedexpressions/>
+  <editform tolerant="1"></editform>
+  <editforminit/>
+  <editforminitcodesource>0</editforminitcodesource>
+  <editforminitfilepath></editforminitfilepath>
+  <editforminitcode><![CDATA[# -*- coding: utf-8 -*-
+"""
+QGIS forms can have a Python function that is called when the form is
+opened.
+
+Use this function to add extra logic to your forms.
+
+Enter the name of the function in the "Python Init function"
+field.
+An example follows:
+"""
+from qgis.PyQt.QtWidgets import QWidget
+
+def my_form_open(dialog, layer, feature):
+    geom = feature.geometry()
+    control = dialog.findChild(QWidget, "MyLineEdit")
+]]></editforminitcode>
+  <featformsuppress>0</featformsuppress>
+  <editorlayout>generatedlayout</editorlayout>
+  <editable>
+    <field name="FromNode" editable="1"/>
+    <field name="Name" editable="1"/>
+    <field name="PumpCurve" editable="1"/>
+    <field name="Shutoff" editable="1"/>
+    <field name="Startup" editable="1"/>
+    <field name="Status" editable="1"/>
+    <field name="ToNode" editable="1"/>
+    <field name="fid" editable="1"/>
+  </editable>
+  <labelOnTop>
+    <field labelOnTop="0" name="FromNode"/>
+    <field labelOnTop="0" name="Name"/>
+    <field labelOnTop="0" name="PumpCurve"/>
+    <field labelOnTop="0" name="Shutoff"/>
+    <field labelOnTop="0" name="Startup"/>
+    <field labelOnTop="0" name="Status"/>
+    <field labelOnTop="0" name="ToNode"/>
+    <field labelOnTop="0" name="fid"/>
+  </labelOnTop>
+  <reuseLastValue>
+    <field reuseLastValue="0" name="FromNode"/>
+    <field reuseLastValue="0" name="Name"/>
+    <field reuseLastValue="0" name="PumpCurve"/>
+    <field reuseLastValue="0" name="Shutoff"/>
+    <field reuseLastValue="0" name="Startup"/>
+    <field reuseLastValue="0" name="Status"/>
+    <field reuseLastValue="0" name="ToNode"/>
+    <field reuseLastValue="0" name="fid"/>
+  </reuseLastValue>
+  <dataDefinedFieldProperties/>
+  <widgets/>
   <layerGeometryType>1</layerGeometryType>
 </qgis>

@@ -335,7 +335,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr('Loading layers...'))
         # list for all layer names which will be added
         # to the project after the tool is executed
-        list_move_to_group = []
+        list_move_to_group = [] # currently not in use
 
         # create layer dictionaries
         # nodes
@@ -546,7 +546,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
             else:
                 feedback.setProgressText(self.tr('Creating outfall node...'))
                 # get crs for outfall file from original outfall file or take the first crs from a node layer in the dict
-                layer_name = str(result_prefix)+'_SWMM_Outfalls'
+                layer_name = str(result_prefix)+'_SWMM_outfalls'
                 fname = os.path.join(folder_save, layer_name+'.'+'gpkg')
                 if os.path.isfile(fname):
                     raise QgsProcessingException('File '+fname+' already exists. Submodel features will only be selected. Please choose another folder or prefix.')
@@ -630,7 +630,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
         for k, v in dict_all_layers.items():
             if v.selectedFeatureCount() > 0:
                 vector_layer = v
-                layer_name = str(result_prefix)+'_SWMM_'+k.capitalize()
+                layer_name = str(result_prefix)+'_SWMM_'+k.lower()
                 geodata_driver_name = drivers_dict[k]
                 geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
                 # create layer
