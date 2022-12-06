@@ -39,6 +39,7 @@ from qgis.PyQt.QtGui import QIcon
 import os
 pluginPath = os.path.dirname(__file__)
 
+
 class GenerateSwmmProvider(QgsProcessingProvider):
 
     def __init__(self):
@@ -63,7 +64,6 @@ class GenerateSwmmProvider(QgsProcessingProvider):
         self.addAlgorithm(ImportInpFile())
         self.addAlgorithm(CreateSubModel())
 
-
     def id(self):
         """
         Returns the unique provider id, used for identifying the provider. This
@@ -86,7 +86,6 @@ class GenerateSwmmProvider(QgsProcessingProvider):
 
     def svgIconPath(self):
         return os.path.join(pluginPath, "icons", "icon.svg")
-        
+
     def longName(self):
         return self.name()
-

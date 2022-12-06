@@ -25,10 +25,12 @@ __author__ = 'Jannik Schilling'
 __date__ = '2022-04-28'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
-def write_inp(inp_file_name,
-              project_dir,
-              inp_dict,
-              feedback):
+
+def write_inp(
+    inp_file_name,
+    project_dir,
+    inp_dict,
+    feedback):
     """
     This script writes the data in inp_dict into a text file
     :param str inp_file_name
@@ -49,10 +51,11 @@ def write_inp(inp_file_name,
     
     # function to write
     def df_to_inp_section(section_name, print_cols = None):
-        '''
+        """
         writes a input file section from pd.Dataframe to file1
         :param str section_name
-        '''
+        :param list print_cols
+        """
         if section_name in inp_dict.keys():
             feedback.setProgressText('writing ['+section_name+']...')
             print_df = inp_dict[section_name]
