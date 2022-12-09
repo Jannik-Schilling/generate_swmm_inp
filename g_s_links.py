@@ -35,12 +35,6 @@ from .g_s_defaults import (
 from .g_s_various_functions import check_columns
 
 
-# FlapGate
-class SwmmFlapGate(Enum):
-    """class for FlapGate definition in Links"""
-    YES = 'YES'
-    NO = 'NO'
-
 
 # conduits
 def get_conduits_from_shapefile(conduits_raw):
@@ -171,13 +165,6 @@ def get_pumps_from_shapefile(pumps_raw):
     return pumps_df
 
 
-pump_field_vals = {
-    'Status': {
-        'ON': 'ON',
-        'OFF': 'OFF'
-    }
-}
-
 
 # weirs
 weirs_shape_dict = {
@@ -188,14 +175,6 @@ weirs_shape_dict = {
     'ROADWAY': 'RECT_OPEN'
 }
 
-weir_field_vals = {
-    'Type': {k: k for k in weirs_shape_dict.keys()},
-    'FlapGate': {t.value: t.value for t in SwmmFlapGate},
-    'Surcharge': {
-        'YES': 'YES',
-        'NO': 'NO'
-    }
-}
 
 
 def get_weirs_from_shapefile(weirs_raw):
@@ -275,19 +254,6 @@ def get_orifices_from_shapefile(orifices_raw):
     return orifices_df, xsections_df
 
 
-orifice_field_vals = {
-    'Type': {
-        'SIDE': 'SIDE',
-        'BOTTOM': 'BOTTOM'
-    },
-    'FlapGate': {t.value: t.value for t in SwmmFlapGate},
-    'Shape': {
-        'CIRCULAR': 'CIRCULAR',
-        'RECT_CLOSED': 'RECT_CLOSED'
-    }
-}
-
-
 # outlets
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
@@ -317,17 +283,6 @@ def get_outlets_from_shapefile(outlets_raw):
         'FlapGate'
     ]]
     return outlets_df
-
-
-outlet_field_vals = {
-    'FlapGate': {t.value: t.value for t in SwmmFlapGate},
-    'RateCurve': {
-        'FUNCTIONAL/DEPTH': 'FUNCTIONAL/DEPTH',
-        'FUNCTIONAL/HEAD': 'FUNCTIONAL/HEAD',
-        'TABULAR/DEPTH': 'TABULAR/DEPTH',
-        'TABULAR/HEAD': 'TABULAR/HEAD'
-    }
-}
 
 
 def get_transects_from_table(transects_raw):

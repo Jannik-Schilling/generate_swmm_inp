@@ -656,13 +656,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
         
         
         
-        def add_layer_on_completion(folder_save, layer_name, style_file, widget_setup = None):
+        def add_layer_on_completion(folder_save, layer_name, style_file):
             """
             adds the current layer on completen to canvas
             :param str folder_save
             :param str layer_name
             :param str style_file: file name of the qml file
-            :param dict widget_setup: definititons for field widgets
             """
             layer_filename = layer_name+'.'+geodata_driver_extension
             vlayer = QgsVectorLayer(os.path.join(folder_save, layer_filename), layer_name, "ogr")
@@ -671,11 +670,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 def_stylefile_dict['st_files_path']
             )
             vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
-            if widget_setup is None:
-                pass
-            else:
-                for k,v in widget_setup.items():
-                    field_to_value_map(vlayer, k, v)
             context.temporaryLayerStore().addMapLayer(vlayer)
             context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
             
@@ -812,13 +806,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num
                 )
-                #from .g_s_nodes import outfall_field_vals
                 add_layer_on_completion(
                     folder_save,
                     outfalls_layer_name,
                     'style_outfalls.qml'
                 )
-        
+
         """ dividers section """
         if 'DIVIDERS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating dividers file ...'))
@@ -1067,12 +1060,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     folder_save,
                     geodata_driver_num
                 )
-                from .g_s_links import pump_field_vals
                 add_layer_on_completion(
                     folder_save,
                     pumps_layer_name,
                     'style_pumps.qml',
-                    pump_field_vals
                 )
 
         """weirs section"""

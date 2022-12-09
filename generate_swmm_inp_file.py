@@ -42,7 +42,11 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer
 )
 from .g_s_various_functions import check_columns, get_coords_from_geometry
-from .g_s_defaults import def_qgis_fields_dict, def_curve_types
+from .g_s_defaults import (
+    def_qgis_fields_dict,
+    def_curve_types,
+    def_sections_dict
+)
 from .g_s_read_write_data import (
     read_data_from_table_direct,
     read_layers_direct
@@ -256,13 +260,26 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         project_dir = os.path.dirname(inp_file_path)
 
         # initializing the input dictionary
+        """
+        SECTION: {
+            'data': pd.df,
+            'annotations': {
+                'object_name1': 'annotation_string'
+                'object_name2': 'annotation_string'
+            }
+        }
+        COORDINATES:
+        Polygons:
+        VERTICES:{}
+        """
         inp_dict = dict()
-        inp_dict['TITLE'] = pd.DataFrame(['test'])
-        inp_dict['JUNCTIONS'] = pd.DataFrame()
-        inp_dict['CONDUITS'] = pd.DataFrame()
-        inp_dict['STORAGE'] = pd.DataFrame()
-        inp_dict['XSECTIONS'] = pd.DataFrame()
-        inp_dict['VERTICES'] = {}
+        inp_dict['TITLE'] = {'data': pd.DataFrame(['test'])}
+        inp_dict['XSECTIONS'] = {
+            'data': pd.DataFrame(),
+            'annotations': {}
+        } 
+        inp_dict['COORDINATES'] = {'data': pd.DataFrame()}
+        inp_dict['VERTICES'] = {'data': dict()}
 
         # reading geodata
         feedback.setProgressText(self.tr('Reading shapfiles'))
@@ -376,7 +393,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'options_df' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OPTIONS] section'))
             from .g_s_options import get_options_from_table
-            inp_dict['OPTIONS'], main_infiltration_method = get_options_from_table(raw_data_dict['options_df'].copy())
+            options_df, main_infiltration_method = get_options_from_table(raw_data_dict['options_df'].copy())
+            inp_dict['OPTIONS'] = {'data': options_df}
 
         # subcatchments
         if 'subcatchments_raw' in raw_data_dict.keys():
@@ -386,10 +404,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 raw_data_dict['subcatchments_raw'].copy(),
                 main_infiltration_method
             )
-            inp_dict['Polygons'] = get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
-            inp_dict['SUBCATCHMENTS'] = subcatchments_df
-            inp_dict['SUBAREAS'] = subareas_df
-            inp_dict['INFILTRATION'] = infiltration_df
+            inp_dict['Polygons'] = {'data':
+                get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
+            }
+            inp_dict['SUBCATCHMENTS'] = {'data': subcatchments_df}
+            inp_dict['SUBAREAS'] = {'data': subareas_df}
+            inp_dict['INFILTRATION'] = {'data': infiltration_df}
 
         # conduits
         if 'conduits_raw' in raw_data_dict.keys():
@@ -398,10 +418,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             conduits_df, xsections_df, losses_df = get_conduits_from_shapefile(raw_data_dict['conduits_raw'].copy())
             conduits_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
             conduits_verts = {k: del_first_last_vt(v) for k, v in conduits_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
-            inp_dict['VERTICES'].update(conduits_verts)
-            inp_dict['CONDUITS'] = conduits_df
-            inp_dict['XSECTIONS'] = xsections_df
-            inp_dict['LOSSES'] = losses_df
+            inp_dict['VERTICES']['data'].update(conduits_verts)
+            inp_dict['CONDUITS'] = {'data': conduits_df}
+            inp_dict['XSECTIONS'] = {'data': xsections_df}
+            inp_dict['LOSSES'] = {'data': losses_df}
 
         # pumps
         if 'pumps_raw' in raw_data_dict.keys():
@@ -410,8 +430,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'].copy())
             pumps_verts = get_coords_from_geometry(raw_data_dict['pumps_raw'].copy())
             pumps_verts = {k: del_first_last_vt(v) for k, v in pumps_verts.items() if len(v) > 2}
-            inp_dict['VERTICES'].update(pumps_verts)
-            inp_dict['PUMPS'] = pumps_df
+            inp_dict['VERTICES']['data'].update(pumps_verts)
+            inp_dict['PUMPS'] = {'data': pumps_df}
 
         # weirs
         if 'weirs_raw' in raw_data_dict.keys():
@@ -420,19 +440,21 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             weirs_df, xsections_df = get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
             weirs_verts = get_coords_from_geometry(raw_data_dict['weirs_raw'].copy())
             weirs_verts = {k: del_first_last_vt(v) for k, v in weirs_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
-            inp_dict['VERTICES'].update(weirs_verts)
-            inp_dict['XSECTIONS'] = inp_dict['XSECTIONS'].append(xsections_df)
-            inp_dict['XSECTIONS'] = inp_dict['XSECTIONS'].reset_index(drop=True)
-            inp_dict['WEIRS'] = weirs_df
+            inp_dict['VERTICES']['data'].update(weirs_verts)
+            inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].append(xsections_df)
+            inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
+            inp_dict['WEIRS'] = {'data': weirs_df}
 
         # outlets
         if 'outlets_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OUTLETS] section'))
             from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
-            inp_dict['OUTLETS'] = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
+            inp_dict['OUTLETS'] = {
+                'data': get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
+            }
             outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
             outlets_verts = {k: del_first_last_vt(v) for k, v in outlets_verts.items() if len(v) > 2}
-            inp_dict['VERTICES'].update(outlets_verts)
+            inp_dict['VERTICES']['data'].update(outlets_verts)
 
         # optional: transects for conduits or weirs
         if 'conduits_raw' in raw_data_dict.keys() or 'weirs_raw' in raw_data_dict.keys():
@@ -440,7 +462,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 feedback.setProgressText(self.tr('[TRANSECTS] section'))
                 from .g_s_links import get_transects_from_table
                 transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
-                inp_dict['TRANSECTS'] = transects_string_list
+                inp_dict['TRANSECTS'] = {'data': transects_string_list}
 
         # orifices
         if 'orifices_raw' in raw_data_dict.keys():
@@ -449,27 +471,30 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             orifices_df, xsections_df = get_orifices_from_shapefile(raw_data_dict['orifices_raw'])
             orifices_verts = get_coords_from_geometry(raw_data_dict['orifices_raw'].copy())
             orifices_verts = {k: del_first_last_vt(v) for k, v in orifices_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
-            inp_dict['VERTICES'].update(orifices_verts)
-            inp_dict['XSECTIONS'] = inp_dict['XSECTIONS'].append(xsections_df)
-            inp_dict['XSECTIONS'] = inp_dict['XSECTIONS'].reset_index(drop=True)
-            inp_dict['ORIFICES'] = orifices_df
+            inp_dict['VERTICES']['data'].update(orifices_verts)
+            inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].append(xsections_df)
+            inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
+            inp_dict['ORIFICES'] = {'data': orifices_df}
         feedback.setProgress(40)
 
         # nodes (junctions, outfalls, orifices)
         all_nodes = list()
         if 'junctions_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[JUNCTIONS] section'))
-            junctions_df = raw_data_dict['junctions_raw'].copy()
             # check columns
             junctions_cols = list(def_qgis_fields_dict['JUNCTIONS'].keys())
             junctions_layer_name = 'Junctions Layer'
             check_columns(
                 junctions_layer_name,
                 junctions_cols,
-                junctions_df.keys()
+                raw_data_dict['junctions_raw'].keys()
             )
+            junctions_df = raw_data_dict['junctions_raw'].copy()
             junctions_df['X_Coord'], junctions_df['Y_Coord'] = get_coords_from_geometry(junctions_df)
-            inp_dict['JUNCTIONS'] = junctions_df
+            junctions_coords = junctions_df[['Name', 'X_Coord', 'Y_Coord']]
+            junctions_inp_cols = def_sections_dict['JUNCTIONS']
+            inp_dict['JUNCTIONS'] = {'data': junctions_df[junctions_inp_cols]}
+            inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(junctions_coords)
             all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OUTFALLS] section'))
@@ -483,14 +508,18 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             from .g_s_nodes import get_outfalls_from_shapefile
             outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
             outfalls_df['X_Coord'], outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
-            inp_dict['OUTFALLS'] = outfalls_df
+            outfalls_coords = outfalls_df[['Name', 'X_Coord', 'Y_Coord']]
+            inp_dict['OUTFALLS'] = {'data': outfalls_df}
+            inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(outfalls_coords)
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
         if 'storages_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[STORAGES] section'))
             # check columns is performed within get_storages_from_geodata for different storage types
             from .g_s_nodes import get_storages_from_geodata
             storage_df = get_storages_from_geodata(raw_data_dict['storages_raw'].copy())
-            inp_dict['STORAGE'] = storage_df
+            storage_coords = storage_df[['Name', 'X_Coord', 'Y_Coord']]
+            inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(storage_coords)
+            inp_dict['STORAGE'] = {'data': storage_df}
             all_nodes = all_nodes+storage_df['Name'].tolist()
         if 'dividers_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[DIVIDERS] section'))
@@ -507,7 +536,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
             dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
             dividers_df['WeirCoeff'] = dividers_df['WeirCoeff'].fillna('')
-            inp_dict['DIVIDERS'] = dividers_df
+            dividers_coords = dividers_df[['Name', 'X_Coord', 'Y_Coord']]
+            inp_dict['DIVIDERS'] = {'data': dividers_df}
+            inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(dividers_coords)
             all_nodes = all_nodes+dividers_df['Name'].tolist()
         feedback.setProgress(50)
 
@@ -521,9 +552,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     all_nodes
                 )
                 if len(inflow_dict) > 0:
-                    inp_dict['INFLOWS'] = inflow_dict
+                    inp_dict['INFLOWS'] = {'data': inflow_dict}
                 if len(dwf_dict) > 0:
-                    inp_dict['DWF'] = dwf_dict
+                    inp_dict['DWF'] = {'data': dwf_dict}
         feedback.setProgress(55)
 
         # Streets and inlets
@@ -534,41 +565,47 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 raw_data_dict['streets']
             )
             if len(streets_df) > 0:
-                inp_dict['STREETS'] = streets_df
+                inp_dict['STREETS'] = {'data': streets_df}
             if len(inlets_df) > 0:
-                inp_dict['INLETS'] = inlets_df
+                inp_dict['INLETS'] = {'data': inlets_df}
             if len(inlet_usage_df) > 0:
-                inp_dict['INLET_USAGE'] = inlet_usage_df
+                inp_dict['INLET_USAGE'] = {'data': inlet_usage_df}
 
         # Curves
         if 'curves' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[CURVES] section'))
             from .g_s_various_functions import get_curves_from_table
-            inp_dict['CURVES'] = get_curves_from_table(
-                raw_data_dict['curves'],
-                name_col='Name'
-            )
+            inp_dict['CURVES'] = {
+                'data': get_curves_from_table(
+                    raw_data_dict['curves'],
+                    name_col='Name'
+                )
+            }
         feedback.setProgress(60)
 
         # patterns
         if 'patterns' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[PATTERNS] section'))
             from .g_s_various_functions import get_patterns_from_table
-            inp_dict['PATTERNS'] = get_patterns_from_table(
-                raw_data_dict['patterns'],
-                name_col='Name'
-            )
+            inp_dict['PATTERNS'] = {
+                'data': get_patterns_from_table(
+                    raw_data_dict['patterns'],
+                    name_col='Name'
+                )
+            }
         feedback.setProgress(65)
 
         # time series
         if 'timeseries' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
             from .g_s_various_functions import get_timeseries_from_table
-            inp_dict['TIMESERIES'] = get_timeseries_from_table(
-                raw_data_dict['timeseries'],
-                name_col='Name',
-                feedback=feedback
-            )
+            inp_dict['TIMESERIES'] = {
+                'data': get_timeseries_from_table(
+                    raw_data_dict['timeseries'],
+                    name_col='Name',
+                    feedback=feedback
+                )
+            }
         feedback.setProgress(70)
 
         # rain gages
@@ -584,26 +621,34 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             rg_features_df['X_Coord'], rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)
             rg_symbols_df = rg_features_df[['Name', 'X_Coord', 'Y_Coord']]
             rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgis_row(row), axis=1)
-            inp_dict['RAINGAGES'] = {rg.Name: rg.to_inp_str() for rg in rg_list}
-            inp_dict['SYMBOLS'] = rg_symbols_df
+            inp_dict['RAINGAGES'] = {
+                'data': {rg.Name: rg.to_inp_str() for rg in rg_list}
+            }
+            inp_dict['SYMBOLS'] = {'data': rg_symbols_df}
 
         # quality
         if 'quality' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[POLLUTANTS] and [LANDUSES] section'))
             from .g_s_quality import get_quality_params_from_table
             if 'SUBCATCHMENTS' in inp_dict.keys():
-                inp_dict['QUALITY'] = get_quality_params_from_table(
-                    raw_data_dict['quality'],
-                    inp_dict['SUBCATCHMENTS'].copy()
-                )
+                inp_dict['QUALITY'] = {
+                    'data': get_quality_params_from_table(
+                        raw_data_dict['quality'],
+                        inp_dict['SUBCATCHMENTS']['data'].copy()
+                    )
+                }
             else:
-                inp_dict['QUALITY'] = get_quality_params_from_table(raw_data_dict['quality'])
+                inp_dict['QUALITY'] = {
+                    'data': get_quality_params_from_table(
+                        raw_data_dict['quality']
+                    )
+                }
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(80)
 
         # writing inp file
         feedback.setProgressText(self.tr('Creating inp file:'))
-        inp_dict = {k: v for k, v in inp_dict.items() if len(v) > 0}  # remove empty sections
+        inp_dict = {k: v for k, v in inp_dict.items() if len(v['data']) > 0}  # remove empty sections
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,
