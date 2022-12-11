@@ -26,6 +26,7 @@ __date__ = '2022-04-28'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import os
+import pandas as pd
 
 inflow_keys_dict = {
     'DWF':['Name','Baseline','Patterns'],
@@ -70,19 +71,20 @@ def write_inp(
             print_df = inp_dict[section_name]['data']
             if 'annotations' in inp_dict[section_name].keys():
                 annotations_dict = inp_dict[section_name]['annotations']
-                annotations_df = pd.DataFrame.from_dict(
-                    annotations_dict, 
-                    orient='index',
-                    columns=['Name']
-                )
-                annotations_df['Name'] = [';'+str(i) for i in annotations_df['Name']]
-                # prepare indeces for insertion
-                replace_index = [k-0.5 for k in print_df.index if print_df.loc[k, 'Name'] in annotations_df.index]
-                annotations_df.index = replace_index
-                missing_cols = print_df.columns.drop('Name')
-                annotations_df[missing_cols] = ''
-                print_df = print_df.append(annotations_df)
-                print_df = print_df.sort_index(ascending=True)
+                if len(annotations_dict) > 0:
+                    annotations_df = pd.DataFrame.from_dict(
+                        annotations_dict, 
+                        orient='index',
+                        columns=['Name']
+                    )
+                    annotations_df['Name'] = [';'+str(i) for i in annotations_df['Name']]
+                    # prepare indeces for insertion
+                    replace_index = [k-0.5 for k in print_df.index if print_df.loc[k, 'Name'] in annotations_df.index]
+                    annotations_df.index = replace_index
+                    missing_cols = print_df.columns.drop('Name')
+                    annotations_df[missing_cols] = ''
+                    print_df = print_df.append(annotations_df)
+                    print_df = print_df.sort_index(ascending=True)
             if only_cols is not None:
                 print_df = print_df[only_cols]
             file1.write('['+section_name+']\n')

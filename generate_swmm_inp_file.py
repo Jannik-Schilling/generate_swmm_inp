@@ -32,6 +32,7 @@ __revision__ = '$Format:%H$'
 
 import os
 import pandas as pd
+import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
     QgsProcessing,
