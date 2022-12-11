@@ -176,16 +176,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         #check if the selected folder is temporary
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
-            raise QgsProcessingException('The data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
+            raise QgsProcessingException(
+                'The data set needs to be saved in a directory '
+                +'(temporary folders won´t work). Please select a directoy'
+            )
 
-        # try:
-            # for f in files_list:
-                # f2 = os.path.join(default_data_path,f)
-                # shutil.copy(f2, folder_save)
-            # feedback.setProgressText(self.tr('style files saved to folder '+folder_save))
-            # feedback.setProgress(1)
-        # except:
-            # raise QgsProcessingException(self.tr('Could not add style files to chosen folder'))
 
         #reading input text file
         feedback.setProgressText(self.tr('reading inp ...'))
@@ -267,11 +262,25 @@ class ImportInpFile (QgsProcessingAlgorithm):
             :return: list
             """                
             section_text = inp_text[text_limits[0]+1:text_limits[1]]
+
+            # delete headers:
+            section_text = [x for x in section_text if not x.startswith(';;')]
+
+            # find descriptions
             section_len = len(section_text)
-            # ugly but it works fast to extract descriptions:
-            #descriptions_list = [[section_text[i+1].split()[0],x[1:]] for i,x in enumerate(section_text) if x.startswith(';') and len(x)>1 and (i+1)<=section_len]
-            #descriptions_dict[section_key] = pd.DataFrame(descriptions_list, columns =['Name','Description'])
-            section_text = [x for x in section_text if not x.startswith(';')] #delete comments and "headers"
+            descriptions_list = [i for i, x in enumerate(section_text) if x.startswith(';')]
+            descr_starts = [i for i in descriptions_list if i-1 not in descriptions_list]
+            descr_ends = [i for i in descriptions_list if i+1 not in descriptions_list]
+            def get_descriptions(startpoint, endpoint):
+                descr_text_list = [x[1:] for x in section_text[startpoint:(endpoint+1)]]
+                descr_text = ' '.join(descr_text_list)
+                if endpoint+1 != section_len:
+                    decribed_name = section_text[endpoint+1].split()[0]
+                    return [decribed_name, descr_text]
+            descr_result_list = [get_descriptions(s, e) for s, e in zip (descr_starts, descr_ends)]
+            descr_dict = {i[0]: i[1] for i in descr_result_list}
+
+            section_text = [x for x in section_text if not x.startswith(';')] # delete descriptions
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             return section_vals_clean
