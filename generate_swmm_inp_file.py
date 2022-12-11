@@ -43,6 +43,7 @@ from qgis.core import (
 )
 from .g_s_various_functions import check_columns, get_coords_from_geometry
 from .g_s_defaults import (
+    annotation_field_name,
     def_qgis_fields_dict,
     def_curve_types,
     def_sections_dict
@@ -387,6 +388,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(20)
         feedback.setProgressText(self.tr('preparing data for input file:'))
+        
+        # function for annotations / descriptions
+        def get_annotations_from_raw_df(df_raw):
+            annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}
+            annot_dict = {k: v for k, v in annot_dict.items() if v != np.nan}
+            annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
+            return annot_dict
 
         # options
         main_infiltration_method = None
@@ -407,7 +415,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['Polygons'] = {'data':
                 get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
             }
-            inp_dict['SUBCATCHMENTS'] = {'data': subcatchments_df}
+            subcatchments_annot = get_annotations_from_raw_df(
+                raw_data_dict['subcatchments_raw'].copy()
+            )
+            inp_dict['SUBCATCHMENTS'] = {
+                'data': subcatchments_df,
+                'annotations': subcatchments_annot
+            }
             inp_dict['SUBAREAS'] = {'data': subareas_df}
             inp_dict['INFILTRATION'] = {'data': infiltration_df}
 

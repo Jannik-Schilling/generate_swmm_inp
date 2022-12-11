@@ -646,6 +646,7 @@ def_stylefile_dict = {
 
 # all possible fields in qgis files for the creation of layers
 def_annotation_field = {"Annotation": 'String'}
+annotation_field_name = list(def_annotation_field.keys())[0]
 
 def_qgis_fields_dict = {
     'RAINGAGES': {
