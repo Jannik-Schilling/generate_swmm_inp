@@ -58,7 +58,7 @@ def write_inp(
     file_path = os.path.join(project_dir, inp_file_name) 
     file1 = open(file_path, 'w')
 
-    # function to write
+    # function to write      
     def df_to_inp_section(section_name, only_cols=None):
         """
         writes a input file section from pd.Dataframe to file1
@@ -70,23 +70,29 @@ def write_inp(
             print_df = inp_dict[section_name]['data']
             if 'annotations' in inp_dict[section_name].keys():
                 annotations_dict = inp_dict[section_name]['annotations']
+                annotations_df = pd.DataFrame.from_dict(
+                    annotations_dict, 
+                    orient='index',
+                    columns=['Name']
+                )
+                annotations_df['Name'] = [';'+str(i) for i in annotations_df['Name']]
+                # prepare indeces for insertion
+                replace_index = [k-0.5 for k in print_df.index if print_df.loc[k, 'Name'] in annotations_df.index]
+                annotations_df.index = replace_index
+                missing_cols = print_df.columns.drop('Name')
+                annotations_df[missing_cols] = ''
+                print_df = print_df.append(annotations_df)
+                print_df = print_df.sort_index(ascending=True)
             if only_cols is not None:
                 print_df = print_df[only_cols]
             file1.write('['+section_name+']\n')
             file1.write(print_df.to_string(header=False, index=False))
             file1.write('\n')
-            file1.write('\n')
+            file1.write('\n')   
 
     # header
     df_to_inp_section('TITLE')
     df_to_inp_section('OPTIONS')
-    # df_to_inp_section('EVAPORATION')
-
-    # evaporation
-    file1.write('[EVAPORATION]\n'+
-                'CONSTANT         0.0\n'+
-                'DRY_ONLY         NO\n'+
-                '\n')
 
     # raingages
     if 'RAINGAGES' in inp_dict.keys():
