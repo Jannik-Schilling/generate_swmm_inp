@@ -268,22 +268,25 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
             # find descriptions
             section_len = len(section_text)
-            descriptions_list = [i for i, x in enumerate(section_text) if x.startswith(';')]
-            descr_starts = [i for i in descriptions_list if i-1 not in descriptions_list]
-            descr_ends = [i for i in descriptions_list if i+1 not in descriptions_list]
-            def get_descriptions(startpoint, endpoint):
-                descr_text_list = [x[1:] for x in section_text[startpoint:(endpoint+1)]]
-                descr_text = ' '.join(descr_text_list)
+            annotations_list = [i for i, x in enumerate(section_text) if x.startswith(';')]
+            annot_starts = [i for i in annotations_list if i-1 not in annotations_list]
+            annot_ends = [i for i in annotations_list if i+1 not in annotations_list]
+            def get_annotations(startpoint, endpoint):
+                annot_text_list = [x[1:] for x in section_text[startpoint:(endpoint+1)]]
+                annot_text = ' '.join(annot_text_list)
                 if endpoint+1 != section_len:
-                    decribed_name = section_text[endpoint+1].split()[0]
-                    return [decribed_name, descr_text]
-            descr_result_list = [get_descriptions(s, e) for s, e in zip (descr_starts, descr_ends)]
-            descr_dict = {i[0]: i[1] for i in descr_result_list}
-
-            section_text = [x for x in section_text if not x.startswith(';')] # delete descriptions
+                    feature_name = section_text[endpoint+1].split()[0]
+                    return [feature_name, annot_text]
+            annot_result_list = [get_annotations(s, e) for s, e in zip (annot_starts, annot_ends)]
+            annot_dict = {i[0]: i[1] for i in annot_result_list}
+            section_text = [x for x in section_text if not x.startswith(';')] # delete annotations / descriptions
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
-            return section_vals_clean
+            inp_extracted = {
+                'data': section_vals_clean,
+                'annotations': annot_dict
+            }
+            return inp_extracted
         
         # dicts for raw and resulting data
         #descriptions_dict = {}
@@ -321,10 +324,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if def_sections_dict[section_name] is None:
                 col_names = None
             # empty df with correct column
-            if (not section_name in dict_all_raw_vals.keys()) or (len(dict_all_raw_vals[section_name])==0):
+            if section_name == 'OUTLETS':
+                print(dict_all_raw_vals[section_name])
+            if (not section_name in dict_all_raw_vals.keys()) or (len(dict_all_raw_vals[section_name]['data'])==0):
                 df = pd.DataFrame(columns = col_names)
             else:
-                df = build_df_from_vals_list(dict_all_raw_vals[section_name], col_names)
+                df = build_df_from_vals_list(
+                        dict_all_raw_vals[section_name]['data'],
+                        col_names
+                    )
             return df
 
 
@@ -561,9 +569,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'CURVES' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating curves file ...'))
             feedback.setProgress(22)
-            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES'] if l[1].capitalize() in curve_cols_dict.keys()}
+            curve_type_dict= {l[0]:l[1] for l in dict_all_raw_vals['CURVES']['data'] if l[1].capitalize() in curve_cols_dict.keys()}
             occuring_curve_types = list(set(curve_type_dict.values()))
-            all_curves = [del_kw_from_list(l, occuring_curve_types, 1) for l in dict_all_raw_vals['CURVES'].copy()]
+            all_curves = [del_kw_from_list(l, occuring_curve_types, 1) for l in dict_all_raw_vals['CURVES']['data'].copy()]
             all_curves = build_df_from_vals_list(all_curves, def_sections_dict['CURVES'])
             all_curves['CurveType'] = [curve_type_dict[i].capitalize() for i in all_curves['Name']] # capitalize as in curve_cols_dict
             all_curves['XVal'] = [float(x) for x in all_curves['XVal']]
@@ -610,11 +618,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
         ## timeseries section
         ts_cols_dict = def_tables_dict['TIMESERIES']['tables']['TIMESERIES']
         if 'TIMESERIES' in dict_all_raw_vals.keys():
-            all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES'].copy()]
+            all_time_series = [adjust_line_length(x,1,4) for x in dict_all_raw_vals['TIMESERIES']['data'].copy()]
             # for external File
             all_time_series = [insert_nan_after_kw(x,2,'FILE',[3,4]) for x in all_time_series]
             all_time_series = [del_kw_from_list(x, 'FILE', 2) for x in all_time_series]
-            all_time_series = build_df_from_vals_list(all_time_series,def_sections_dict['TIMESERIES'])
+            all_time_series = build_df_from_vals_list(
+                all_time_series,
+                def_sections_dict['TIMESERIES']
+            )
             all_time_series['Description'] = ''
         else:
             all_time_series = build_df_from_vals_list([],list(ts_cols_dict.keys()))
@@ -632,7 +643,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             
             if 'INLETS' in dict_all_raw_vals.keys():
                 from .g_s_links import get_inlet_from_inp
-                inl_list = [get_inlet_from_inp(inl_line) for inl_line in dict_all_raw_vals['INLETS']]
+                inl_list = [get_inlet_from_inp(inl_line) for inl_line in dict_all_raw_vals['INLETS']['data']]
                 street_data['INLETS'] = build_df_from_vals_list(inl_list, def_sections_dict['INLETS'])
             else:
                 street_data['INLETS'] = build_df_for_section('INLETS')
@@ -699,7 +710,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             rg_geoms = [get_point_from_x_y(rg_choords.loc[i,:]) for i in rg_choords.index]
             rg_geoms = pd.DataFrame(rg_geoms, columns = ['Name', 'geometry']).set_index('Name')
             from .g_s_subcatchments import SwmmRainGage
-            rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']]
+            rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']['data']]
             if len(rain_gages_list) > 0:
                 rain_gages_df = pd.DataFrame([i.to_qgis_row() for i in rain_gages_list])
                 rain_gages_df = rain_gages_df.join(rg_geoms, on = 'Name')
@@ -759,7 +770,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('generating storages file ...'))
             feedback.setProgress(45)
             from .g_s_nodes import get_storages_from_inp
-            st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']]
+            st_list = [get_storages_from_inp(st_line) for st_line in dict_all_raw_vals['STORAGE']['data']]
             if len(st_list) > 0 or create_empty == True:
                 all_storages = build_df_from_vals_list(
                     st_list,
@@ -793,11 +804,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OUTFALLS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating outfalls file ...'))
             feedback.setProgress(50)
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FREE',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'NORMAL',[3,4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'FIXED',[4]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIDAL',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
-            dict_all_raw_vals['OUTFALLS'] = [insert_nan_after_kw(x,2,'TIMESERIES',[3]) for x in dict_all_raw_vals['OUTFALLS'].copy()]
+            dict_all_raw_vals['OUTFALLS']['data'] = [insert_nan_after_kw(x,2,'FREE',[3,4]) for x in dict_all_raw_vals['OUTFALLS']['data'].copy()]
+            dict_all_raw_vals['OUTFALLS']['data'] = [insert_nan_after_kw(x,2,'NORMAL',[3,4]) for x in dict_all_raw_vals['OUTFALLS']['data'].copy()]
+            dict_all_raw_vals['OUTFALLS']['data'] = [insert_nan_after_kw(x,2,'FIXED',[4]) for x in dict_all_raw_vals['OUTFALLS']['data'].copy()]
+            dict_all_raw_vals['OUTFALLS']['data'] = [insert_nan_after_kw(x,2,'TIDAL',[3]) for x in dict_all_raw_vals['OUTFALLS']['data'].copy()]
+            dict_all_raw_vals['OUTFALLS']['data'] = [insert_nan_after_kw(x,2,'TIMESERIES',[3]) for x in dict_all_raw_vals['OUTFALLS']['data'].copy()]
             all_outfalls = build_df_for_section('OUTFALLS')
             if len(all_outfalls) > 0:
                 all_outfalls = all_outfalls.join(all_geoms, on = 'Name')
@@ -825,13 +836,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'DIVIDERS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating dividers file ...'))
             feedback.setProgress(51)
-            divider_raw = dict_all_raw_vals['DIVIDERS'].copy()
+            divider_raw = dict_all_raw_vals['DIVIDERS']['data'].copy()
             divider_raw = [insert_nan_after_kw(x,3,'OVERFLOW',[4,5,6,7,8]) for x in divider_raw]
             divider_raw = [insert_nan_after_kw(x,3,'CUTOFF',[5,6,7,8]) for x in divider_raw]
             divider_raw = [insert_nan_after_kw(x,3,'TABULAR',[4,6,7,8]) for x in divider_raw]
             divider_raw = [insert_nan_after_kw(x,3,'WEIR',[4,5]) for x in divider_raw]
             divider_raw = [adjust_line_length(x,10,13,[np.nan,np.nan,np.nan]) for x in divider_raw]
-            dict_all_raw_vals['DIVIDERS'] = divider_raw.copy()
+            dict_all_raw_vals['DIVIDERS']['data'] = divider_raw.copy()
             all_dividers = build_df_for_section('DIVIDERS')
             if len(all_dividers) > 0:
                 all_dividers = all_dividers.join(all_geoms, on = 'Name')
@@ -948,7 +959,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if 'TRANSECTS' in dict_all_raw_vals.keys():
                 feedback.setProgressText(self.tr('generating transects file ...'))
                 feedback.setProgress(70)
-                transects_list = dict_all_raw_vals['TRANSECTS'].copy()
+                transects_list = dict_all_raw_vals['TRANSECTS']['data'].copy()
                 tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
                 tr_endp = tr_startp[1:]+[len(transects_list)]
                 def get_transects_data(tr_i):
@@ -1022,7 +1033,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OUTLETS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating outlets file ...'))
             feedback.setProgress(75)
-            dict_all_raw_vals['OUTLETS'] = [adjust_outlets_list(i) for i in dict_all_raw_vals['OUTLETS']]
+            dict_all_raw_vals['OUTLETS']['data'] = [adjust_outlets_list(i) for i in dict_all_raw_vals['OUTLETS']['data']]
             all_outlets = build_df_for_section('OUTLETS')
             if len(all_outlets) > 0:
                 all_outlets = all_outlets.applymap(replace_nan_null)
@@ -1168,8 +1179,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_subcatchments = build_df_for_section('SUBCATCHMENTS')
             if len(all_subcatchments) > 0:
                 all_subareas = build_df_for_section('SUBAREAS')
-                all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill non-HORTON
-                all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION'].copy()] # fill missing Methods
+                all_infiltr = [adjust_line_length(x,4,6,[np.nan,np.nan] ) for x in dict_all_raw_vals['INFILTRATION']['data'].copy()] # fill non-HORTON
+                all_infiltr = [adjust_line_length(x,7,7,[np.nan] ) for x in dict_all_raw_vals['INFILTRATION']['data'].copy()] # fill missing Methods
                 all_infiltr = build_df_from_vals_list(all_infiltr, def_sections_dict['INFILTRATION'])
                 all_subcatchments  = create_subcatchm_attributes_from_inp_df(
                     all_subcatchments,
