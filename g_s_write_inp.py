@@ -153,63 +153,13 @@ def write_inp(
         file1.write('\n')    
 
     # storages
-    if 'STORAGE' in inp_dict.keys():
-        feedback.setProgressText('writing [STORAGES]...')
-        storage_df = inp_dict['STORAGE']['data']
-        file1.write('[STORAGE]\n')
-        for i in range(len(storage_df)):
-            stor = storage_df.loc[i, :]
-            file1.write(str(stor['Name'])+'    '+
-                        str(stor['Elevation'])+'    '+
-                        str(stor['MaxDepth'])+'    '+
-                        str(stor['InitDepth'])+'    '+
-                        str(stor['Type'])+'    '+
-                        str(stor['Shape1'])+'    '+
-                        str(stor['Shape2'])+'    '+
-                        str(stor['Shape3'])+'    '+
-                        str(stor['SurDepth'])+'    '+
-                        str(stor['Fevap'])+'    '+
-                        str(stor['Psi'])+'    '+
-                        str(stor['Ksat'])+'    '+
-                        str(stor['IMD']))  
-            file1.write('\n')  
-        file1.write('\n')  
+    df_to_inp_section('STORAGE')
 
     # conduits
-    if 'CONDUITS' in inp_dict.keys():
-        feedback.setProgressText('writing [CONDUITS]...')
-        conduits_df = inp_dict['CONDUITS']['data']
-        file1.write('[CONDUITS]\n')
-        for i in range(len(conduits_df)):
-            con = conduits_df.loc[i, :]
-            file1.write(str(con['Name'])+'    '
-                        + str(con['FromNode'])+'    '
-                        + str(con['ToNode'])+'    '
-                        + str(con['Length'])+'    '
-                        + str(con['Roughness'])+'    '
-                        + str(con['InOffset'])+'    '
-                        + str(con['OutOffset'])+'    '
-                        + str(con['InitFlow'])+'    '
-                        + str(con['MaxFlow']))
-            file1.write('\n')     
-        file1.write('\n')  
+    df_to_inp_section('CONDUITS')
 
     # pumps
-    if 'PUMPS' in inp_dict.keys():
-        feedback.setProgressText('writing [PUMPS]...')
-        pumps_df = inp_dict['PUMPS']['data']
-        file1.write('[PUMPS]\n')
-        for i in range(len(pumps_df)):
-            pmp = pumps_df.loc[i, :]
-            file1.write(str(pmp['Name'])+'   '+
-                        str(pmp['FromNode'])+'    '+
-                        str(pmp['ToNode'])+'    '+
-                        str(pmp['PumpCurve'])+'    '+
-                        str(pmp['Status'])+'    '+
-                        str(pmp['Startup'])+'    '+
-                        str(pmp['Shutoff']))
-            file1.write('\n')
-        file1.write('\n')
+    df_to_inp_section('PUMPS')
 
     # weirs orifices and outlets
     df_to_inp_section('WEIRS')

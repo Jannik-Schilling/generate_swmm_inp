@@ -44,6 +44,7 @@ def get_outfalls_from_shapefile(outfalls_raw):
     outfalls_raw.loc[outfalls_raw['Type'] == 'FREE', 'Data'] = ''
     outfalls_raw.loc[outfalls_raw['Type'] == 'NORMAL', 'Data'] = ''
     outfalls_raw['RouteTo'] = outfalls_raw['RouteTo'].fillna('')
+    outfalls_raw['FlapGate'] = outfalls_raw['FlapGate'].fillna('NO')
     outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
     return outfalls_raw
 
@@ -101,6 +102,9 @@ def get_storages_from_geodata(storages_raw):
     storage_df['Psi'] = storage_df['Psi'].fillna('')
     storage_df['Ksat'] = storage_df['Ksat'].fillna('')
     storage_df['IMD'] = storage_df['IMD'].fillna('')
+    storage_df['InitDepth'] = storage_df['InitDepth'].fillna(0)
+    storage_df['SurDepth'] = storage_df['SurDepth'].fillna(0)
+    storage_df['Fevap'] = storage_df['Fevap'].fillna(0)
     storage_df = storage_df.drop(columns=st_types_needed)
     return storage_df
 

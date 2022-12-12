@@ -392,9 +392,12 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         
         # function for annotations / descriptions
         def get_annotations_from_raw_df(df_raw):
-            annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}
-            annot_dict = {k: v for k, v in annot_dict.items() if v != np.nan}
-            annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
+            if annotation_field_name in df_raw.columns:
+                annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}
+                annot_dict = {k: v for k, v in annot_dict.items() if pd.notna(v)}
+                annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
+            else:
+                annot_dict = {}
             return annot_dict
 
         # options
@@ -434,7 +437,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             conduits_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
             conduits_verts = {k: del_first_last_vt(v) for k, v in conduits_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
             inp_dict['VERTICES']['data'].update(conduits_verts)
-            inp_dict['CONDUITS'] = {'data': conduits_df}
+            conduits_annot = get_annotations_from_raw_df(
+                raw_data_dict['conduits_raw'].copy()
+            )
+            inp_dict['CONDUITS'] = {
+                'data': conduits_df,
+                'annotations': conduits_annot
+            }
             inp_dict['XSECTIONS'] = {'data': xsections_df}
             inp_dict['LOSSES'] = {'data': losses_df}
 
@@ -443,29 +452,46 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[PUMPS] section'))
             from .g_s_links import get_pumps_from_shapefile, del_first_last_vt
             pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'].copy())
+            pumps_annot = get_annotations_from_raw_df(
+                raw_data_dict['pumps_raw'].copy()
+            )
             pumps_verts = get_coords_from_geometry(raw_data_dict['pumps_raw'].copy())
             pumps_verts = {k: del_first_last_vt(v) for k, v in pumps_verts.items() if len(v) > 2}
+            pumps_inp_cols = def_sections_dict['PUMPS']
             inp_dict['VERTICES']['data'].update(pumps_verts)
-            inp_dict['PUMPS'] = {'data': pumps_df}
+            inp_dict['PUMPS'] = {
+                'data': pumps_df[pumps_inp_cols],
+                'annotations': pumps_annot
+            }
 
         # weirs
         if 'weirs_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[WEIRS] section'))
             from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
             weirs_df, xsections_df = get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
+            weirs_annot = get_annotations_from_raw_df(
+                raw_data_dict['weirs_raw'].copy()
+            )
             weirs_verts = get_coords_from_geometry(raw_data_dict['weirs_raw'].copy())
             weirs_verts = {k: del_first_last_vt(v) for k, v in weirs_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
             inp_dict['VERTICES']['data'].update(weirs_verts)
             inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].append(xsections_df)
             inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
-            inp_dict['WEIRS'] = {'data': weirs_df}
+            inp_dict['WEIRS'] = {
+                'data': weirs_df,
+                'annotations': weirs_annot
+            }
 
         # outlets
         if 'outlets_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OUTLETS] section'))
             from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
+            outlets_annot = get_annotations_from_raw_df(
+                raw_data_dict['outlets_raw'].copy()
+            )            
             inp_dict['OUTLETS'] = {
-                'data': get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
+                'data': get_outlets_from_shapefile(raw_data_dict['outlets_raw']),
+                'annotations': outlets_annot
             }
             outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
             outlets_verts = {k: del_first_last_vt(v) for k, v in outlets_verts.items() if len(v) > 2}
@@ -484,12 +510,19 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('[ORIFICES] section'))
             from .g_s_links import get_orifices_from_shapefile, del_first_last_vt
             orifices_df, xsections_df = get_orifices_from_shapefile(raw_data_dict['orifices_raw'])
+            orifices_annot = get_annotations_from_raw_df(
+                raw_data_dict['orifices_raw'].copy()
+            )
             orifices_verts = get_coords_from_geometry(raw_data_dict['orifices_raw'].copy())
             orifices_verts = {k: del_first_last_vt(v) for k, v in orifices_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
             inp_dict['VERTICES']['data'].update(orifices_verts)
             inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].append(xsections_df)
             inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
-            inp_dict['ORIFICES'] = {'data': orifices_df}
+            inp_dict['ORIFICES'] = {
+                'data': orifices_df,
+                'annotations': orifices_annot
+            }
+
         feedback.setProgress(40)
 
         # nodes (junctions, outfalls, orifices)
@@ -505,10 +538,20 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 raw_data_dict['junctions_raw'].keys()
             )
             junctions_df = raw_data_dict['junctions_raw'].copy()
+            junctions_df['MaxDepth'] = junctions_df['MaxDepth'].fillna(0)
+            junctions_df['InitDepth'] = junctions_df['InitDepth'].fillna(0)
+            junctions_df['SurDepth'] = junctions_df['SurDepth'].fillna(0)
+            junctions_df['Aponded'] = junctions_df['Aponded'].fillna(0)
+            junctions_annot = get_annotations_from_raw_df(
+                raw_data_dict['junctions_raw'].copy()
+            )
             junctions_df['X_Coord'], junctions_df['Y_Coord'] = get_coords_from_geometry(junctions_df)
             junctions_coords = junctions_df[['Name', 'X_Coord', 'Y_Coord']]
             junctions_inp_cols = def_sections_dict['JUNCTIONS']
-            inp_dict['JUNCTIONS'] = {'data': junctions_df[junctions_inp_cols]}
+            inp_dict['JUNCTIONS'] = {
+                'data': junctions_df[junctions_inp_cols],
+                'annotations': junctions_annot
+            }
             inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(junctions_coords)
             all_nodes = all_nodes+junctions_df['Name'].tolist()
         if 'outfalls_raw' in raw_data_dict.keys():
@@ -524,7 +567,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
             outfalls_df['X_Coord'], outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
             outfalls_coords = outfalls_df[['Name', 'X_Coord', 'Y_Coord']]
-            inp_dict['OUTFALLS'] = {'data': outfalls_df}
+            outfalls_annot = get_annotations_from_raw_df(
+                raw_data_dict['outfalls_raw'].copy()
+            )
+            inp_dict['OUTFALLS'] = {
+                'data': outfalls_df,
+                'annotations': outfalls_annot
+            }
             inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(outfalls_coords)
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
         if 'storages_raw' in raw_data_dict.keys():
@@ -532,9 +581,21 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             # check columns is performed within get_storages_from_geodata for different storage types
             from .g_s_nodes import get_storages_from_geodata
             storage_df = get_storages_from_geodata(raw_data_dict['storages_raw'].copy())
+            storage_annot = get_annotations_from_raw_df(
+                raw_data_dict['storages_raw'].copy()
+            )
             storage_coords = storage_df[['Name', 'X_Coord', 'Y_Coord']]
+            storage_inp_cols = [
+                'Name', 'Elevation', 'MaxDepth','InitDepth','Type',
+                'Shape1','Shape2','Shape3','SurDepth','Fevap','Psi',
+                'Ksat','IMD'
+            ]
+            storage_df = storage_df[storage_inp_cols]
             inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(storage_coords)
-            inp_dict['STORAGE'] = {'data': storage_df}
+            inp_dict['STORAGE'] = {
+                'data': storage_df,
+                'annotations': storage_annot
+            }
             all_nodes = all_nodes+storage_df['Name'].tolist()
         if 'dividers_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[DIVIDERS] section'))
@@ -551,8 +612,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
             dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
             dividers_df['WeirCoeff'] = dividers_df['WeirCoeff'].fillna('')
+            dividers_annot = get_annotations_from_raw_df(
+                raw_data_dict['dividers_raw'].copy()
+            )
             dividers_coords = dividers_df[['Name', 'X_Coord', 'Y_Coord']]
-            inp_dict['DIVIDERS'] = {'data': dividers_df}
+            inp_dict['DIVIDERS'] = {
+                'data': dividers_df,
+                'annotations': dividers_annot
+            }
             inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].append(dividers_coords)
             all_nodes = all_nodes+dividers_df['Name'].tolist()
         feedback.setProgress(50)
@@ -633,11 +700,15 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 SwmmRainGage.QgisLayerFields,
                 rg_features_df.columns
             )
+            raingages_annot = get_annotations_from_raw_df(
+                raw_data_dict['raingages_raw'].copy()
+            )
             rg_features_df['X_Coord'], rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)
             rg_symbols_df = rg_features_df[['Name', 'X_Coord', 'Y_Coord']]
             rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgis_row(row), axis=1)
             inp_dict['RAINGAGES'] = {
-                'data': {rg.Name: rg.to_inp_str() for rg in rg_list}
+                'data': {rg.Name: rg.to_inp_str() for rg in rg_list},
+                'annotations': raingages_annot
             }
             inp_dict['SYMBOLS'] = {'data': rg_symbols_df}
 
