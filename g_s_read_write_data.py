@@ -29,10 +29,12 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 import pandas as pd
 import os
 import numpy as np
+import copy
 from qgis.core import (
     NULL,
     QgsFeature,
     QgsField,
+    QgsFields,
     QgsProcessingException,
     QgsProject,
     QgsVectorFileWriter,
@@ -194,7 +196,7 @@ def create_feature_from_df(df, pr, geom_type):
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
-        f.setGeometry(df.geometry)
+        f.setGeometry(df['geometry'])
         f.setAttributes(df.tolist()[:-1])
     else:
         f.setAttributes(df.tolist())
@@ -223,15 +225,11 @@ def create_layer_from_table(
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-
     # set geometry type and provider
     geom_type = def_sections_geoms_dict[section_name]
+    geom_type = geom_type+'?crs='+crs_result
     vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
-    v_l_crs = vector_layer.crs()
-    v_l_crs.createFromUserInput(crs_result)
-    vector_layer.setCrs(v_l_crs)
     pr = vector_layer.dataProvider()
-
     # set fields
     field_types_dict = {
         'Double': QVariant.Double,
@@ -239,20 +237,24 @@ def create_layer_from_table(
         'Int': QVariant.Int,
         'Bool': QVariant.Bool
     }
-    layer_fields = def_qgis_fields_dict[section_name]
+    layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
     if custom_fields is not None:
         layer_fields.update(custom_fields)
     for col, field_type_string in layer_fields.items():
         field_type = field_types_dict[field_type_string]
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
+    # get data_df columns in the correct order
+    data_df_column_order = list(layer_fields.keys())
+    if geom_type != 'NoGeometry':
+        data_df_column_order = data_df_column_order+['geometry']
+    data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
     vector_layer.updateExtents()
-
     # create layer
     try:
         options = QgsVectorFileWriter.SaveVectorOptions()
-        options.fileEnconding = 'utf-8'
+        options.fileEncoding = 'utf-8'
         options.driverName = geodata_driver_name
         transform_context = QgsProject.instance().transformContext()
         QgsVectorFileWriter.writeAsVectorFormatV3(
@@ -276,7 +278,9 @@ def create_layer_from_table(
             vector_layer.crs(),
             driverName=geodata_driver_name
         )
-    return vector_layer
+    del vector_layer
+    del pr
+    return ()
 
 
 # Tables to Excel files

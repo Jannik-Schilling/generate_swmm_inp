@@ -40,7 +40,6 @@ def_curve_types = ['Control',
                    'Diversion',
                    'Shape']
 
-
 # all possible columns in the input file
 def_sections_dict = {
     'TITLE': None,
@@ -419,74 +418,62 @@ def_tables_dict = {
             'Pump1': {
                 'Name': 'String',
                 'Volume': 'Double',
-                'Flow': 'Double',
-                'Notes': 'String'
+                'Flow': 'Double'
             },
             'Pump2': {
                 'Name': 'String',
                 'Depth': 'Double',
-                'Flow': 'Double',
-                'Notes': 'String'
+                'Flow': 'Double'
             },
             'Pump3': {
                 'Name': 'String',
                 'Head': 'Double',
-                'Flow': 'Double',
-                'Notes': 'String'
+                'Flow': 'Double'
             },
             'Pump4': {
                 'Name': 'String',
                 'Depth': 'Double',
-                'Flow': 'Double',
-                'Notes': 'String'
+                'Flow': 'Double'
             },
             'Pump5': {
                 'Name': 'String',
                 'Head': 'Double',
-                'Flow': 'Double',
-                'Notes': 'String'
+                'Flow': 'Double'
             },
             'Storage': {
                 'Name': 'String',
                 'Depth': 'Double',
-                'Area': 'Double',
-                'Notes': 'String'
+                'Area': 'Double'
             },
             'Rating': {
                 'Name': 'String',
                 'Head/Depth': 'Double',
-                'Outflow': 'Double',
-                'Notes': 'String'
+                'Outflow': 'Double'
             },
             'Tidal': {
                 'Name': 'String',
                 'Hour_of_Day': 'Int',
-                'Stage': 'Double',
-                'Notes': 'String'
+                'Stage': 'Double'
             },
             'Control': {
                 'Name': 'String',
                 'Value': 'Double',
-                'Setting': 'Double',
-                'Notes': 'String'
+                'Setting': 'Double'
             },
             'Diversion': {
                 'Name': 'String',
                 'Inflow': 'Double',
-                'Outflow': 'Double',
-                'Notes': 'String'
+                'Outflow': 'Double'
             },
             'Shape': {
                 'Name': 'String',
                 'Depth': 'Double',
-                'Width': 'Double',
-                'Notes': 'String'
+                'Width': 'Double'
             },
             'Weir': {
                 'Name': 'String',
                 'Head': 'Double',
-                'Coefficient': 'Double',
-                'Notes': 'String'
+                'Coefficient': 'Double'
             }
         }
     },
@@ -543,8 +530,7 @@ def_tables_dict = {
                 'Date': 'Date',
                 'Time': 'Time',
                 'Value': 'Double',
-                'File_Name': 'String',
-                'Description': 'String'
+                'File_Name': 'String'
             }
         }
     },
@@ -645,7 +631,7 @@ def_stylefile_dict = {
 }
 
 # all possible fields in qgis files for the creation of layers
-def_annotation_field = {"Annotation": 'String'}
+def_annotation_field = {'Annotation': 'String'}
 annotation_field_name = list(def_annotation_field.keys())[0]
 
 def_qgis_fields_dict = {
