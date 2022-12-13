@@ -274,7 +274,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     feature_name = section_text[endpoint+1].split()[0]
                     return [feature_name, annot_text]
             annot_result_list = [get_annotations(s, e) for s, e in zip (annot_starts, annot_ends)]
-            annot_dict = {i[0]: i[1] for i in annot_result_list}
+            annot_dict = {i[0]: i[1] for i in annot_result_list if i is not None}
+            # exclude empty comments
+            annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
             section_text = [x for x in section_text if not x.startswith(';')] # delete annotations / descriptions
             section_vals = [x.split() for x in section_text]
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
