@@ -57,7 +57,8 @@ from .g_s_defaults import (
     def_ogr_driver_names,
     def_sections_dict,
     def_stylefile_dict,
-    def_tables_dict
+    def_tables_dict,
+    def_qgis_fields_dict
 )
 from .g_s_various_functions import field_to_value_map
 from .g_s_read_write_data import (
@@ -729,32 +730,40 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # raingages section
         if 'RAINGAGES' in dict_all_raw_vals.keys():
+            from .g_s_subcatchments import get_raingage_list_from_inp
             feedback.setProgressText(self.tr('generating raingages file ...'))
             feedback.setProgress(37)
             rg_choords = build_df_for_section('SYMBOLS')
             rg_geoms = [get_point_from_x_y(rg_choords.loc[i, :]) for i in rg_choords.index]
             rg_geoms = pd.DataFrame(rg_geoms, columns=['Name', 'geometry']).set_index('Name')
-            from .g_s_subcatchments import SwmmRainGage
-            rain_gages_list = [SwmmRainGage.from_inp_line(rg_line) for rg_line in dict_all_raw_vals['RAINGAGES']['data']]
-            if len(rain_gages_list) > 0:
-                rain_gages_df = pd.DataFrame(
-                    [i.to_qgis_row() for i in rain_gages_list]
+            rg_list = [
+                get_raingage_list_from_inp(x) for x in dict_all_raw_vals['RAINGAGES']['data']
+            ]
+            if len(rg_list) > 0 or create_empty:
+                rg_cols = list(def_qgis_fields_dict['RAINGAGES'].keys())
+                rg_cols = rg_cols + [annotation_field_name]
+                rain_gages_df = build_df_from_vals_list(
+                    rg_list,
+                    rg_cols
                 )
+            if len(rain_gages_df) > 0:
+                rg_annots = dict_all_raw_vals['RAINGAGES']['annotations']
+                rain_gages_df[annotation_field_name] = rain_gages_df['Name'].map(rg_annots)
                 rain_gages_df = rain_gages_df.join(rg_geoms, on='Name')
                 rain_gages_df = rain_gages_df.applymap(replace_nan_null)
-            else:
-                rain_gages_df = pd.DataFrame()
-            if len(rain_gages_list) > 0 or create_empty:
+            if len(rain_gages_df) > 0 or create_empty:
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                rg_layer = create_layer_from_table(
+                create_layer_from_table(
                     rain_gages_df,
                     'RAINGAGES',
                     rg_layer_name,
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -784,7 +793,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
 
                 add_layer_on_completion(
@@ -808,12 +818,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 all_storages = pd.DataFrame()
             if len(all_storages) > 0:
+                st_annots = dict_all_raw_vals['STORAGE']['annotations']
+                all_storages[annotation_field_name] = all_storages['Name'].map(st_annots)
                 all_storages = all_storages.join(all_geoms, on='Name')
             if len(all_storages) > 0 or create_empty:
                 all_storages = all_storages.applymap(replace_nan_null)
                 storages_layer_name = 'SWMM_storages'
-                # add prefix to layer name if available
                 if result_prefix != '':
+                    # add prefix to layer name if available
                     storages_layer_name = result_prefix+'_'+storages_layer_name
                 create_layer_from_table(
                     all_storages,
@@ -822,7 +834,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -857,7 +870,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -892,7 +906,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -984,7 +999,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -1106,7 +1122,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -1135,7 +1152,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -1184,7 +1202,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -1223,7 +1242,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,
@@ -1298,7 +1318,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
-                    def_annotation_field
+                    def_annotation_field,
+                    create_empty
                 )
                 add_layer_on_completion(
                     folder_save,

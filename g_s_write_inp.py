@@ -97,14 +97,7 @@ def write_inp(
     df_to_inp_section('OPTIONS')
 
     # raingages
-    if 'RAINGAGES' in inp_dict.keys():
-        feedback.setProgressText('writing [RAINGAGES]...')
-        file1.write('[RAINGAGES]\n')
-        raingages_dict = inp_dict['RAINGAGES']['data']
-        for rg_v in raingages_dict.values():
-            file1.write(rg_v)
-            file1.write('\n')
-        file1.write('\n')
+    df_to_inp_section('RAINGAGES')
 
     # subcatchments
     df_to_inp_section('SUBCATCHMENTS')
@@ -294,7 +287,7 @@ def write_inp(
         for ts_key in timeseries_dict.keys():
             ts_dict_i = timeseries_dict[ts_key].copy()
             ts_df = ts_dict_i['TimeSeries']
-            file1.write(';'+ts_dict_i['Description']+'\n')
+            file1.write(';'+ts_dict_i['Annotations']+'\n')
             file1.write(ts_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')

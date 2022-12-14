@@ -166,172 +166,53 @@ def create_subcatchm_attributes_from_inp_df(
 
 
 # for raingages
-def get_raingages(
-    rg_features_df,
-    feedback,
-    rg_ts_dict=None,
-    rg_pos_default=None
-):
+def get_raingage_list_from_inp(rg_line):
     """
-    generates a raingages dict for the input file from timeseries dict
-    :param list rg_ts_list
-    :param QgsProcessingFeedback feedback
+    creates a list of raingage values in the correct order from an inp line
+    :param list rg_line
+    :return list
     """
-    rg_dict = {}
-    temp_rg_ts = {}
-    if rg_ts_dict is not None:
-        for v in rg_ts_dict.values():
-            v['TimeSeries'] = v['TimeSeries'].reset_index(drop=True)
-            rg_i = SwmmRainGage.from_ts(v, feedback)
-            temp_rg_ts[v['Description']] = rg_i.to_inp_str()
-    return (rg_dict)
-
-
-# new...
-class SwmmRainGage:
-    """Rain gage class for SWMM models"""
-    def __init__(
-        self,
-        Name,
-        Format,
-        Interval,
-        SCF,
-        Source,
-        Position=None
-    ):
-        self.Name = str(Name)
-        self.Format = str(Format)
-        self.Interval = str(Interval)
-        self.SCF = SCF
-        self.Source = Source
-        self.Position = Position
-
-    QgisLayerFields = {
-        'Name': 'String',
-        'Format': 'String',
-        'Interval': 'String',
-        'SCF': 'Double',
-        'DataSource': 'String',
-        'SeriesName': 'String',
-        'FileName': 'String',
-        'StationID': 'String',
-        'RainUnits': 'String'
-    }
-
-    def from_qgis_row(rg_row):
-        if rg_row['DataSource'] == 'TIMESERIES':
-            rg_source = {
-                'DataSource': 'TIMESERIES',
-                'SeriesName': rg_row['SeriesName']
-            }
-        else:  # FILE
-            rg_source = {
-                'DataSource': 'FILE',
-                'FileName': rg_row['FileName'],
-                'StationID': rg_row['StationID'],
-                'RainUnits': rg_row['RainUnits']
-            }
-        return SwmmRainGage(
-            rg_row['Name'],
-            rg_row['Format'],
-            rg_row['Interval'],
-            rg_row['SCF'],
-            rg_source
-        )
-
-    def from_inp_line(rg_line):
-        if rg_line[4] == 'TIMESERIES':
-            rg_source = {
-                'DataSource': 'TIMESERIES',
-                'SeriesName': rg_line[5]
-            }
-        else:  # FILE
-            rg_source = {
-                'DataSource': 'FILE',
-                'FileName': rg_line[5],
-                'StationID': rg_line[6],
-                'RainUnits': rg_line[7]
-            }
-        interval_split = str(rg_line[2]).split(':')  # Interval splitted in HH:mm
-        if len(interval_split) == 1:
-            interval_split = interval_split + ['00']  # if only hours
-        if len(interval_split[0]) == 1:
-            interval_split[0] = '0' + interval_split[0]  # if one digit hour
-        interval = interval_split[0] + ':' + interval_split[1]
-        return SwmmRainGage(
-            rg_line[0],  # Name
-            rg_line[1],  # Format
-            interval,
-            rg_line[3],  # SCF
-            rg_source
-        )
-
-    def to_qgis_row(self):
-        '''prepares a pandas series for QGIS features'''
-        rg_row = pd.Series({
-            'Name': self.Name,
-            'Format': self.Format,
-            'Interval': self.Interval,
-            'SCF': self.SCF
-        })
-        if self.Source['DataSource'] == 'TIMESERIES':
-            rg_row['DataSource'] = 'TIMESERIES'
-            rg_row['SeriesName'] = str(self.Source['SeriesName'])
-            rg_row['FileName'] = np.nan
-            rg_row['StationID'] = np.nan
-            rg_row['RainUnits'] = np.nan
-        if self.Source['DataSource'] == 'FILE':
-            rg_row['DataSource'] = 'FILE'
-            rg_row['SeriesName'] = np.nan
-            rg_row['FileName'] = str(self.Source['FileName'])
-            rg_row['StationID'] = str(self.Source['StationID'])
-            rg_row['RainUnits'] = str(self.Source['RainUnits'])
-        return rg_row
-
-    def to_inp_str(self):
-        """writes a string for the input file"""
-        if self.Source['DataSource'] == 'TIMESERIES':
-            source_string = (
-                str(self.Source['DataSource']) + ' ' +
-                str(self.Source['SeriesName'])
-            )
-        if self.Source['DataSource'] == 'FILE':
-            source_string = (
-                str(self.Source['DataSource']) + ' ' +
-                str(self.Source['FileName']) + ' ' +
-                str(self.Source['StationID']) + ' ' +
-                str(self.Source['RainUnits'])
-            )
-        inp_str = (
-            self.Name + '    ' +
-            self.Format + '    ' +
-            str(self.Interval) + '    ' +
-            str(self.SCF) + '    ' +
-            source_string
-        )
-        return inp_str
-
-        # deprecated:
-    def from_ts(rg_ts, feedback):
-        """creates a rain gage from timeseries dict"""
+    if rg_line[4] == 'TIMESERIES':
         rg_source = {
             'DataSource': 'TIMESERIES',
-            'SeriesName': rg_ts['Name']}
-        try:
-            timediff = datetime.strptime(rg_i['TimeSeries']['Time'][1], '%H:%M')-datetime.strptime(rg_i['TimeSeries']['Time'][0], '%H:%M')
-            rg_interval = str(timediff)[:-3]
-        except:
-            rg_interval = ('5')  # set to ten minutes
-            feedback.setProgressText(
-                'Time interval for rain gage "'
-                + rg_ts['Description']
-                + '"could not be determined and was set by default '
-                + 'to 5 Minutes. Please check in SWMM.'
-            )
-        return SwmmRainGage(
-            rg_ts['Description'],
-            rg_ts['Format'],
-            rg_interval,
-            1,
-            rg_source,
-        )
+            'SeriesName': rg_line[5],
+            'FileName': np.nan,
+            'StationID': np.nan,
+            'RainUnits': np.nan
+        }
+    else:  # FILE
+        rg_source = {
+            'DataSource': 'FILE',
+            'SeriesName': np.nan,
+            'FileName': rg_line[5],
+            'StationID': rg_line[6],
+            'RainUnits': rg_line[7]
+        }
+    interval_split = str(rg_line[2]).split(':')  # Interval splitted in HH:mm
+    if len(interval_split) == 1:
+        interval_split = interval_split + ['00']  # if only hours
+    if len(interval_split[0]) == 1:
+        interval_split[0] = '0' + interval_split[0]  # if one digit hour
+    interval = interval_split[0] + ':' + interval_split[1]
+    rg_list = [
+        rg_line[0],  # Name
+        rg_line[1],  # Format
+        interval,
+        rg_line[3]  # SCF
+    ] + list(rg_source.values())
+    return rg_list
+
+
+def get_raingage_from_qgis_row(rg_row):
+    """
+    adjusts columns in a row from a QGIS raingage layer
+    :param pd.series rg_row
+    """
+    if rg_row['DataSource'] == 'TIMESERIES':
+        rg_row['SourceName'] = rg_row['SeriesName']
+        rg_row['StationID'] = ''
+        rg_row['RainUnits'] = ''
+    else:  # FILE
+        rg_row['SourceName'] = rg_row['FileName']
+    # unused columns (FileName and SeriesName) are deleted later on
+    return rg_row

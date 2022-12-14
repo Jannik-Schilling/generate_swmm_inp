@@ -36,7 +36,10 @@ from qgis.core import (
     QgsProcessingException,
     QgsEditorWidgetSetup
 )
-from .g_s_defaults import def_tables_dict
+from .g_s_defaults import (
+    def_tables_dict,
+    annotation_field_name
+)
 
 
 # geometry functions
@@ -254,11 +257,14 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                     ['%H:%M:%S', '%H:%M', '%H'],
                     '%H:%M'
                 )
-            ts_description = ts_df['Description'].fillna('').unique()[0]
+            if annotation_field_name in ts_df.columns:
+                ts_annotation = ts_df[annotation_field_name].fillna('').unique()[0]
+            else:
+                ts_annotation = ''
             ts_dict[i] = {
                 'Name': i,
                 'TimeSeries': ts_df[['Name', 'Date', 'Time', 'Value']],
-                'Description': ts_description
+                'Annotations': ts_annotation
             }
     return(ts_dict)
 

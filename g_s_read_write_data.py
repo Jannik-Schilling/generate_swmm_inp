@@ -196,6 +196,7 @@ def create_feature_from_df(df, pr, geom_type):
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
+        #f.setGeometry(df['geometry'])
         f.setGeometry(df['geometry'])
         f.setAttributes(df.tolist()[:-1])
     else:
@@ -210,7 +211,8 @@ def create_layer_from_table(
     crs_result,
     folder_save,
     geodata_driver_num,
-    custom_fields=None
+    custom_fields=None,
+    create_empty=False
 ):
     """
     creates a QgsVectorLayer from data in data_df
@@ -245,10 +247,11 @@ def create_layer_from_table(
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
     # get data_df columns in the correct order
-    data_df_column_order = list(layer_fields.keys())
-    if geom_type != 'NoGeometry':
-        data_df_column_order = data_df_column_order+['geometry']
-    data_df = data_df[data_df_column_order]
+    if not create_empty:
+        data_df_column_order = list(layer_fields.keys())
+        if geom_type != 'NoGeometry':
+            data_df_column_order = data_df_column_order+['geometry']
+        data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
     vector_layer.updateExtents()
     # create layer

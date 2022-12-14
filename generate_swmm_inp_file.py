@@ -691,23 +691,29 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(70)
 
         # rain gages
-        from .g_s_subcatchments import SwmmRainGage
+        from .g_s_subcatchments import get_raingage_from_qgis_row
         if 'raingages_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[RAINGAGES] section'))
+            rg_cols = list(def_qgis_fields_dict['RAINGAGES'].keys())
             rg_features_df = raw_data_dict['raingages_raw']
             check_columns(
                 file_raingages,
-                SwmmRainGage.QgisLayerFields,
+                rg_cols,
                 rg_features_df.columns
             )
             raingages_annot = get_annotations_from_raw_df(
-                raw_data_dict['raingages_raw'].copy()
+                rg_features_df
+            )
+            rg_features_df = rg_features_df.apply(
+                lambda x: get_raingage_from_qgis_row(x),
+                axis=1
             )
             rg_features_df['X_Coord'], rg_features_df['Y_Coord'] = get_coords_from_geometry(rg_features_df)
             rg_symbols_df = rg_features_df[['Name', 'X_Coord', 'Y_Coord']]
-            rg_list = rg_features_df.apply(lambda row: SwmmRainGage.from_qgis_row(row), axis=1)
+            rg_inp_cols = def_sections_dict['RAINGAGES']
+            rg_features_df = rg_features_df[rg_inp_cols]
             inp_dict['RAINGAGES'] = {
-                'data': {rg.Name: rg.to_inp_str() for rg in rg_list},
+                'data': rg_features_df,
                 'annotations': raingages_annot
             }
             inp_dict['SYMBOLS'] = {'data': rg_symbols_df}
