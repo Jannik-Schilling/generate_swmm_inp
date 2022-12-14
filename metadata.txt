@@ -24,6 +24,8 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.25 2022-12
 	- new tool 4_CreateSubModel
+	- fix CRS issues
+	- added annotation/description import and export
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, import
