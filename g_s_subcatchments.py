@@ -28,7 +28,6 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import pandas as pd
 import numpy as np
-from qgis.core import QgsProcessingException
 from .g_s_various_functions import check_columns
 from .g_s_defaults import def_qgis_fields_dict, def_sections_dict
 

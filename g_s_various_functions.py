@@ -202,13 +202,13 @@ def adjust_datetime(
         # if already in a date or time format
         dt_column = [t.strftime(str_output_format) for t in dt_column]
         return dt_column
-    except:
+    except BaseException:
         # if given as string
         for st in str_input_formats:
             try:
                 dt_column = [datetime.strptime(str(t), st) for t in dt_column]
                 dt_column = [t.strftime(str_output_format) for t in dt_column]
-            except:
+            except BaseException:
                 dt_column = [str(t) for t in dt_column]
             else:
                 return dt_column

@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2022-04-28'
+__date__ = '2022-12-15'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
 
@@ -71,7 +71,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
                 self.SWMM_VERSION,
                 self.tr("Default data for SWMM version..."),
                 ['Test data set for SWMM 5.1','Test data set for SWMM 5.2', 'Empty layers'],
-                defaultValue=[1]
+                defaultValue=1
             )
         )
 
@@ -89,7 +89,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             shutil.copy(doc_file, data_save_folder)
             feedback.setProgressText(self.tr('documentation file saved to folder '+data_save_folder))
             feedback.setProgress(1)
-        except:
+        except BaseException:
             raise QgsProcessingException(self.tr('Could not add documentation file to chosen folder'))
 
         data_path = os.path.join(pluginPath,'test_data','swmm_data')

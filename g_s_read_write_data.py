@@ -143,7 +143,7 @@ def read_data_from_table_direct(file, sheet=0):
     if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
         try:
             sheets = list(pd.read_excel(file, None, engine='openpyxl').keys())
-        except:
+        except BaseException:
             sheets = pd.ExcelFile(file).sheet_names
         if sheet == 0:
             s_n = 0
@@ -161,7 +161,7 @@ def read_data_from_table_direct(file, sheet=0):
         if s_n is not None:
             try:
                 data_df = pd.read_excel(file, sheet_name=s_n)
-            except:
+            except BaseException:
                 data_df = pd.read_excel(
                     file,
                     sheet_name=s_n,
@@ -269,7 +269,7 @@ def create_layer_from_table(
             transform_context,
             options
         )
-    except:
+    except BaseException:
         # for older QGIS versions
         QgsVectorFileWriter.writeAsVectorFormat(
             vector_layer,
@@ -313,7 +313,7 @@ def dict_to_excel(
             with pd.ExcelWriter(os.path.join(folder_save, save_name)) as writer:
                 for sheet_name, df in data_dict.items():
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
-        except:
+        except BaseException:
             raise QgsProcessingException(self.tr(
                 'Could not write tables in the desired file format.'
                 ' Please install the package \"openpyxl\" (or alternatively'
@@ -327,7 +327,7 @@ def dict_to_excel(
             with pd.ExcelWriter(os.path.join(folder_save, save_name_xlsx)) as writer:
                 for sheet_name, df in data_dict.items():
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
-        except:
+        except BaseException:
             try:
                 save_name_xls = save_name+'.xls'
                 with pd.ExcelWriter(os.path.join(folder_save, save_name_xls)) as writer:
@@ -337,7 +337,7 @@ def dict_to_excel(
                             sheet_name=sheet_name,
                             index=False
                         )
-            except:
+            except BaseException:
                 try:
                     save_name_ods = save_name+'.ods'
                     with pd.ExcelWriter(os.path.join(folder_save, save_name_ods)) as writer:
@@ -347,7 +347,7 @@ def dict_to_excel(
                                 sheet_name=sheet_name,
                                 index=False
                             )
-                except:
+                except BaseException:
                     raise QgsProcessingException(self.tr(
                         'Could not write tables in .xlsx, .xls, or .ods'
                         ' format. Please install the package \"openpyxl\" '

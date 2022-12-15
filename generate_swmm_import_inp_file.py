@@ -35,6 +35,7 @@ from qgis.core import (
     QgsField,
     QgsFeature,
     QgsGeometry,
+    QgsMessageLog,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingException,
@@ -186,9 +187,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 with open(readfile, 'r', encoding=e) as f:
                     inp_text = f.readlines()
             except UnicodeDecodeError:
-                print('got unicode error with %s , trying different encoding' % e)
+                feedback.setProgressText('got unicode error with %s , trying different encoding' % e)
             else:
-                print('opening the file with encoding:  %s ' % e)
+                feedback.setProgressText('opening the file with encoding:  %s ' % e)
                 break
 
         inp_text = [x for x in inp_text if x != '\n']
@@ -432,13 +433,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         else:
                             try:
                                 return datetime.strptime(str(x), '%H:%M:%S').time()
-                            except:
+                            except BaseException:
                                 try:
                                     return datetime.strptime(str(x), '%H:%M').time()
-                                except:
+                                except BaseException:
                                     try:
                                         datetime.strptime(str(x), '%H').time()
-                                    except:
+                                    except BaseException:
                                         return x  # when over 48 h
                     return [time_conversion(x) for x in col]
             df = df.apply(col_conversion, axis=0)
@@ -447,6 +448,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # sections which will be converted into tables
         # --------------------------------------------
         # options section
+        main_infiltration_method = 'HORTON'  # assumption for main infiltration method if not in options
         if 'OPTIONS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating options file ...'))
             feedback.setProgress(8)
@@ -455,12 +457,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
             dict_options = {k: v for k, v in zip(df_options['Option'], df_options['Value'])}
             df_options_converted = convert_options_format_for_import(dict_options, feedback)
             dict_res_table['OPTIONS'] = {'OPTIONS': df_options_converted}
-            try:
+            if 'INFILTRATION' in df_options['Option']:
                 main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION', 'Value'].values[0]
-            except:
-                main_infiltration_method = 'HORTON'  # if for some reason it is not in the OPTIONS section
-        else:
-            main_infiltration_method = 'HORTON'  # assumption for main infiltration method if not in options
+                if main_infiltration_method not in [
+                    'HORTON',
+                    'MODIFIED_HORTON',
+                    'GREEN_AMPT',
+                    'MODIFIED_GREEN_AMPT',
+                    'CURVE_NUMBER'
+                ]:
+                    main_infiltration_method = 'HORTON'
 
         # inflows section
         feedback.setProgressText(self.tr('generating inflows file ...'))

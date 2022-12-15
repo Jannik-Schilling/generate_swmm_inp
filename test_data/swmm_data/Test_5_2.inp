@@ -49,6 +49,7 @@ DRY_ONLY         NO
 [RAINGAGES]
 ;;Name           Format    Interval SCF      Source    
 ;;-------------- --------- ------ ------ ----------
+;just a test comment
 RG_1             VOLUME    1:00     1        TIMESERIES TS_1            
 
 [SUBCATCHMENTS]

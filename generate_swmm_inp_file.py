@@ -310,6 +310,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             'outlets_raw': file_outlets,
             'dividers_raw': file_dividers
         }
+        raw_layers_crs_list = [
+            v.crs().authid() for v in raw_layers_dict.values() if v is not None
+        ]
+        unique_crs = np.unique(raw_layers_crs_list)
+        if len(unique_crs) > 1:
+            feedback.pushWarning(
+                'Warning: different CRS in the selected layers.'
+                + 'This may lead to unexpected locations in SWMM')
         raw_data_dict = read_layers_direct(raw_layers_dict)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(12)
