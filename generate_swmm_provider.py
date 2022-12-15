@@ -34,9 +34,11 @@ from qgis.core import QgsProcessingProvider
 from .generate_swmm_inp_file import GenerateSwmmInpFile
 from .generate_default_data import GenerateDefaultFolder
 from .generate_swmm_import_inp_file import ImportInpFile
+from .create_submodel import CreateSubModel
 from qgis.PyQt.QtGui import QIcon
 import os
 pluginPath = os.path.dirname(__file__)
+
 
 class GenerateSwmmProvider(QgsProcessingProvider):
 
@@ -60,7 +62,7 @@ class GenerateSwmmProvider(QgsProcessingProvider):
         self.addAlgorithm(GenerateSwmmInpFile())
         self.addAlgorithm(GenerateDefaultFolder())
         self.addAlgorithm(ImportInpFile())
-
+        self.addAlgorithm(CreateSubModel())
 
     def id(self):
         """
@@ -84,7 +86,6 @@ class GenerateSwmmProvider(QgsProcessingProvider):
 
     def svgIconPath(self):
         return os.path.join(pluginPath, "icons", "icon.svg")
-        
+
     def longName(self):
         return self.name()
-

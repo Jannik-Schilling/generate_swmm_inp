@@ -4,6 +4,12 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 ## Documentation
 [Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) to the documentation file
 
+## Provided tools:
+1. **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
+2. **2_GenerateSwmmInpFile**: Create an input file for a SWMM simulation from your QGIS layers
+3. **3_ImportInpFile**: Import an existing SWMM model into QGIS
+4. **4_CreateSubModel**: Create a submodel (of an existing set SWMM layers in QGIS) below or above a certain node
+
 ## Recommended Workflow
 ### 0 Install 
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
@@ -14,29 +20,30 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 
 ### 1 Load the default data set
-...with the first tool (**1_GenerateDefaultData**). Alternatively you can import existing models into QGIS (**step 5**). Separate layers are provided for the main infrastructures:
-- rain gages (SWMM_raingages.gpkg)
-- junctions (SWMM_junctions.gpkg)
-- conduits (SWMM_conduits.gpkg)
-- subcatchments (SWMM_subcatchments.gpkg)
-- storages (SWMM_storages.gpkg)
-- outfalls (SWMM_outfalls.gpkg)
-- pumps (SWMM_pumps.gpkg)
-- weirs (SWMM_weirs.gpkg)
-- outlets (SWMM_outlets.gpkg)
-- orifices (SWMM_orifices.gpkg)
-Further data is provided in tables and can be edited there:
-- curves (gisswmm_curves.xlsx)
-- inflows (gisswmm_inflows.xlsx)
-- options (gisswmm_options.xlsx)
-- patterns (gisswmm_patterns.xlsx)
-- quality  (gisswmm_quality.xlsx)
-- timeseries (gisswmm_timeseries.xlsx)
-- transects (gisswmm_transects.xlsx)
+...with the first tool. Alternatively you can import existing models into QGIS (**step 5**). Separate layers are provided for the main infrastructures:
+- rain gages 
+- junctions 
+- conduits 
+- subcatchments 
+- storages 
+- outfalls 
+- pumps
+- weirs
+- outlets
+- orifices
+Further data is provided in tables (which will be saved in the chosen directory) and can be edited there:
+- curves
+- inflows
+- options
+- patterns
+- quality
+- timeseries
+- transects
+- streets (only for swmm 5.2 and later)
 
 ### 2 Edit
 Now you can do some modifactions.
-You can edit the layers in QGIS and data in tables to create your own model. When filling the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) and the [SWMM user manual](https://www.epa.gov/water-research/storm-water-management-model-swmm-version-51-users-manual) migth help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later.  Saving layer as a new file, e.g. if you want to have different variants of conduits layers, is recommended.
+You can edit the layers in QGIS and data in tables to create your own model. When filling the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_2.pdf) and the [SWMM user manual](https://www.epa.gov/water-research/storm-water-management-model-swmm-version-51-users-manual) migth help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later. Saving layer as a new file, e.g. if you want to have different variants of conduits layers, is recommended. 
 
 If you start from scratch, a useful tool to create a network from a line layer is the QGIS plugin "WaterNetAnalyzer" (available in the [QGIS plugin repository](https://plugins.qgis.org/plugins/WaterNetAnalyzer-master/) or on [Github](https://github.com/Jannik-Schilling/WaterNetAnalyzer)).
 
@@ -50,6 +57,7 @@ If you start from scratch, a useful tool to create a network from a line layer i
 You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended. You can choose a prefix (e.g. "v2") which will be added and the data format (.shp, .gpkg, .gml, .kml, .geojson).
 
 Some formats seem to have problems with certain coordinate reference systems. GPKG and SHP worked fine so far
+
 
 ## Further useful packages
 Python:
