@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2022-04-28'
+__date__ = '2022-12-15'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
 
@@ -347,6 +347,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
         }
         nodes_layers_dict = {k: v for k, v in nodes_layers_dict.items() if v is not None}
         drivers_dict = {k: v.dataProvider().storageType() for k, v in nodes_layers_dict.items()}
+        crs_dict = {k: v.dataProvider().crs() for k, v in nodes_layers_dict.items()}
 
         # links
         link_layers_dict = {
@@ -358,11 +359,13 @@ class CreateSubModel(QgsProcessingAlgorithm):
         }
         link_layers_dict = {k: v for k, v in link_layers_dict.items() if v is not None}
         drivers_dict.update({k: v.dataProvider().storageType() for k, v in link_layers_dict.items()})
+        crs_dict.update({k: v.dataProvider().crs() for k, v in link_layers_dict.items()})
 
         # subcatchments
         subcatch_layers_dict = {'SUBCATCHMENTS': file_subcatchments}
         subcatch_layers_dict = {k: v for k, v in subcatch_layers_dict.items() if v is not None}
         drivers_dict.update({k: v.dataProvider().storageType() for k, v in subcatch_layers_dict.items()})
+        crs_dict.update({k: v.dataProvider().crs() for k, v in subcatch_layers_dict.items()})
         if len(subcatch_layers_dict) != 0:
             needed_subc_attrs = ['Name', 'Outlet', 'RainGage']
             subc_df_dict = read_layers_direct(
@@ -376,6 +379,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
         raingages_layer_dict = {'RAINGAGES': file_raingages}
         raingages_layer_dict = {k: v for k, v in raingages_layer_dict.items() if v is not None}
         drivers_dict.update({k: v.dataProvider().storageType() for k, v in raingages_layer_dict.items()})
+        crs_dict.update({k: v.dataProvider().crs() for k, v in raingages_layer_dict.items()})
         if len(raingages_layer_dict) != 0:
             # load raingages layer as pd df
             needed_rg_attrs = ['Name']
@@ -456,6 +460,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     break
                 next_rows = np.where(Marker == all_links_df['ToNode'])[0].tolist()
                 if len(next_rows) > 0:
+                    if Marker == start_point:
+                        feedback.pushWarning('Warning: More than one link is connected to the selected node (which will be converted into an outfall node). This will lead to an error in SWMM.')
                     for Z in next_rows:
                         if all_links_df.loc[Z, 'Name'] in links_route:
                             # sometimes segments are saved in links_route...then they are deleted
@@ -631,8 +637,11 @@ class CreateSubModel(QgsProcessingAlgorithm):
             if v.selectedFeatureCount() > 0:
                 vector_layer = v
                 layer_name = str(result_prefix)+'_SWMM_'+k.lower()
+                crs_dict
+                geodata_crs = crs_dict[k]
                 geodata_driver_name = drivers_dict[k]
                 geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+                vector_layer.setCrs(geodata_crs)
                 # create layer
                 options = QgsVectorFileWriter.SaveVectorOptions()
                 options.fileEnconding = 'utf-8'
@@ -643,7 +652,9 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     folder_save, layer_name+'.'+geodata_driver_extension
                 )
                 if os.path.isfile(fname):
-                    raise QgsProcessingException('File '+fname+' already exists. Submodel features will only be selected. Please choose another folder or prefix.')
+                    raise QgsProcessingException('File '+fname
+                    + ' already exists. Submodel features will only be '
+                    + 'selected. Please choose another folder or prefix.')
                 QgsVectorFileWriter.writeAsVectorFormatV3(
                     vector_layer,
                     fname,
