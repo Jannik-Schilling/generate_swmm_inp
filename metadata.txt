@@ -24,6 +24,7 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.26 2023-01
 	- fix raingages with no symbol
+	- speed up polygon generation
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, import

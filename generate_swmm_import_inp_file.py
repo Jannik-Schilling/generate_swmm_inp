@@ -36,6 +36,7 @@ from qgis.core import (
     QgsFeature,
     QgsGeometry,
     QgsMessageLog,
+    QgsPointXY,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingException,
@@ -1288,14 +1289,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 """
                 verts = all_polygons.copy()[all_polygons['Name'] == polyg_name]
                 verts = verts.reset_index(drop=True)
-                verts_points = [get_point_from_x_y(verts.loc[i, :])[1] for i in verts.index]
-                verts_points = [x.asPoint() for x in verts_points]
-                if len(verts_points) < 3:  # only 1 or 2 vertices
+                if len(verts) < 3:  # only 1 or 2 vertices
                     # set geometry to buffer around first vertice
+                    verts_points = [get_point_from_x_y(verts.loc[i, :])[1] for i in verts.index]
+                    verts_points = [x.asPoint() for x in verts_points]
                     polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
                 else:
-                    polyg_geom = QgsGeometry.fromPolygonXY([verts_points])
+                    polyg_geom = QgsGeometry.fromPolygonXY(
+                        [[QgsPointXY(float(x), float(y)) for x,y in zip(verts['X_Coord'],verts['Y_Coord'])]] 
+                    )
                 return [polyg_name, polyg_geom]
+
 
         # subcatchments section
         if 'SUBCATCHMENTS' in dict_all_raw_vals.keys():
