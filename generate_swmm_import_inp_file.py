@@ -1298,7 +1298,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     polyg_geom = QgsGeometry.fromPolygonXY(
                         [[QgsPointXY(float(x), float(y)) for x,y in zip(verts['X_Coord'],verts['Y_Coord'])]] 
                     )
-                return [polyg_name, polyg_geom]
+                return polyg_geom
 
 
         # subcatchments section
@@ -1326,11 +1326,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     main_infiltration_method
                 )
                 polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
-                polyg_geoms = pd.DataFrame(
-                    polyg_geoms,
-                    columns=['Name', 'geometry']
-                ).set_index('Name')
-                all_subcatchments = all_subcatchments.join(polyg_geoms, on='Name')
+                all_subcatchments['geometry'] = polyg_geoms
                 all_subcatchments = all_subcatchments.applymap(replace_nan_null)
             if len(all_subcatchments) > 0 or create_empty:
                 subc_layer_name = 'SWMM_subcatchments'
