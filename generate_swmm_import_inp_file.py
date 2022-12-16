@@ -56,6 +56,7 @@ from .g_s_defaults import (
     def_annotation_field,
     def_ogr_driver_dict,
     def_ogr_driver_names,
+    def_rg_geom,
     def_sections_dict,
     def_stylefile_dict,
     def_tables_dict,
@@ -739,9 +740,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
             from .g_s_subcatchments import get_raingage_list_from_inp
             feedback.setProgressText(self.tr('generating raingages file ...'))
             feedback.setProgress(37)
-            rg_choords = build_df_for_section('SYMBOLS')
-            rg_geoms = [get_point_from_x_y(rg_choords.loc[i, :]) for i in rg_choords.index]
-            rg_geoms = pd.DataFrame(rg_geoms, columns=['Name', 'geometry']).set_index('Name')
+            if 'SYMBOLS' in dict_all_raw_vals.keys():
+                rg_choords = build_df_for_section('SYMBOLS')
+                rg_geoms = [get_point_from_x_y(rg_choords.loc[i, :]) for i in rg_choords.index]
+                rg_geoms = pd.DataFrame(rg_geoms, columns=['Name', 'geometry']).set_index('Name')
+            else:
+                # create just an empty df
+                rg_geoms = pd.DataFrame(columns=['Name', 'geometry']).set_index('Name')
             rg_list = [
                 get_raingage_list_from_inp(x) for x in dict_all_raw_vals['RAINGAGES']['data']
             ]
@@ -755,8 +760,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(rain_gages_df) > 0:
                 rg_annots = dict_all_raw_vals['RAINGAGES']['annotations']
                 rain_gages_df[annotation_field_name] = rain_gages_df['Name'].map(rg_annots)
-                rain_gages_df = rain_gages_df.join(rg_geoms, on='Name')
                 rain_gages_df = rain_gages_df.applymap(replace_nan_null)
+                rain_gages_df = rain_gages_df.join(rg_geoms, on='Name')
+                # fill if SYMBOLS section is missing or any raingage has no symbol cooordinates
+                if any(pd.isna(rain_gages_df['geometry'])):
+                    feedback.pushWarning(
+                        'Warning: symbol coordinates are missing for'
+                        + ' at least one rain gage in the input file. '
+                        + 'The geometry was set to \'Point(0,0)\' '
+                        + 'in this case'  
+                    )
+                    rain_gages_df['geometry'] = rain_gages_df['geometry'].fillna(
+                        def_rg_geom
+                    )
             if len(rain_gages_df) > 0 or create_empty:
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':

@@ -26,6 +26,7 @@ __date__ = '2022-04-28'
 __copyright__ = '(C) 2022 by Jannik Schilling'
 
 import os
+from qgis.core import QgsGeometry
 
 def_curve_types = ['Control',
                    'Pump1',
@@ -629,6 +630,11 @@ def_stylefile_dict = {
     },
     'st_files_path': os.path.join('test_data', 'swmm_data')
 }
+
+# default raingage coord
+def_rg_geom = QgsGeometry.fromWkt(
+        'POINT(' + str(0) + ' '+str(0) + ')'
+    )
 
 # all possible fields in qgis files for the creation of layers
 def_annotation_field = {'Annotation': 'String'}
