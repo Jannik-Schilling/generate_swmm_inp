@@ -1305,16 +1305,27 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'SUBCATCHMENTS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating subcatchments file ...'))
             feedback.setProgress(90)
-            from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
+            from .g_s_subcatchments import (
+                create_subcatchm_attributes_from_inp_df,
+                adjust_infiltration_inp_lines
+            )
             all_subcatchments = build_df_for_section(
                 'SUBCATCHMENTS',
                 with_annot=True
             )
             if len(all_subcatchments) > 0:
                 all_subareas = build_df_for_section('SUBAREAS')
-                all_infiltr = [adjust_line_length(x, 4, 6, [np.nan, np.nan]) for x in dict_all_raw_vals['INFILTRATION']['data'].copy()]  # fill non-HORTON
-                # fill missing Methods
-                all_infiltr = [adjust_line_length(x, 7, 7, [np.nan]) for x in all_infiltr]
+                if 'INFILTRATION' in dict_all_raw_vals.keys():
+                    all_infiltr = [
+                        adjust_infiltration_inp_lines(
+                            x,
+                            main_infiltration_method) for x in dict_all_raw_vals['INFILTRATION']['data']
+                    ]
+                else:
+                    all_infiltr = [
+                        np.nan, np.nan, np.nan,
+                        np.nan, np.nan, np.nan, np.nan
+                    ]
                 all_infiltr = build_df_from_vals_list(
                     all_infiltr,
                     def_sections_dict['INFILTRATION']
@@ -1322,8 +1333,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_subcatchments = create_subcatchm_attributes_from_inp_df(
                     all_subcatchments,
                     all_subareas,
-                    all_infiltr,
-                    main_infiltration_method
+                    all_infiltr
                 )
                 polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
                 all_subcatchments['geometry'] = polyg_geoms

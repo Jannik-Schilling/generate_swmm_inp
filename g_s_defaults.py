@@ -28,18 +28,28 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 import os
 from qgis.core import QgsGeometry
 
-def_curve_types = ['Control',
-                   'Pump1',
-                   'Pump2',
-                   'Pump3',
-                   'Pump4',
-                   'Pump5',
-                   'Storage',
-                   'Rating',
-                   'Weir',
-                   'Tidal',
-                   'Diversion',
-                   'Shape']
+def_curve_types = [
+    'Control',
+    'Pump1',
+    'Pump2',
+    'Pump3',
+    'Pump4',
+    'Pump5',
+    'Storage',
+    'Rating',
+    'Weir',
+    'Tidal',
+    'Diversion',
+    'Shape'
+]
+
+def_infiltration_types = [
+    'GREEN_AMPT',
+    'MODIFIED_GREEN_AMPT',
+    'HORTON',
+    'MODIFIED_HORTON',
+    'CURVE_NUMBER'
+]
 
 # all possible columns in the input file
 def_sections_dict = {
