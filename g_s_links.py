@@ -65,10 +65,27 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR', 'Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET', 'Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM', 'Shp_Trnsct']
-    xsections_df['Geom2'] = xsections_df['Geom2'].fillna('')
-    xsections_df['Geom3'] = xsections_df['Geom3'].fillna('')
-    xsections_df['Geom4'] = xsections_df['Geom4'].fillna('')
-    xsections_df['Barrels'] = xsections_df['Barrels'].fillna('1')
+    def fill_empty_xsects(xs_row, col):
+        if col == 'Barrels':
+            if xs_row['Shape'] in ['IRREGULAR', 'STREET']:
+                return ''
+            else:
+                if pd.isna(xs_row[col]):
+                    return '1'
+                else:
+                    return xs_row[col]
+        else:
+            if xs_row['Shape'] in ['IRREGULAR', 'STREET', 'CUSTOM']:
+                return ''
+            else:
+                if pd.isna(xs_row[col]):
+                    return '0'
+                else:
+                    return xs_row[col]
+    xsections_df['Geom2'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom2'), axis=1)
+    xsections_df['Geom3'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom3'), axis=1)
+    xsections_df['Geom4'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom4'), axis=1)
+    xsections_df['Barrels'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Barrels'), axis=1)
     losses_df = conduits_raw[losses_cols].copy()
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
