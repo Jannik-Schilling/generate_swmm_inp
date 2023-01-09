@@ -56,6 +56,8 @@ def get_conduits_from_shapefile(conduits_raw):
     # Asteriscs indicate that InOffset or OutOffset is the same as node elevation:
     conduits_df['InOffset'] = conduits_df['InOffset'].fillna('*')
     conduits_df['OutOffset'] = conduits_df['OutOffset'].fillna('*')
+    conduits_df['InitFlow'] = conduits_df['InitFlow'].fillna('0')
+    conduits_df['MaxFlow'] = conduits_df['MaxFlow'].fillna('0')
     xsections_df = conduits_raw[xsections_cols].copy()
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
     if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM') or any(xsections_df['Shape'] == 'STREET'):
@@ -209,8 +211,10 @@ def get_weirs_from_shapefile(weirs_raw):
     weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('*')
     weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('*')
     weirs_df['CoeffCurve'] = weirs_df['CoeffCurve'].fillna('')
+    weirs_df['FlapGate'] = weirs_df['FlapGate'].fillna('NO')
     weirs_df['EndContrac'] = weirs_df['EndContrac'].fillna('0')
     weirs_df['EndCoeff'] = weirs_df['EndCoeff'].fillna('0')
+    weirs_df['Surcharge'] = weirs_df['Surcharge'].fillna('YES')
     weirs_df = weirs_df[weirs_inp_cols]
     weirs_raw = weirs_raw.rename(
         columns={
@@ -252,6 +256,8 @@ def get_orifices_from_shapefile(orifices_raw):
     orifices_inp_cols = def_sections_dict['ORIFICES']
     orifices_df = orifices_raw.copy()
     orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')
+    orifices_df['FlapGate'] = orifices_df['FlapGate'].fillna('NO')
+    orifices_df['CloseTime'] = orifices_df['CloseTime'].fillna('0')
     orifices_df = orifices_df[orifices_inp_cols]
     orifices_raw['Geom1'] = orifices_raw['Height']
     orifices_raw['Geom2'] = orifices_raw['Width']
@@ -288,6 +294,7 @@ def get_outlets_from_shapefile(outlets_raw):
                   outlets_raw.keys())
     outlets_raw['Qcoeff'] = outlets_raw['Qcoeff'].fillna(1)
     outlets_raw['CurveName'] = outlets_raw['CurveName'].fillna('*')
+    outlets_raw['FlapGate'] = outlets_raw['FlapGate'].fillna('NO')
     outlets_raw['QCurve'] = [get_outl_curve(outlets_raw.loc[i]) for i in outlets_raw.index]
     outlets_df = outlets_raw[[
         'Name',
