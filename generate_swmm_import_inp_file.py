@@ -36,6 +36,7 @@ from qgis.core import (
     QgsFeature,
     QgsGeometry,
     QgsMessageLog,
+    QgsPointXY,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingException,
@@ -56,6 +57,7 @@ from .g_s_defaults import (
     def_annotation_field,
     def_ogr_driver_dict,
     def_ogr_driver_names,
+    def_rg_geom,
     def_sections_dict,
     def_stylefile_dict,
     def_tables_dict,
@@ -739,9 +741,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
             from .g_s_subcatchments import get_raingage_list_from_inp
             feedback.setProgressText(self.tr('generating raingages file ...'))
             feedback.setProgress(37)
-            rg_choords = build_df_for_section('SYMBOLS')
-            rg_geoms = [get_point_from_x_y(rg_choords.loc[i, :]) for i in rg_choords.index]
-            rg_geoms = pd.DataFrame(rg_geoms, columns=['Name', 'geometry']).set_index('Name')
+            if 'SYMBOLS' in dict_all_raw_vals.keys():
+                rg_choords = build_df_for_section('SYMBOLS')
+                rg_geoms = [get_point_from_x_y(rg_choords.loc[i, :]) for i in rg_choords.index]
+                rg_geoms = pd.DataFrame(rg_geoms, columns=['Name', 'geometry']).set_index('Name')
+            else:
+                # create just an empty df
+                rg_geoms = pd.DataFrame(columns=['Name', 'geometry']).set_index('Name')
             rg_list = [
                 get_raingage_list_from_inp(x) for x in dict_all_raw_vals['RAINGAGES']['data']
             ]
@@ -755,8 +761,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(rain_gages_df) > 0:
                 rg_annots = dict_all_raw_vals['RAINGAGES']['annotations']
                 rain_gages_df[annotation_field_name] = rain_gages_df['Name'].map(rg_annots)
-                rain_gages_df = rain_gages_df.join(rg_geoms, on='Name')
                 rain_gages_df = rain_gages_df.applymap(replace_nan_null)
+                rain_gages_df = rain_gages_df.join(rg_geoms, on='Name')
+                # fill if SYMBOLS section is missing or any raingage has no symbol cooordinates
+                if any(pd.isna(rain_gages_df['geometry'])):
+                    feedback.pushWarning(
+                        'Warning: symbol coordinates are missing for'
+                        + ' at least one rain gage in the input file. '
+                        + 'The geometry was set to \'Point(0,0)\' '
+                        + 'in this case'  
+                    )
+                    rain_gages_df['geometry'] = rain_gages_df['geometry'].fillna(
+                        def_rg_geom
+                    )
             if len(rain_gages_df) > 0 or create_empty:
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
@@ -1272,29 +1289,43 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 """
                 verts = all_polygons.copy()[all_polygons['Name'] == polyg_name]
                 verts = verts.reset_index(drop=True)
-                verts_points = [get_point_from_x_y(verts.loc[i, :])[1] for i in verts.index]
-                verts_points = [x.asPoint() for x in verts_points]
-                if len(verts_points) < 3:  # only 1 or 2 vertices
+                if len(verts) < 3:  # only 1 or 2 vertices
                     # set geometry to buffer around first vertice
+                    verts_points = [get_point_from_x_y(verts.loc[i, :])[1] for i in verts.index]
+                    verts_points = [x.asPoint() for x in verts_points]
                     polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
                 else:
-                    polyg_geom = QgsGeometry.fromPolygonXY([verts_points])
-                return [polyg_name, polyg_geom]
+                    polyg_geom = QgsGeometry.fromPolygonXY(
+                        [[QgsPointXY(float(x), float(y)) for x,y in zip(verts['X_Coord'],verts['Y_Coord'])]] 
+                    )
+                return polyg_geom
+
 
         # subcatchments section
         if 'SUBCATCHMENTS' in dict_all_raw_vals.keys():
             feedback.setProgressText(self.tr('generating subcatchments file ...'))
             feedback.setProgress(90)
-            from .g_s_subcatchments import create_subcatchm_attributes_from_inp_df
+            from .g_s_subcatchments import (
+                create_subcatchm_attributes_from_inp_df,
+                adjust_infiltration_inp_lines
+            )
             all_subcatchments = build_df_for_section(
                 'SUBCATCHMENTS',
                 with_annot=True
             )
             if len(all_subcatchments) > 0:
                 all_subareas = build_df_for_section('SUBAREAS')
-                all_infiltr = [adjust_line_length(x, 4, 6, [np.nan, np.nan]) for x in dict_all_raw_vals['INFILTRATION']['data'].copy()]  # fill non-HORTON
-                # fill missing Methods
-                all_infiltr = [adjust_line_length(x, 7, 7, [np.nan]) for x in all_infiltr]
+                if 'INFILTRATION' in dict_all_raw_vals.keys():
+                    all_infiltr = [
+                        adjust_infiltration_inp_lines(
+                            x,
+                            main_infiltration_method) for x in dict_all_raw_vals['INFILTRATION']['data']
+                    ]
+                else:
+                    all_infiltr = [
+                        np.nan, np.nan, np.nan,
+                        np.nan, np.nan, np.nan, np.nan
+                    ]
                 all_infiltr = build_df_from_vals_list(
                     all_infiltr,
                     def_sections_dict['INFILTRATION']
@@ -1302,15 +1333,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 all_subcatchments = create_subcatchm_attributes_from_inp_df(
                     all_subcatchments,
                     all_subareas,
-                    all_infiltr,
-                    main_infiltration_method
+                    all_infiltr
                 )
                 polyg_geoms = [get_polygon_from_verts(x) for x in all_subcatchments['Name']]
-                polyg_geoms = pd.DataFrame(
-                    polyg_geoms,
-                    columns=['Name', 'geometry']
-                ).set_index('Name')
-                all_subcatchments = all_subcatchments.join(polyg_geoms, on='Name')
+                all_subcatchments['geometry'] = polyg_geoms
                 all_subcatchments = all_subcatchments.applymap(replace_nan_null)
             if len(all_subcatchments) > 0 or create_empty:
                 subc_layer_name = 'SWMM_subcatchments'

@@ -185,7 +185,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Options table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -194,7 +194,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Curves table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -203,7 +203,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Patterns table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -212,7 +212,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Timeseries table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -221,7 +221,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Inflows table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -230,7 +230,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Quality table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -239,7 +239,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Transects table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
         self.addParameter(
@@ -248,7 +248,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 self.tr('Streets and Inlets table file'),
                 QgsProcessingParameterFile.File,
                 optional=True,
-                fileFilter='Tables (*.xlsx *.xsl *.odf)'
+                fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
         )
 

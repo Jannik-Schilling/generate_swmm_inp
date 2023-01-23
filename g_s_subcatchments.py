@@ -29,7 +29,11 @@ __copyright__ = '(C) 2022 by Jannik Schilling'
 import pandas as pd
 import numpy as np
 from .g_s_various_functions import check_columns
-from .g_s_defaults import def_qgis_fields_dict, def_sections_dict
+from .g_s_defaults import (
+    def_infiltration_types,
+    def_qgis_fields_dict,
+    def_sections_dict
+)
 
 
 def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
@@ -99,12 +103,31 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     subcatchments_df = subcatchments_df[def_sections_dict['SUBCATCHMENTS']]
     return subcatchments_df, subareas_df, infiltration_df
 
+def adjust_infiltration_inp_lines(
+    inp_line,
+    main_infiltration_method
+):
+    """
+    adjusts the line length in the infiltration section
+    """
+    if inp_line[-1] in def_infiltration_types:
+        current_infiltration_method = inp_line[-1]
+        inp_line = inp_line[:-1]
+    else:
+        current_infiltration_method = main_infiltration_method
+    if len(inp_line) == 4:
+        # fill non-HORTON or missing values
+        inp_line = inp_line+[np.nan, np.nan]
+    if len(inp_line) == 5:
+        # fill missing values
+        inp_line = inp_line+[np.nan]
+    inp_line = inp_line+[current_infiltration_method]
+    return inp_line
 
 def create_subcatchm_attributes_from_inp_df(
     all_subcatchments,
     all_subareas,
-    all_infiltr,
-    main_infiltration_method
+    all_infiltr
 ):
     """
     creates pd.Dataframes from lists of subcatchment attributes (from an inp file)
@@ -122,9 +145,7 @@ def create_subcatchm_attributes_from_inp_df(
         'CurveNum'
     ]
 
-    def create_infiltr_df(infiltr_row, main_infilt_method):
-        if pd.isna(infiltr_row['InfMethod']):
-            infiltr_row['InfMethod'] = main_infilt_method
+    def create_infiltr_df(infiltr_row):
         if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
             infiltr_row = infiltr_row.rename({
                 'Param1': 'SuctHead',
@@ -157,7 +178,7 @@ def create_subcatchm_attributes_from_inp_df(
             for c in cols_not_in_infilt:
                 infiltr_row[c] = np.nan
         return infiltr_row
-    all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x, main_infiltration_method), axis=1)
+    all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x), axis=1)
     all_infiltr = all_infiltr[['Name']+InfiltrDtypes]
     all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on='Name')
     all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on='Name')

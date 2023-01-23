@@ -84,7 +84,11 @@ def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback=None):
     :param str opt_source: 'table' (source is the options table) or 'input' (source is the SWMM input file)
     """
     d_type_val = type(opt_val)
-    d_type_def = def_options_dtypes[opt_key][0]
+    if opt_key in def_options_dtypes.keys():
+        d_type_def = def_options_dtypes[opt_key][0]
+    else:
+        # assume str
+        d_type_def = [[str]]
     if opt_source == 'table':
         if d_type_val in d_type_def:
             if d_type_def[0] in [time, datetime]:
