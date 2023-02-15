@@ -94,6 +94,7 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
         axis=1,
         args=(main_infiltration_method, )
     )
+    subcatchments_df['CurbLen'] = subcatchments_df['CurbLen'].fillna('0')
     subcatchments_df['SnowPack'] = subcatchments_df['SnowPack'].fillna('')
     subcatchments_df['PctRouted'] = subcatchments_df['PctRouted'].fillna(100)
     subcatchments_df = subcatchments_df.reset_index(drop=True)
@@ -115,6 +116,7 @@ def adjust_infiltration_inp_lines(
         inp_line = inp_line[:-1]
     else:
         current_infiltration_method = main_infiltration_method
+    #print('cur '+current_infiltration_method)
     if len(inp_line) == 4:
         # fill non-HORTON or missing values
         inp_line = inp_line+[np.nan, np.nan]
