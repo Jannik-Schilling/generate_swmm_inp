@@ -46,6 +46,7 @@ from .g_s_various_functions import check_columns, get_coords_from_geometry
 from .g_s_defaults import (
     annotation_field_name,
     def_qgis_fields_dict,
+    def_tables_dict,
     def_curve_types,
     def_sections_dict
 )
@@ -413,6 +414,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'options_df' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OPTIONS] section'))
             from .g_s_options import get_options_from_table
+            check_columns(
+                file_options,
+                list(def_tables_dict['OPTIONS']['tables']['OPTIONS'].keys()),
+                raw_data_dict['options_df']
+            )
             options_df, main_infiltration_method = get_options_from_table(raw_data_dict['options_df'].copy())
             inp_dict['OPTIONS'] = {'data': options_df}
 
