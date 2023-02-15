@@ -823,6 +823,7 @@ def_qgis_fields_dict = {
 def_ogr_driver_dict = {
     'ESRI Shapefile': 'shp',
     'GPKG': 'gpkg',
+    'FlatGeobuf':'fgb',
     'GML': 'gml',
     'GeoJSON': 'geojson',
     'KML': 'kml'

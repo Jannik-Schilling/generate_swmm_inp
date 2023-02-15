@@ -94,6 +94,7 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
         axis=1,
         args=(main_infiltration_method, )
     )
+    subcatchments_df['CurbLen'] = subcatchments_df['CurbLen'].fillna('0')
     subcatchments_df['SnowPack'] = subcatchments_df['SnowPack'].fillna('')
     subcatchments_df['PctRouted'] = subcatchments_df['PctRouted'].fillna(100)
     subcatchments_df = subcatchments_df.reset_index(drop=True)
@@ -130,7 +131,10 @@ def create_subcatchm_attributes_from_inp_df(
     all_infiltr
 ):
     """
-    creates pd.Dataframes from lists of subcatchment attributes (from an inp file)
+    creates pd.Dataframes from a pd.DataFrame of subcatchment attributes (from an inp file)
+    :param pd.DataFrame all_subcatchments
+    :param pd.DataFrame all_subareas
+    :param pd.DataFrame all_infiltr
     """
     InfiltrDtypes = [
         'InfMethod',
@@ -146,6 +150,10 @@ def create_subcatchm_attributes_from_inp_df(
     ]
 
     def create_infiltr_df(infiltr_row):
+        """
+        creates a pd.DataFrame for infiltration values
+        :param pd.Series infiltr_row
+        """
         if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
             infiltr_row = infiltr_row.rename({
                 'Param1': 'SuctHead',

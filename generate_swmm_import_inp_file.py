@@ -456,10 +456,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(8)
             from .g_s_options import convert_options_format_for_import
             df_options = build_df_for_section('OPTIONS')
+            
             dict_options = {k: v for k, v in zip(df_options['Option'], df_options['Value'])}
             df_options_converted = convert_options_format_for_import(dict_options, feedback)
             dict_res_table['OPTIONS'] = {'OPTIONS': df_options_converted}
-            if 'INFILTRATION' in df_options['Option']:
+            if 'INFILTRATION' in df_options['Option'].values:
                 main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION', 'Value'].values[0]
                 if main_infiltration_method not in [
                     'HORTON',
