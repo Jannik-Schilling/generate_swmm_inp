@@ -24,7 +24,7 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.27 2023-02
 	- fix numpy dstack error
-	- 
+	- fix import of main infiltration method
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, import
