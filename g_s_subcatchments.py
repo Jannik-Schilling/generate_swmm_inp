@@ -116,7 +116,6 @@ def adjust_infiltration_inp_lines(
         inp_line = inp_line[:-1]
     else:
         current_infiltration_method = main_infiltration_method
-    #print('cur '+current_infiltration_method)
     if len(inp_line) == 4:
         # fill non-HORTON or missing values
         inp_line = inp_line+[np.nan, np.nan]
@@ -132,7 +131,10 @@ def create_subcatchm_attributes_from_inp_df(
     all_infiltr
 ):
     """
-    creates pd.Dataframes from lists of subcatchment attributes (from an inp file)
+    creates pd.Dataframes from a pd.DataFrame of subcatchment attributes (from an inp file)
+    :param pd.DataFrame all_subcatchments
+    :param pd.DataFrame all_subareas
+    :param pd.DataFrame all_infiltr
     """
     InfiltrDtypes = [
         'InfMethod',
@@ -148,6 +150,10 @@ def create_subcatchm_attributes_from_inp_df(
     ]
 
     def create_infiltr_df(infiltr_row):
+        """
+        creates a pd.DataFrame for infiltration values
+        :param pd.Series infiltr_row
+        """
         if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
             infiltr_row = infiltr_row.rename({
                 'Param1': 'SuctHead',

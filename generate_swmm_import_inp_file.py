@@ -470,7 +470,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     'CURVE_NUMBER'
                 ]:
                     main_infiltration_method = 'HORTON'
-        print('main '+main_infiltration_method)
 
         # inflows section
         feedback.setProgressText(self.tr('generating inflows file ...'))
