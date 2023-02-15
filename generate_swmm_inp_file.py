@@ -46,6 +46,7 @@ from .g_s_various_functions import check_columns, get_coords_from_geometry
 from .g_s_defaults import (
     annotation_field_name,
     def_qgis_fields_dict,
+    def_tables_dict,
     def_curve_types,
     def_sections_dict
 )
@@ -413,6 +414,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'options_df' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[OPTIONS] section'))
             from .g_s_options import get_options_from_table
+            check_columns(
+                'OPTIONS file',
+                list(def_tables_dict['OPTIONS']['tables']['OPTIONS'].keys()),
+                raw_data_dict['options_df'].keys()
+            )
             options_df, main_infiltration_method = get_options_from_table(raw_data_dict['options_df'].copy())
             inp_dict['OPTIONS'] = {'data': options_df}
 
@@ -420,6 +426,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'subcatchments_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
             from .g_s_subcatchments import get_subcatchments_from_layer
+            # check if all columns exist
+            all_sub_cols = list(def_qgis_fields_dict['SUBCATCHMENTS'].keys())
+            subc_layer_name = 'Subcatchments Layer'
+            check_columns(
+                subc_layer_name,
+                all_sub_cols,
+                raw_data_dict['subcatchments_raw'].keys()
+            )
             subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
                 raw_data_dict['subcatchments_raw'].copy(),
                 main_infiltration_method
