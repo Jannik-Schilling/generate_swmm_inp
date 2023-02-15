@@ -25,6 +25,7 @@ hasProcessingProvider=yes
 changelog= 0.27 2023-02
 	- fix numpy dstack error
 	- fix import of main infiltration method
+	- add flatgeobuff to import option
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, import
