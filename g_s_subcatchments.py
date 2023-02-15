@@ -40,14 +40,6 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     """
     reads subcatchment shapefile
     """
-    # check if all columns exist
-    all_sub_cols = list(def_qgis_fields_dict['SUBCATCHMENTS'].keys())
-    sub_layer_name = 'Subcatchments Layer'
-    check_columns(
-        sub_layer_name,
-        all_sub_cols,
-        subcatchments_df.keys()
-    )
 
     def rename_for_infiltation(subc_row, main_infiltration_method):
         """
