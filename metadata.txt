@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.20
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.27
+version=0.28
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -22,13 +22,13 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.27 2023-02
+changelog= 0.28 2023-04
 	- fix numpy dstack error
 	- fix import of main infiltration method
 	- add flatgeobuff to import option
 
 # Tags are comma separated with spaces allowed
-tags=swmm, water, modelling, flow, import
+tags=swmm, water, modelling, flow, sewer, wastewater
 
 homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
