@@ -135,7 +135,7 @@ def get_storages_from_inp(st_raw_line):
 
 
 # inflows
-def get_inflows_from_table(inflows_raw, all_nodes):
+def get_inflows_from_table(inflows_raw, all_nodes, feedback):
     """
     generates a dict for direct inflow and
     dry weather inflow from tables in "inflows_raw"
@@ -179,6 +179,15 @@ def get_inflows_from_table(inflows_raw, all_nodes):
         )
         # delete inflows for nodes which do no exist
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
+        missing_nodes = list(inflow_df.loc[~inflow_df['Name'].isin(all_nodes),'Name'])
+        if len(missing_nodes) > 0:
+            feedback.pushWarning(
+                'Warning: Missing nodes for inflows: '
+                + ', '.join([str(x) for x in missing_nodes])
+                + '. Please check if the correct layers were selected.'
+                + 'The inflows will not be written into the input file '
+                + 'to avoid errors in SWMM'
+            )
         inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
         inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
         inflow_df = inflow_df.fillna('""')

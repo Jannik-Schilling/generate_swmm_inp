@@ -653,7 +653,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 from .g_s_nodes import get_inflows_from_table
                 dwf_dict, inflow_dict = get_inflows_from_table(
                     raw_data_dict['inflows'],
-                    all_nodes
+                    all_nodes,
+                    feedback
                 )
                 if len(inflow_dict) > 0:
                     inp_dict['INFLOWS'] = {'data': inflow_dict}
