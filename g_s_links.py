@@ -89,6 +89,7 @@ def get_conduits_from_shapefile(conduits_raw):
     xsections_df['Geom4'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom4'), axis=1)
     xsections_df['Barrels'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Barrels'), axis=1)
     losses_df = conduits_raw[losses_cols].copy()
+    losses_df['FlapGate'] = losses_df['FlapGate'].fillna('NO')
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
     losses_df['Kexit'] = losses_df['Kexit'].fillna('0')

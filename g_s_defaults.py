@@ -335,8 +335,22 @@ def_sections_dict = {
         'Time_Pattern3',
         'Time_Pattern4'
     ],
-    'RDII': None,
-    'HYDROGRAPHS': None,
+    'RDII': [
+        'Name',
+        'UnitHydrograph',
+        'SewerArea'
+    ],
+    'HYDROGRAPHS': [
+        'Name',
+        'RG_Month',
+        'Response',
+        'R',
+        'T',
+        'K',
+        'Dmax',
+        'Drevoc',
+        'Dinit'
+    ],
     'CURVES': ['Name', 'XVal', 'YVal'],
     'TIMESERIES': ['Name', 'Date', 'Time', 'Value', 'File_Name'],
     'PATTERNS': None,
@@ -395,6 +409,34 @@ def_tables_dict = {
                 'Time_Pattern2': 'String',
                 'Time_Pattern3': 'String',
                 'Time_Pattern4': 'String'
+            },
+            'RDII': {
+                'Name': 'String',
+                'Unit_Hydrograph': 'String',
+                'Sewer_Area': 'Double'
+            },
+            'Hydrographs': {
+                'Name': 'String',
+                'Rain_Gage': 'String',
+                'Months': 'String',
+                'Short_Term_R': 'Double',
+                'Short_Term_T': 'Double',
+                'Short_Term_K': 'Double',
+                'Short_Term_D_max': 'Double',
+                'Short_Term_D_recovery': 'Double',
+                'Short_Term_D_init': 'Double',
+                'Medium_Term_R': 'Double',
+                'Medium_Term_T': 'Double',
+                'Medium_Term_K': 'Double',
+                'Medium_Term_D_max': 'Double',
+                'Medium_Term_D_recovery': 'Double',
+                'Medium_Term_D_init': 'Double',
+                'Long_Term_R': 'Double',
+                'Long_Term_T': 'Double',
+                'Long_Term_K': 'Double',
+                'Long_Term_D_max': 'Double',
+                'Long_Term_D_recovery': 'Double',
+                'Long_Term_D_init': 'Double'
             }
         }
      },

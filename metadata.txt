@@ -24,6 +24,7 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.28 2023-04
 	- fix error in timeseries without date
+	- fix inflows when all nodes names are numbers
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, sewer, wastewater

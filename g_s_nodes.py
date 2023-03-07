@@ -38,6 +38,7 @@ from .g_s_various_functions import (
 
 # Outfalls
 def get_outfalls_from_shapefile(outfalls_raw):
+    outfalls_raw['Name'] = [str(x) for x in outfalls_raw['Name']]
     outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Curve_TS']
     outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Curve_TS']
     outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'FixedStage']
@@ -87,6 +88,7 @@ def get_storages_from_geodata(storages_raw):
         storages_cols_needed,
         storage_df.keys()
     )
+    storage_df['Name'] = [str(x) for x in storage_df['Name']]
     storage_df['X_Coord'], storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
 
     def st_type_adjustment(st_row):
@@ -179,6 +181,7 @@ def get_inflows_from_table(inflows_raw, all_nodes, feedback):
         )
         # delete inflows for nodes which do no exist
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
+        inflow_df['Name'] = [str(x) for x in inflow_df['Name']]
         missing_nodes = list(inflow_df.loc[~inflow_df['Name'].isin(all_nodes),'Name'])
         if len(missing_nodes) > 0:
             feedback.pushWarning(

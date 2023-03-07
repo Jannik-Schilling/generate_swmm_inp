@@ -560,6 +560,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 raw_data_dict['junctions_raw'].keys()
             )
             junctions_df = raw_data_dict['junctions_raw'].copy()
+            junctions_df['Name'] = [str(x) for x in junctions_df['Name']]
             junctions_df['MaxDepth'] = junctions_df['MaxDepth'].fillna(0)
             junctions_df['InitDepth'] = junctions_df['InitDepth'].fillna(0)
             junctions_df['SurDepth'] = junctions_df['SurDepth'].fillna(0)
@@ -629,6 +630,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             check_columns(dividers_layer_name,
                           dividers_cols,
                           dividers_df.keys())
+            dividers_df['Name'] = [str(x) for x in dividers_df['Name']]
             dividers_df['CutoffFlow'] = dividers_df['CutoffFlow'].fillna('')
             dividers_df['Curve'] = dividers_df['Curve'].fillna('')
             dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
