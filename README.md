@@ -82,3 +82,6 @@ R:
 
 ## Cite
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
+
+## Funding
+First versions of this plugin have been developed within the project PROSPER-RO, funded by BMBF, grant number 033L212
