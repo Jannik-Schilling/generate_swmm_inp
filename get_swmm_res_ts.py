@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from qgis.utils import iface
+from qgis.core import QgsWkbTypes
 from qgis.PyQt import (
     QtWidgets,
     uic
@@ -26,6 +27,14 @@ import matplotlib.pyplot as plt
 
 
 layer = QgsProject.instance().mapLayer('[% @layer_id %]')
+if layer.geometryType() == QgsWkbTypes.LineGeometry:
+    filter_items = 'LINK'
+elif layer.geometryType() == QgsWkbTypes.PointGeometry:
+    filter_items = 'NODE'
+elif layer.geometryType() == QgsWkbTypes.PolygonGeometry:
+    filter_items = 'SUBCATCH'
+else:
+    filter_items = 'NO_FILTER'
 layer_field_name = layer.fields().indexFromName("Name")
 swmm_obj_requested = layer.getFeature([% $id %])
 obj_name = swmm_obj_requested.attributes()[layer_field_name]
@@ -44,6 +53,7 @@ swmm_obj_types = {
     'WEIRS': 'LINK',
     'OUTLETS': 'LINK'
 }
+swmm_obj_types = {k: v for k, v in swmm_obj_types.items() if v == filter_items}
 
 result_aggregates = {
     0: 'sum',
