@@ -361,7 +361,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # inflows table
         if file_inflows != '':
             raw_data_dict['inflows'] = {}
-            for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs']:
+            for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs', 'RDII']:
                 raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(
                     file_inflows,
                     sheet=inflow_type
@@ -653,7 +653,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             if 'inflows' in raw_data_dict.keys():
                 feedback.setProgressText(self.tr('[INFLOWS] section'))
                 from .g_s_nodes import get_inflows_from_table
-                dwf_dict, inflow_dict, hydrogr_df = get_inflows_from_table(
+                dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
                     raw_data_dict['inflows'],
                     all_nodes,
                     feedback
@@ -662,8 +662,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     inp_dict['INFLOWS'] = {'data': inflow_dict}
                 if len(dwf_dict) > 0:
                     inp_dict['DWF'] = {'data': dwf_dict}
-                if len(hydrogr_df)>0:
-                    inp_dict['HYDROGRAPHS'] = {'data': hydrogr_df }
+                if len(hydrogr_df) > 0:
+                    inp_dict['HYDROGRAPHS'] = {'data': hydrogr_df}
+                if len(rdii_df) > 0:
+                    inp_dict['RDII'] = {'data': rdii_df}
         feedback.setProgress(55)
 
         # Streets and inlets

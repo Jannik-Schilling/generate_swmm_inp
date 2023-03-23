@@ -258,6 +258,7 @@ def write_inp(
         file1.write('\n')
         
     df_to_inp_section('HYDROGRAPHS')
+    df_to_inp_section('RDII')
         
         
     # curves

@@ -212,63 +212,70 @@ def get_inflows_from_table(inflows_raw, all_nodes, feedback):
     inflow_dict = {}
     dwf_dict = {}
     hydrogr_df = pd.DataFrame()
-    for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs']:
-        # check if all columns exits
+    rdii_df = pd.DataFrame()
+    for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs', 'RDII']:
         inflow_df = inflows_raw[inflow_type]
-        inflow_cols_needed = list(def_tables_dict['INFLOWS']['tables'][inflow_type].keys())
-        table_name = inflow_type + ' table'
-        check_columns(
-            table_name,
-            inflow_cols_needed,
-            inflow_df.columns
-        )
-        # delete inflows for nodes which do no exist
-        inflow_df = inflow_df[inflow_df['Name'] != ";"]
-        inflow_df['Name'] = [str(x) for x in inflow_df['Name']]
-        if inflow_type != 'Hydrographs':
-            missing_nodes = list(inflow_df.loc[~inflow_df['Name'].isin(all_nodes),'Name'])
-            if len(missing_nodes) > 0:
-                feedback.pushWarning(
-                    'Warning: Missing nodes for inflows: '
-                    + ', '.join([str(x) for x in missing_nodes])
-                    + '. Please check if the correct layers were selected.'
-                    + 'The inflows will not be written into the input file '
-                    + 'to avoid errors in SWMM'
-                )
-            inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
-            inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
-        inflow_df = inflow_df.fillna('""')
         if not inflow_df.empty:
-            # prepare a dict with node names and constituents
-            a_l = inflow_df['Name'].tolist()
-            if inflow_type in ['Direct', 'Dry_Weather']:
-                b_l = inflow_df['Constituent'].tolist()
-                inflow_df['temp'] = [str(a) + '    ' + str(b) for a, b in zip(a_l, b_l)]
-                inflow_df.set_index(keys=['temp'], inplace=True)
-                if inflow_type == 'Direct':
-                    inflow_dict = {
-                        i: compose_infl_dict(
-                            inflow_df.loc[i, :],
-                            i,
-                            inflow_type
+            # check if all columns exits
+            inflow_cols_needed = list(def_tables_dict['INFLOWS']['tables'][inflow_type].keys())
+            table_name = inflow_type + ' table'
+            check_columns(
+                table_name,
+                inflow_cols_needed,
+                inflow_df.columns
+            )
+            # delete inflows for nodes which do no exist
+            if inflow_type == 'RDII':
+                inflow_df['Name'] = inflow_df['Node']
+            inflow_df = inflow_df[inflow_df['Name'] != ";"]
+            inflow_df['Name'] = [str(x) for x in inflow_df['Name']]
+            if inflow_type != 'Hydrographs':
+                missing_nodes = list(inflow_df.loc[~inflow_df['Name'].isin(all_nodes),'Name'])
+                if len(missing_nodes) > 0:
+                    feedback.pushWarning(
+                        'Warning: Missing nodes for inflows: '
+                        + ', '.join([str(x) for x in missing_nodes])
+                        + '. Please check if the correct layers were selected.'
+                        + 'The inflows will not be written into the input file '
+                        + 'to avoid errors in SWMM'
+                    )
+                inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
+                inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
+            inflow_df = inflow_df.fillna('""')
+            if not inflow_df.empty:
+                # prepare a dict with node names and constituents
+                a_l = inflow_df['Name'].tolist()
+                if inflow_type in ['Direct', 'Dry_Weather']:
+                    b_l = inflow_df['Constituent'].tolist()
+                    inflow_df['temp'] = [str(a) + '    ' + str(b) for a, b in zip(a_l, b_l)]
+                    inflow_df.set_index(keys=['temp'], inplace=True)
+                    if inflow_type == 'Direct':
+                        inflow_dict = {
+                            i: compose_infl_dict(
+                                inflow_df.loc[i, :],
+                                i,
+                                inflow_type
+                            ) for i in inflow_df.index
+                        }
+                    else:  # Dry_Weather
+                        dwf_dict = {
+                            i: compose_infl_dict(
+                                inflow_df.loc[i, :],
+                                i,
+                                inflow_type
+                            ) for i in inflow_df.index
+                        }
+                elif inflow_type == 'Hydrographs':
+                    # to do: check if rain gage exists
+                    hydrog_list = [
+                        compose_hydrograph_df(
+                            inflow_df.loc[i, :]
                         ) for i in inflow_df.index
-                    }
-                else:  # Dry_Weather
-                    dwf_dict = {
-                        i: compose_infl_dict(
-                            inflow_df.loc[i, :],
-                            i,
-                            inflow_type
-                        ) for i in inflow_df.index
-                    }
-            else:  # hydrographs
-                # to do: check if rain gage exists
-                hydrog_list = [
-                    compose_hydrograph_df(
-                        inflow_df.loc[i, :]
-                    ) for i in inflow_df.index
-                ]
-                hydrogr_df = pd.concat(hydrog_list)
-                hydrogr_df = hydrogr_df.fillna('')
-                    
-    return dwf_dict, inflow_dict, hydrogr_df
+                    ]
+                    hydrogr_df = pd.concat(hydrog_list)
+                    hydrogr_df = hydrogr_df.fillna('')
+                else:  # rdii
+                    rdii_df = inflow_df
+                    rdii_df = rdii_df[['Node', 'UnitHydrograph', 'SewerArea']]
+                                   
+    return dwf_dict, inflow_dict, hydrogr_df, rdii_df

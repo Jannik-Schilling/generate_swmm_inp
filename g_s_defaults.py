@@ -336,7 +336,7 @@ def_sections_dict = {
         'Time_Pattern4'
     ],
     'RDII': [
-        'Name',
+        'Node',
         'UnitHydrograph',
         'SewerArea'
     ],
@@ -411,9 +411,9 @@ def_tables_dict = {
                 'Time_Pattern4': 'String'
             },
             'RDII': {
-                'Name': 'String',
-                'Unit_Hydrograph': 'String',
-                'Sewer_Area': 'Double'
+                'Node': 'String',
+                'UnitHydrograph': 'String',
+                'SewerArea': 'Double'
             },
             'Hydrographs': {
                 'Name': 'String',

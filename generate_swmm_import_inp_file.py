@@ -515,10 +515,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
             for hg_name in hg_name_list:
                 df_hydrographs = pd.concat([df_hydrographs, get_hydrogrphs(hg_name)])
             df_hydrographs = df_hydrographs.reset_index(drop=True)
+            # rdii
+        if 'RDII' in dict_all_raw_vals.keys():
+            df_rdii = build_df_for_section('RDII')
         dict_inflows = {
             'Direct': df_inflows,
             'Dry_Weather': df_dry_weather,
-            'Hydrographs': df_hydrographs
+            'Hydrographs': df_hydrographs,
+            'RDII': df_rdii
         }
         dict_res_table['INFLOWS'] = dict_inflows
 
