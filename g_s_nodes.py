@@ -137,39 +137,82 @@ def get_storages_from_inp(st_raw_line):
 
 
 # inflows
+def compose_infl_dict(inflow, i, inf_type):
+    """
+    writes an inflow dict from a pd.df for direct and dry weather inflow
+    :param pd.DataFram inflow
+    :param str i: name
+    :param str inf_type    
+    """
+    if inf_type == 'Direct':
+        i_dict = {
+            'Name': i,
+            'Constituent': inflow['Constituent'],
+            'Time_Series': inflow['Time_Series'],
+            'Type': inflow['Type'],
+            'Mfactor': inflow['Units_Factor'],
+            'Sfactor': inflow['Scale_Factor'],
+            'Baseline': inflow['Baseline'],
+            'Pattern': inflow['Baseline_Pattern']
+        }
+    if inflow_type == 'Dry_Weather':  # dry weather
+        i_dict = {
+            'Name': i,
+            'Constituent': inflow['Constituent'],
+            'Baseline': inflow['Average_Value'],
+            'Patterns': ' '.join([
+                inflow['Time_Pattern1'],
+                inflow['Time_Pattern2'],
+                inflow['Time_Pattern3'],
+                inflow['Time_Pattern4']
+            ])
+        }            
+    return i_dict
+        
+def compose_hydrograph_df(hydrog):
+        """
+        creates a pd.Dataframe for evey hydrograph with short, medium
+        and long term parameters in different rows which can directly be 
+        printed into the input file
+        :param str i: hydrograph name
+        :param pd.DataFrame hydrog
+        :returns pd.DataFrame        
+        """
+        h_name = hydrog['Name']
+        df_rg = pd.DataFrame(
+            {'Name': h_name, 'RG_Month': hydrog['Rain_Gage']},
+            index = [0]
+        )
+        for i, t in enumerate(['Short', 'Medium', 'Long']):
+            df_i = pd.DataFrame(
+                {
+                    'Name': h_name,
+                    'RG_Month': hydrog['Months'],
+                    'Response': t,
+                    'R': hydrog['R_'+t+'Term'],
+                    'T': hydrog['T_'+t+'Term'],
+                    'K': hydrog['K_'+t+'Term'],
+                    'D_max': hydrog['D_max_'+t+'Term'],
+                    'D_recovery': hydrog['D_recovery_'+t+'Term'],
+                    'D_init': hydrog['D_init_'+t+'Term']
+                },
+                index = [i+1]
+            )
+            df_rg = pd.concat([df_rg, df_i])
+        return df_rg
+
 def get_inflows_from_table(inflows_raw, all_nodes, feedback):
     """
     generates a dict for direct inflow and
     dry weather inflow from tables in "inflows_raw"
     :param dict inflows_raw
     :param list all_nodes
-    """
-    def compose_infl_dict(inflow, i, inf_type):
-        if inf_type == 'Direct':
-            i_dict = {
-                'Name': i,
-                'Constituent': inflow['Constituent'],
-                'Time_Series': inflow['Time_Series'],
-                'Type': inflow['Type'],
-                'Mfactor': inflow['Units_Factor'],
-                'Sfactor': inflow['Scale_Factor'],
-                'Baseline': inflow['Baseline'],
-                'Pattern': inflow['Baseline_Pattern']
-            }
-        else:
-            i_dict = {
-                'Name': i,
-                'Constituent': inflow['Constituent'],
-                'Baseline': inflow['Average_Value'],
-                'Patterns': ' '.join([
-                    inflow['Time_Pattern1'],
-                    inflow['Time_Pattern2'],
-                    inflow['Time_Pattern3'],
-                    inflow['Time_Pattern4']
-                ])
-            }
-        return i_dict
-    for inflow_type in ['Direct', 'Dry_Weather']:
+    """       
+    # create empty dicts / pd.DataFrame in case no flow is given
+    inflow_dict = {}
+    dwf_dict = {}
+    hydrogr_df = pd.DataFrame()
+    for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs']:
         # check if all columns exits
         inflow_df = inflows_raw[inflow_type]
         inflow_cols_needed = list(def_tables_dict['INFLOWS']['tables'][inflow_type].keys())
@@ -182,32 +225,50 @@ def get_inflows_from_table(inflows_raw, all_nodes, feedback):
         # delete inflows for nodes which do no exist
         inflow_df = inflow_df[inflow_df['Name'] != ";"]
         inflow_df['Name'] = [str(x) for x in inflow_df['Name']]
-        missing_nodes = list(inflow_df.loc[~inflow_df['Name'].isin(all_nodes),'Name'])
-        if len(missing_nodes) > 0:
-            feedback.pushWarning(
-                'Warning: Missing nodes for inflows: '
-                + ', '.join([str(x) for x in missing_nodes])
-                + '. Please check if the correct layers were selected.'
-                + 'The inflows will not be written into the input file '
-                + 'to avoid errors in SWMM'
-            )
-        inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
-        inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
+        if inflow_type != 'Hydrographs':
+            missing_nodes = list(inflow_df.loc[~inflow_df['Name'].isin(all_nodes),'Name'])
+            if len(missing_nodes) > 0:
+                feedback.pushWarning(
+                    'Warning: Missing nodes for inflows: '
+                    + ', '.join([str(x) for x in missing_nodes])
+                    + '. Please check if the correct layers were selected.'
+                    + 'The inflows will not be written into the input file '
+                    + 'to avoid errors in SWMM'
+                )
+            inflow_df = inflow_df[inflow_df['Name'].isin(all_nodes)]
+            inflow_df = inflow_df[pd.notna(inflow_df['Name'])]
         inflow_df = inflow_df.fillna('""')
-        if inflow_df.empty:
-            # if no flow of the current inflow_type and existing nodes is given, return empty dicts
-            if inflow_type == 'Direct':
-                inflow_dict = {}
-            else:
-                dwf_dict = {}
-        else:
+        if not inflow_df.empty:
             # prepare a dict with node names and constituents
             a_l = inflow_df['Name'].tolist()
-            b_l = inflow_df['Constituent'].tolist()
-            inflow_df['temp'] = [str(a) + '    ' + str(b) for a, b in zip(a_l, b_l)]
-            inflow_df.set_index(keys=['temp'], inplace=True)
-            if inflow_type == 'Direct':
-                inflow_dict = {i: compose_infl_dict(inflow_df.loc[i, :], i, inflow_type) for i in inflow_df.index}
-            else:
-                dwf_dict = {i: compose_infl_dict(inflow_df.loc[i, :], i, inflow_type) for i in inflow_df.index}
-    return dwf_dict, inflow_dict
+            if inflow_type in ['Direct', 'Dry_Weather']:
+                b_l = inflow_df['Constituent'].tolist()
+                inflow_df['temp'] = [str(a) + '    ' + str(b) for a, b in zip(a_l, b_l)]
+                inflow_df.set_index(keys=['temp'], inplace=True)
+                if inflow_type == 'Direct':
+                    inflow_dict = {
+                        i: compose_infl_dict(
+                            inflow_df.loc[i, :],
+                            i,
+                            inflow_type
+                        ) for i in inflow_df.index
+                    }
+                else:  # Dry_Weather
+                    dwf_dict = {
+                        i: compose_infl_dict(
+                            inflow_df.loc[i, :],
+                            i,
+                            inflow_type
+                        ) for i in inflow_df.index
+                    }
+            else:  # hydrographs
+                # to do: check if rain gage exists
+                hydrog_list = [
+                    compose_hydrograph_df(
+                        inflow_df.loc[i, :]
+                    ) for i in inflow_df.index
+                ]
+                hydrogr_df = pd.concat(hydrog_list)
+                hydrogr_df = hydrogr_df.fillna('')
+                    
+    return dwf_dict, inflow_dict, hydrogr_df

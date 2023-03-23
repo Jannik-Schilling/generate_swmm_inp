@@ -488,9 +488,37 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 [],
                 def_sections_dict['DWF']
             )
+        if 'HYDROGRAPHS' in dict_all_raw_vals.keys():
+            df_hydrographs_raw = build_df_for_section('HYDROGRAPHS')
+            hg_name_list = np.unique(df_hydrographs_raw['Name'])
+            def get_hydrogrphs(hg_name):
+                '''
+                creates a flat hydrograph df
+                :param str hg_name
+                '''
+                subdf = df_hydrographs_raw[df_hydrographs_raw['Name'] == hg_name]
+                hg_rg = subdf[pd.isna(subdf['Response'])]
+                hg_rg = hg_rg[['Name', 'RG_Month']].rename(columns={'RG_Month': 'Rain_Gage'})
+                for t in ['Short', 'Medium', 'Long']:
+                    hg_i = subdf[subdf['Response'] == t]
+                    if t == 'Short':
+                        hg_rg['Months'] = list(hg_i['RG_Month'])[0]
+                    hg_i = hg_i.drop(columns = ['RG_Month', 'Response'])
+                    ren_dict = {c: c+'_'+t+'Term' for c in hg_i.columns if c != 'Name'}
+                    hg_i = hg_i.rename(columns=ren_dict)
+                    hg_rg = hg_rg.join(
+                        hg_i.set_index('Name'),
+                        on='Name'
+                    )
+                return (hg_rg)
+            df_hydrographs = pd.DataFrame()
+            for hg_name in hg_name_list:
+                df_hydrographs = pd.concat([df_hydrographs, get_hydrogrphs(hg_name)])
+            df_hydrographs = df_hydrographs.reset_index(drop=True)
         dict_inflows = {
             'Direct': df_inflows,
-            'Dry_Weather': df_dry_weather
+            'Dry_Weather': df_dry_weather,
+            'Hydrographs': df_hydrographs
         }
         dict_res_table['INFLOWS'] = dict_inflows
 
