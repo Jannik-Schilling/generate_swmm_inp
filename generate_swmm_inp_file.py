@@ -665,7 +665,28 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 if len(hydrogr_df) > 0:
                     inp_dict['HYDROGRAPHS'] = {'data': hydrogr_df}
                 if len(rdii_df) > 0:
-                    inp_dict['RDII'] = {'data': rdii_df}
+                    if len (hydrogr_df) == 0:
+                        feedback.pushWarning(
+                            'Warning: No hydrographs were provided for RDII'
+                            + '. Please check if the correct file was selected '
+                            + 'and the \"Hydrographs\" table is set up correctly. '
+                            + 'The RDII section will not be written into the input file '
+                            + 'to avoid errors in SWMM.'
+                        )
+                    else:
+                        needed_U_H = list(rdii_df['UnitHydrograph'])
+                        misshing_U_H = [h for h in needed_U_H if h not in list(hydrogr_df['Name'])]
+                        if len (misshing_U_H) > 0:
+                            feedback.pushWarning(
+                                'Warning: Missing hydrographs for RDII: '
+                                + ', '.join([str(x) for x in misshing_U_H])
+                                + '. \nPlease check if the correct file was selected '
+                                + 'and the \"Hydrographs\" table is set up correctly. '
+                                + 'The RDII section will not be written into the input file '
+                                + 'to avoid errors in SWMM.'
+                            )
+                        else:
+                            inp_dict['RDII'] = {'data': rdii_df}
         feedback.setProgress(55)
 
         # Streets and inlets

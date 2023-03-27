@@ -14,6 +14,8 @@ about=This plugin provides tools to generate SWMM input files from layers in QGI
 
 	Cite as: Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262
 
+	First versions of this plugin have been developed within the project PROSPER-RO, funded by BMBF, grant number 033L212.
+
 tracker=https://github.com/Jannik-Schilling/generate_swmm_inp/issues
 repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 # End of mandatory metadata
@@ -24,7 +26,7 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.28 2023-04
 	- fix error in timeseries without date
-	- fix inflows when all nodes names are numbers
+	- add RDII and Hydrographs sections
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, sewer, wastewater
