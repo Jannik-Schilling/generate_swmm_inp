@@ -155,7 +155,7 @@ def compose_infl_dict(inflow, i, inf_type):
             'Baseline': inflow['Baseline'],
             'Pattern': inflow['Baseline_Pattern']
         }
-    if inflow_type == 'Dry_Weather':  # dry weather
+    if inf_type == 'Dry_Weather':  # dry weather
         i_dict = {
             'Name': i,
             'Constituent': inflow['Constituent'],
