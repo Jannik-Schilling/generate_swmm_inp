@@ -799,7 +799,7 @@ def_qgis_fields_dict = {
         'Geom2': 'Double',
         'Geom3': 'Double',
         'Geom4': 'Double',
-        'Barrels': 'Double',
+        'Barrels': 'Int',
         'Culvert': 'String',
         'Shp_Trnsct': 'String',
         'Kentry': 'Double',
