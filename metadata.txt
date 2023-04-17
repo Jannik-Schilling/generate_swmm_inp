@@ -27,6 +27,7 @@ hasProcessingProvider=yes
 changelog= 0.28 2023-04
 	- fix error in timeseries without date
 	- add RDII and Hydrographs sections
+	- fix for barrels export
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, sewer, wastewater
