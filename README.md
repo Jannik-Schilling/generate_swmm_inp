@@ -6,8 +6,8 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 ## Provided tools:
 1. **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
-2. **2_GenerateSwmmInpFile**: Create an input file for a SWMM simulation from your QGIS layers
-3. **3_ImportInpFile**: Import an existing SWMM model into QGIS
+2. **2_GenerateSwmmInpFile**: Select a set of layers in QGIS to create an input file for a SWMM simulation
+3. **3_ImportInpFile**: Import an existing SWMM model into QGIS (layers and tables).
 4. **4_CreateSubModel**: Create a submodel (of an existing set SWMM layers in QGIS) below or above a certain node
 
 ## Recommended Workflow
@@ -31,6 +31,8 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 - weirs
 - outlets
 - orifices
+
+
 Further data is provided in tables (which will be saved in the chosen directory) and can be edited there:
 - curves
 - inflows

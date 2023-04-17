@@ -361,7 +361,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # inflows table
         if file_inflows != '':
             raw_data_dict['inflows'] = {}
-            for inflow_type in ['Direct', 'Dry_Weather']:
+            for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs', 'RDII']:
                 raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(
                     file_inflows,
                     sheet=inflow_type
@@ -560,6 +560,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 raw_data_dict['junctions_raw'].keys()
             )
             junctions_df = raw_data_dict['junctions_raw'].copy()
+            junctions_df['Name'] = [str(x) for x in junctions_df['Name']]
             junctions_df['MaxDepth'] = junctions_df['MaxDepth'].fillna(0)
             junctions_df['InitDepth'] = junctions_df['InitDepth'].fillna(0)
             junctions_df['SurDepth'] = junctions_df['SurDepth'].fillna(0)
@@ -629,6 +630,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             check_columns(dividers_layer_name,
                           dividers_cols,
                           dividers_df.keys())
+            dividers_df['Name'] = [str(x) for x in dividers_df['Name']]
             dividers_df['CutoffFlow'] = dividers_df['CutoffFlow'].fillna('')
             dividers_df['Curve'] = dividers_df['Curve'].fillna('')
             dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
@@ -651,14 +653,40 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             if 'inflows' in raw_data_dict.keys():
                 feedback.setProgressText(self.tr('[INFLOWS] section'))
                 from .g_s_nodes import get_inflows_from_table
-                dwf_dict, inflow_dict = get_inflows_from_table(
+                dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
                     raw_data_dict['inflows'],
-                    all_nodes
+                    all_nodes,
+                    feedback
                 )
                 if len(inflow_dict) > 0:
                     inp_dict['INFLOWS'] = {'data': inflow_dict}
                 if len(dwf_dict) > 0:
                     inp_dict['DWF'] = {'data': dwf_dict}
+                if len(hydrogr_df) > 0:
+                    inp_dict['HYDROGRAPHS'] = {'data': hydrogr_df}
+                if len(rdii_df) > 0:
+                    if len (hydrogr_df) == 0:
+                        feedback.pushWarning(
+                            'Warning: No hydrographs were provided for RDII'
+                            + '. Please check if the correct file was selected '
+                            + 'and the \"Hydrographs\" table is set up correctly. '
+                            + 'The RDII section will not be written into the input file '
+                            + 'to avoid errors in SWMM.'
+                        )
+                    else:
+                        needed_U_H = list(rdii_df['UnitHydrograph'])
+                        misshing_U_H = [h for h in needed_U_H if h not in list(hydrogr_df['Name'])]
+                        if len (misshing_U_H) > 0:
+                            feedback.pushWarning(
+                                'Warning: Missing hydrographs for RDII: '
+                                + ', '.join([str(x) for x in misshing_U_H])
+                                + '. \nPlease check if the correct file was selected '
+                                + 'and the \"Hydrographs\" table is set up correctly. '
+                                + 'The RDII section will not be written into the input file '
+                                + 'to avoid errors in SWMM.'
+                            )
+                        else:
+                            inp_dict['RDII'] = {'data': rdii_df}
         feedback.setProgress(55)
 
         # Streets and inlets

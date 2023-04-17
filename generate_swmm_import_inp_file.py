@@ -193,12 +193,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 feedback.setProgressText('opening the file with encoding:  %s ' % e)
                 break
-
+        
+        # delete unused lines
         inp_text = [x for x in inp_text if x != '\n']
-        inp_text = [x for x in inp_text if x != '\s']
+        inp_text = [x for x in inp_text if x != '\r']
         inp_text = [x for x in inp_text if not x.startswith(';;')]
         inp_text = [x.replace('\n', '') for x in inp_text]
-        inp_text = [x.strip() for x in inp_text if x != '\s']
+        inp_text = [x.strip() for x in inp_text]
         section_list_brackets = ['['+k+']' for k in def_sections_dict.keys()]
         # remove section which are not available
         section_list_brackets = [sect for sect in section_list_brackets if sect in inp_text]
@@ -440,7 +441,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                                     return datetime.strptime(str(x), '%H:%M').time()
                                 except BaseException:
                                     try:
-                                        datetime.strptime(str(x), '%H').time()
+                                        return datetime.strptime(str(x), '%H').time()
                                     except BaseException:
                                         return x  # when over 48 h
                     return [time_conversion(x) for x in col]
@@ -488,9 +489,50 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 [],
                 def_sections_dict['DWF']
             )
+        if 'HYDROGRAPHS' in dict_all_raw_vals.keys():
+            df_hydrographs_raw = build_df_for_section('HYDROGRAPHS')
+            hg_name_list = np.unique(df_hydrographs_raw['Name'])
+            def get_hydrogrphs(hg_name):
+                '''
+                creates a flat hydrograph df
+                :param str hg_name
+                '''
+                subdf = df_hydrographs_raw[df_hydrographs_raw['Name'] == hg_name]
+                hg_rg = subdf[pd.isna(subdf['Response'])]
+                hg_rg = hg_rg[['Name', 'RG_Month']].rename(columns={'RG_Month': 'Rain_Gage'})
+                for t in ['Short', 'Medium', 'Long']:
+                    hg_i = subdf[subdf['Response'] == t]
+                    if t == 'Short':
+                        hg_rg['Months'] = list(hg_i['RG_Month'])[0]
+                    hg_i = hg_i.drop(columns = ['RG_Month', 'Response'])
+                    ren_dict = {c: c+'_'+t+'Term' for c in hg_i.columns if c != 'Name'}
+                    hg_i = hg_i.rename(columns=ren_dict)
+                    hg_rg = hg_rg.join(
+                        hg_i.set_index('Name'),
+                        on='Name'
+                    )
+                return (hg_rg)
+            df_hydrographs = pd.DataFrame()
+            for hg_name in hg_name_list:
+                df_hydrographs = pd.concat([df_hydrographs, get_hydrogrphs(hg_name)])
+            df_hydrographs = df_hydrographs.reset_index(drop=True)
+        else:
+            df_hydrographs = build_df_from_vals_list(
+                [],
+                list(def_tables_dict['INFLOWS']['tables']['Hydrographs'].keys())
+            )
+        if 'RDII' in dict_all_raw_vals.keys():
+            df_rdii = build_df_for_section('RDII')
+        else:
+            df_rdii = build_df_from_vals_list(
+                [],
+                def_sections_dict['RDII']
+            )
         dict_inflows = {
             'Direct': df_inflows,
-            'Dry_Weather': df_dry_weather
+            'Dry_Weather': df_dry_weather,
+            'Hydrographs': df_hydrographs,
+            'RDII': df_rdii
         }
         dict_res_table['INFLOWS'] = dict_inflows
 

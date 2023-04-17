@@ -335,8 +335,22 @@ def_sections_dict = {
         'Time_Pattern3',
         'Time_Pattern4'
     ],
-    'RDII': None,
-    'HYDROGRAPHS': None,
+    'RDII': [
+        'Node',
+        'UnitHydrograph',
+        'SewerArea'
+    ],
+    'HYDROGRAPHS': [
+        'Name',
+        'RG_Month',
+        'Response',
+        'R',
+        'T',
+        'K',
+        'D_max',
+        'D_recovery',
+        'D_init'
+    ],
     'CURVES': ['Name', 'XVal', 'YVal'],
     'TIMESERIES': ['Name', 'Date', 'Time', 'Value', 'File_Name'],
     'PATTERNS': None,
@@ -395,6 +409,34 @@ def_tables_dict = {
                 'Time_Pattern2': 'String',
                 'Time_Pattern3': 'String',
                 'Time_Pattern4': 'String'
+            },
+            'RDII': {
+                'Node': 'String',
+                'UnitHydrograph': 'String',
+                'SewerArea': 'Double'
+            },
+            'Hydrographs': {
+                'Name': 'String',
+                'Rain_Gage': 'String',
+                'Months': 'String',
+                'R_ShortTerm': 'Double',
+                'T_ShortTerm': 'Double',
+                'K_ShortTerm': 'Double',
+                'D_max_ShortTerm': 'Double',
+                'D_recovery_ShortTerm': 'Double',
+                'D_init_ShortTerm': 'Double',
+                'R_MediumTerm': 'Double',
+                'T_MediumTerm': 'Double',
+                'K_MediumTerm': 'Double',
+                'D_max_MediumTerm': 'Double',
+                'D_recovery_MediumTerm': 'Double',
+                'D_init_MediumTerm': 'Double',
+                'R_LongTerm': 'Double',
+                'T_LongTerm': 'Double',
+                'K_LongTerm': 'Double',
+                'D_max_LongTerm': 'Double',
+                'D_recovery_LongTerm': 'Double',
+                'D_init_LongTerm': 'Double'
             }
         }
      },
@@ -757,7 +799,7 @@ def_qgis_fields_dict = {
         'Geom2': 'Double',
         'Geom3': 'Double',
         'Geom4': 'Double',
-        'Barrels': 'Double',
+        'Barrels': 'Int',
         'Culvert': 'String',
         'Shp_Trnsct': 'String',
         'Kentry': 'Double',

@@ -53,6 +53,7 @@ def get_conduits_from_shapefile(conduits_raw):
                   qgis_conduits_cols,
                   conduits_raw.keys())
     conduits_df = conduits_raw[conduits_cols].copy()
+    conduits_df['Name'] = [str(x) for x in conduits_df['Name']]
     # Asteriscs indicate that InOffset or OutOffset is the same as node elevation:
     conduits_df['InOffset'] = conduits_df['InOffset'].fillna('*')
     conduits_df['OutOffset'] = conduits_df['OutOffset'].fillna('*')
@@ -75,7 +76,7 @@ def get_conduits_from_shapefile(conduits_raw):
                 if pd.isna(xs_row[col]):
                     return '1'
                 else:
-                    return xs_row[col]
+                    return int(xs_row[col])
         else:
             if xs_row['Shape'] in ['IRREGULAR', 'STREET', 'CUSTOM']:
                 return ''
@@ -89,6 +90,7 @@ def get_conduits_from_shapefile(conduits_raw):
     xsections_df['Geom4'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom4'), axis=1)
     xsections_df['Barrels'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Barrels'), axis=1)
     losses_df = conduits_raw[losses_cols].copy()
+    losses_df['FlapGate'] = losses_df['FlapGate'].fillna('NO')
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
     losses_df['Kexit'] = losses_df['Kexit'].fillna('0')
@@ -176,6 +178,7 @@ def get_pumps_from_shapefile(pumps_raw):
         pumps_raw.keys()
     )
     pumps_df = pumps_raw[pumps_cols].copy()
+    pumps_df['Name'] = [str(x) for x in pumps_df['Name']]
     pumps_df['PumpCurve'] = pumps_df['PumpCurve'].fillna('*')
     pumps_df['Status'] = pumps_df['Status'].fillna('ON')
     pumps_df['Startup'] = pumps_df['Startup'].fillna('0')
@@ -207,6 +210,7 @@ def get_weirs_from_shapefile(weirs_raw):
         weirs_raw.columns
     )
     weirs_df = weirs_raw.copy()
+    weirs_df['Name'] = [str(x) for x in weirs_df['Name']]
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
     weirs_df['RoadWidth'] = weirs_df['RoadWidth'].fillna('*')
     weirs_df['RoadSurf'] = weirs_df['RoadSurf'].fillna('*')
@@ -255,6 +259,7 @@ def get_orifices_from_shapefile(orifices_raw):
     )
     orifices_inp_cols = def_sections_dict['ORIFICES']
     orifices_df = orifices_raw.copy()
+    orifices_df['Name'] = [str(x) for x in orifices_df['Name']]
     orifices_df['InOffset'] = orifices_df['InOffset'].fillna('*')
     orifices_df['FlapGate'] = orifices_df['FlapGate'].fillna('NO')
     orifices_df['CloseTime'] = orifices_df['CloseTime'].fillna('0')
@@ -292,6 +297,7 @@ def get_outlets_from_shapefile(outlets_raw):
     check_columns(outlets_layer_name,
                   outlets_cols,
                   outlets_raw.keys())
+    outlets_raw['Name'] = [str(x) for x in outlets_raw['Name']]
     outlets_raw['Qcoeff'] = outlets_raw['Qcoeff'].fillna(1)
     outlets_raw['CurveName'] = outlets_raw['CurveName'].fillna('*')
     outlets_raw['FlapGate'] = outlets_raw['FlapGate'].fillna('NO')

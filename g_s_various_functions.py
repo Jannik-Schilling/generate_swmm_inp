@@ -223,7 +223,6 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     :param QgsProcessingFeedback feedback
     """
     ts_dict = dict()
-    rg_ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
     if 'File_Name' not in ts_raw.columns:
         feedback.setProgressText('No external file is used in time series')
@@ -247,11 +246,17 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 ts_df['Time'] = ts_df['File_Name']
                 ts_df['Value'] = ''
             else:
-                ts_df['Date'] = adjust_datetime(
-                    ts_df['Date'],
-                    ['%Y-%m-%d', '%d/%m/%Y', '%d.%m.%Y'],
-                    '%m/%d/%Y'
-                )
+                if sum(pd.isna(ts_df['Date'])) > 0:
+                    if not all(pd.isna(ts_df['Date'])):
+                        feedback.pushWarning(
+                                'Warning: At least one date in the timeseries file is missing. Date will be set to start date')
+                    ts_df['Date'] = ''
+                else: 
+                    ts_df['Date'] = adjust_datetime(
+                        ts_df['Date'],
+                        ['%Y-%m-%d', '%d/%m/%Y', '%d.%m.%Y'],
+                        '%m/%d/%Y'
+                    )
                 ts_df['Time'] = adjust_datetime(
                     ts_df['Time'],
                     ['%H:%M:%S', '%H:%M', '%H'],

@@ -78,7 +78,7 @@ def write_inp(
                         columns=['Name']
                     )
                     annotations_df['Name'] = [';'+str(i) for i in annotations_df['Name']]
-                    # prepare indeces for insertion
+                    # prepare indices for insertion
                     replace_index = [k-0.5 for k in print_df.index if print_df.loc[k, 'Name'] in annotations_df.index]
                     annotations_df.index = replace_index
                     missing_cols = print_df.columns.drop('Name')
@@ -256,7 +256,11 @@ def write_inp(
             )
         ))
         file1.write('\n')
-
+        
+    df_to_inp_section('HYDROGRAPHS')
+    df_to_inp_section('RDII')
+        
+        
     # curves
     if 'CURVES' in inp_dict.keys():
         feedback.setProgressText('writing [CURVES]...')
