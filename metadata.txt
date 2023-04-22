@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.20
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.28
+version=0.28.1
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -24,7 +24,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.28 2023-04
+changelog= 0.28.1 2023-04-22
+    - fix documentation error
+    0.28 2023-04
 	- fix error in timeseries without date
 	- add RDII and Hydrographs sections
 	- fix for barrels export
