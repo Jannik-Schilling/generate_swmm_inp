@@ -200,31 +200,27 @@ class ImportInpFile (QgsProcessingAlgorithm):
         inp_text = [x for x in inp_text if not x.startswith(';;')]
         inp_text = [x.replace('\n', '') for x in inp_text]
         inp_text = [x.strip() for x in inp_text]
-        section_list_brackets = ['['+k+']' for k in def_sections_dict.keys()]
-        # remove section which are not available
-        section_list_brackets = [sect for sect in section_list_brackets if sect in inp_text]
-        pos_start_list = [inp_text.index(sect) for sect in section_list_brackets]
 
-        # remove brackets
-        section_list = [x.replace('[', '') for x in section_list_brackets]
-        section_list = [x.replace(']', '') for x in section_list]
-
-        # sort section_list according to occurance of sections in inp_text
-        section_list = [section_list[i] for i in np.argsort(pos_start_list).tolist()]
-
-        # sort startpoints of sections in inp_text
-        pos_start_list = sorted(pos_start_list)
-
-        # endpoints of sections in inp_text
+        # SWMM sections in the text file
+        inp_text_sections = [i for i in inp_text if i.startswith('[') and i.endswith(']')]
+        pos_start_list = [inp_text.index(sect) for sect in inp_text_sections]
         pos_end_list = pos_start_list[1:]+[len(inp_text)]
-
+        
         # make a dict of sections to extract
         dict_search = {
-            section_list[i]: [
+            s[1:-1].upper(): [
                 pos_start_list[i],
                 pos_end_list[i]
-            ] for i in range(len(section_list))
+            ] for i, s in enumerate(inp_text_sections) if s[1:-1].upper() in def_sections_dict.keys()
         }
+        # sections which are not available
+        unknown_sections = [s for s in inp_text_sections if not s[1:-1].upper() in def_sections_dict.keys()]
+        if len(unknown_sections) > 0:
+            feedback.pushWarning(
+                            'Warning: unknown sections in input file: '
+                            + (' ,').join(unknown_sections)
+                            + 'These sections will be ignored'
+                        )
 
         # several functions to convert the lines of the input file
         def concat_quoted_vals(text_line):
@@ -265,8 +261,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
             :return: list
             """
             section_text = inp_text[text_limits[0]+1:text_limits[1]]
-            # delete headers:
-            section_text = [x for x in section_text if not x.startswith(';;')]
             # find descriptions
             section_len = len(section_text)
             annotations_list = [i for i, x in enumerate(section_text) if x.startswith(';')]
@@ -288,7 +282,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             section_vals_clean = [concat_quoted_vals(x) for x in section_vals]
             inp_extracted = {
                 'data': section_vals_clean,
-                'annotations': annot_dict
+                'annotations': annot_dict,
+                'n_objects': len(section_vals_clean)
             }
             return inp_extracted
 
@@ -1318,10 +1313,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 )
 
         # POLYGONS
-        if 'Polygons' in dict_all_raw_vals.keys():
-            feedback.setProgressText(self.tr('extracting poligons ...'))
+        if 'POLYGONS' in dict_all_raw_vals.keys():
+            feedback.setProgressText(self.tr('extracting polygons ...'))
             feedback.setProgress(88)
-            all_polygons = build_df_for_section('Polygons')
+            all_polygons = build_df_for_section('POLYGONS')
             all_polygons = all_polygons.applymap(replace_nan_null)
 
             def get_polygon_from_verts(polyg_name):

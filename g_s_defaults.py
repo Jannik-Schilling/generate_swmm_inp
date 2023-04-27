@@ -356,7 +356,7 @@ def_sections_dict = {
     'PATTERNS': None,
     'COORDINATES': ['Name', 'X_Coord', 'Y_Coord'],
     'VERTICES': ['Name', 'X_Coord', 'Y_Coord'],
-    'Polygons': ['Name', 'X_Coord', 'Y_Coord'],
+    'POLYGONS': ['Name', 'X_Coord', 'Y_Coord'],
     'SYMBOLS': ['Name', 'X_Coord', 'Y_Coord'],
     'LABELS': None,
     'BACKDROP': None,
