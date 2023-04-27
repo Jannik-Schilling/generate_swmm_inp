@@ -583,6 +583,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     """
                     pattern_adjusted = [[pattern_row[0], i] for i in pattern_row[1:] if pd.notna(i)]
                     return (pd.DataFrame(pattern_adjusted, columns=['Name', 'Factor']))
+
                 all_patterns = pd.concat([adjust_patterns_df(all_patterns.loc[i, :]) for i in all_patterns.index])
                 all_patterns = all_patterns.join(
                     occuring_patterns_types,
@@ -769,10 +770,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # POINTS
         # ------
-        coords = build_df_for_section('COORDINATES')
         from .g_s_various_functions import get_point_from_x_y
-        all_geoms = [get_point_from_x_y(coords.loc[i, :]) for i in coords.index]  # point geometries
-        all_geoms = pd.DataFrame(all_geoms, columns=['Name', 'geometry']).set_index('Name')
+        if 'COORDINATES' in dict_all_raw_vals.keys():
+            coords = build_df_for_section('COORDINATES')
+            all_geoms = [get_point_from_x_y(coords.loc[i, :]) for i in coords.index]  # point geometries
+            all_geoms = pd.DataFrame(all_geoms, columns=['Name', 'geometry']).set_index('Name')
+        else:
+            all_geoms = pd.DataFrame(columns = ['Name', 'geometry']).set_index('Name')
 
         # raingages section
         if 'RAINGAGES' in dict_all_raw_vals.keys():
@@ -799,19 +803,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if len(rain_gages_df) > 0:
                 rg_annots = dict_all_raw_vals['RAINGAGES']['annotations']
                 rain_gages_df[annotation_field_name] = rain_gages_df['Name'].map(rg_annots)
-                rain_gages_df = rain_gages_df.applymap(replace_nan_null)
                 rain_gages_df = rain_gages_df.join(rg_geoms, on='Name')
-                # fill if SYMBOLS section is missing or any raingage has no symbol cooordinates
-                if any(pd.isna(rain_gages_df['geometry'])):
-                    feedback.pushWarning(
-                        'Warning: symbol coordinates are missing for'
-                        + ' at least one rain gage in the input file. '
-                        + 'The geometry was set to \'Point(0,0)\' '
-                        + 'in this case'  
-                    )
-                    rain_gages_df['geometry'] = rain_gages_df['geometry'].fillna(
-                        def_rg_geom
-                    )
+                rain_gages_df = rain_gages_df.applymap(replace_nan_null)
             if len(rain_gages_df) > 0 or create_empty:
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
@@ -823,6 +816,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -854,6 +848,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -895,6 +890,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -931,6 +927,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -967,6 +964,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -980,7 +978,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # -----
         feedback.setProgressText(self.tr('extracting vertices ...'))
         feedback.setProgress(55)
-        all_vertices = build_df_for_section('VERTICES')
+        if 'VERTICES' in dict_all_raw_vals.keys():
+            all_vertices = build_df_for_section('VERTICES')
+        else:
+            all_vertices = pd.DataFrame(columns=['Name', 'X_Coord', 'Y_Coord'])
 
         def get_line_geometry(section_df):
             """
@@ -999,13 +1000,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     l_verts_points = []
                 # From all_geoms
                 from_node = section_df.loc[section_df['Name'] == line_name, 'FromNode']
-                from_geom = all_geoms.loc[from_node, 'geometry'].values[0]
-                from_point = from_geom.asPoint()
                 to_node = section_df.loc[section_df['Name'] == line_name, 'ToNode']
-                to_geom = all_geoms.loc[to_node, 'geometry'].values[0]
-                to_point = to_geom.asPoint()
-                l_all_verts = [from_point]+l_verts_points+[to_point]
-                line_geom = QgsGeometry.fromPolylineXY(l_all_verts)
+                if (from_node.values[0] not in all_geoms.index) or (to_node.values[0] not in all_geoms.index):
+                    line_geom = NULL
+                else:
+                    from_geom = all_geoms.loc[from_node, 'geometry'].values[0]
+                    from_point = from_geom.asPoint()
+                    to_geom = all_geoms.loc[to_node, 'geometry'].values[0]
+                    to_point = to_geom.asPoint()
+                    l_all_verts = [from_point]+l_verts_points+[to_point]
+                    line_geom = QgsGeometry.fromPolylineXY(l_all_verts)
                 return [line_name, line_geom]
             lines_created = [get_line_from_points(x) for x in section_df['Name']]
             lines_created = pd.DataFrame(
@@ -1026,6 +1030,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
             all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2']
             all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
             all_xsections = all_xsections.applymap(replace_nan_null)
+        else: 
+            all_xsections = pd.DataFrame(
+                columns = [
+                    'Name',
+                    'Shape',
+                    'Geom1',
+                    'Geom2',
+                    'Geom3',
+                    'Geom4',
+                    'Barrels',
+                    'Culvert'
+                ]
+            )
 
         # conduits section
         if 'CONDUITS' in dict_all_raw_vals.keys():
@@ -1060,6 +1077,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -1183,6 +1201,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -1213,6 +1232,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -1263,6 +1283,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -1303,6 +1324,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )
@@ -1318,25 +1340,30 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(88)
             all_polygons = build_df_for_section('POLYGONS')
             all_polygons = all_polygons.applymap(replace_nan_null)
+        else:
+            # empty DataFrame
+            all_polygons = pd.DataFrame(columns=['Name', 'X_Coord', 'Y_Coord'])
 
-            def get_polygon_from_verts(polyg_name):
-                """
-                creates polygon geometries from vertices
-                :param str polyg_name
-                :returns: list
-                """
-                verts = all_polygons.copy()[all_polygons['Name'] == polyg_name]
-                verts = verts.reset_index(drop=True)
-                if len(verts) < 3:  # only 1 or 2 vertices
-                    # set geometry to buffer around first vertice
-                    verts_points = [get_point_from_x_y(verts.loc[i, :])[1] for i in verts.index]
-                    verts_points = [x.asPoint() for x in verts_points]
-                    polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
-                else:
-                    polyg_geom = QgsGeometry.fromPolygonXY(
-                        [[QgsPointXY(float(x), float(y)) for x,y in zip(verts['X_Coord'],verts['Y_Coord'])]] 
-                    )
-                return polyg_geom
+        def get_polygon_from_verts(polyg_name):
+            """
+            creates polygon geometries from vertices
+            :param str polyg_name
+            :returns: list
+            """
+            verts = all_polygons.copy()[all_polygons['Name'] == polyg_name]
+            verts = verts.reset_index(drop=True)
+            if len(verts) == 0: # no geometry given
+                polyg_geom = NULL
+            elif len(verts) < 3:  # only 1 or 2 vertices
+                # set geometry to buffer around first vertice
+                verts_points = [get_point_from_x_y(verts.loc[i, :])[1] for i in verts.index]
+                verts_points = [x.asPoint() for x in verts_points]
+                polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
+            else:
+                polyg_geom = QgsGeometry.fromPolygonXY(
+                    [[QgsPointXY(float(x), float(y)) for x,y in zip(verts['X_Coord'],verts['Y_Coord'])]] 
+                )
+            return polyg_geom
 
 
         # subcatchments section
@@ -1388,6 +1415,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     crs_result,
                     folder_save,
                     geodata_driver_num,
+                    feedback,
                     def_annotation_field,
                     create_empty
                 )

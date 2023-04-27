@@ -35,6 +35,7 @@ from qgis.core import (
     QgsFeature,
     QgsField,
     QgsFields,
+    QgsGeometry,
     QgsProcessingException,
     QgsProject,
     QgsVectorFileWriter,
@@ -58,17 +59,8 @@ def replace_null_nan(attr_value):
     else:
         return attr_value
 
-
 # read functions
 # layers with geometry
-def replace_null_nan(attr_value):
-    """replaces NULL with np.nan"""
-    if attr_value == NULL:
-        return np.nan
-    else:
-        return attr_value
-
-
 def read_layers_direct(
     raw_layers_dict,
     select_cols=[],
@@ -196,8 +188,15 @@ def create_feature_from_df(df, pr, geom_type):
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
-        #f.setGeometry(df['geometry'])
-        f.setGeometry(df['geometry'])
+        if df['geometry'] is NULL:
+            if str(geom_type).startswith('Polygon'):
+                f.setGeometry(QgsGeometry.fromWkt('Polygon()'))
+            if str(geom_type).startswith('LineString'):
+                f.setGeometry(QgsGeometry.fromWkt('LineString()'))
+            if str(geom_type).startswith('Point'):
+                f.setGeometry(QgsGeometry.fromWkt('Point()'))
+        else:
+            f.setGeometry(df['geometry'])
         f.setAttributes(df.tolist()[:-1])
     else:
         f.setAttributes(df.tolist())
@@ -211,6 +210,7 @@ def create_layer_from_table(
     crs_result,
     folder_save,
     geodata_driver_num,
+    feedback,
     custom_fields=None,
     create_empty=False
 ):
@@ -222,7 +222,9 @@ def create_layer_from_table(
     :param str crs_result: epsg code of the desired CRS
     :param str folder_save
     :param int geodata_driver_num: key of driver in def_ogr_driver_dict
+    :param QgsProcessingFeedback feedback
     :param dict costum fields: additional fields
+    :param Bool feedback
     """
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
@@ -251,6 +253,12 @@ def create_layer_from_table(
         data_df_column_order = list(layer_fields.keys())
         if geom_type != 'NoGeometry':
             data_df_column_order = data_df_column_order+['geometry']
+            if any ([g == NULL for g in data_df['geometry']]):
+                feedback.pushWarning(
+                            'Warning: There are missing geometries in layer \"'
+                            + str(layer_name)
+                            + '\".'
+                        )
         data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
     vector_layer.updateExtents()
