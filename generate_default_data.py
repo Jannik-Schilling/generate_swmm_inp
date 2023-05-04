@@ -85,7 +85,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             os.makedirs(data_save_folder)
             
         try:
-            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_28.pdf')
+            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_29.pdf')
             shutil.copy(doc_file, data_save_folder)
             feedback.setProgressText(self.tr('documentation file saved to folder '+data_save_folder))
             feedback.setProgress(1)

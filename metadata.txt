@@ -26,6 +26,7 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.29 2023-05
     - fix case sensitivity for section names
+    - fix import when geometries are missing
 
 # Tags are comma separated with spaces allowed
 tags=swmm, water, modelling, flow, sewer, wastewater
