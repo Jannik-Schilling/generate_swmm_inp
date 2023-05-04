@@ -4,11 +4,18 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 ## Documentation
 [Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_29.pdf) to the documentation file
 
-## Provided tools:
+## Provided features
+### Tools (available in the processing toolbox)
 1. **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
 2. **2_GenerateSwmmInpFile**: Select a set of layers in QGIS to create an input file for a SWMM simulation
 3. **3_ImportInpFile**: Import an existing SWMM model into QGIS (layers and tables).
 4. **4_CreateSubModel**: Create a submodel (of an existing set SWMM layers in QGIS) below or above a certain node
+
+### Default data sets 
+Three input files can be imported into QGIS with the first tool
+
+### Custom feature forms
+When SWMM input files are imported into QGIS feature forms for all new layers are automatically added.
 
 ## Recommended Workflow
 ### 0 Install 
