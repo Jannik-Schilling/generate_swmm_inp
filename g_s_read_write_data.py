@@ -47,9 +47,11 @@ from .g_s_defaults import (
     def_ogr_driver_dict,
     def_sections_geoms_dict,
     def_tables_dict,
-    def_qgis_fields_dict
+    def_qgis_fields_dict,
+    def_point_geom,
+    def_line_geom,
+    def_ploygon_geom
 )
-
 
 # helper functions
 def replace_null_nan(attr_value):
@@ -177,7 +179,6 @@ def read_data_from_table_direct(file, sheet=0):
         data_df = data_df.drop(columns=['fid'])
     return data_df
 
-
 # write functions and helpers
 def create_feature_from_df(df, pr, geom_type):
     """
@@ -190,11 +191,11 @@ def create_feature_from_df(df, pr, geom_type):
     if geom_type != 'NoGeometry':
         if df['geometry'] is NULL:
             if str(geom_type).startswith('Polygon'):
-                f.setGeometry(QgsGeometry.fromWkt('Polygon()'))
+                f.setGeometry(def_ploygon_geom)
             if str(geom_type).startswith('LineString'):
-                f.setGeometry(QgsGeometry.fromWkt('LineString()'))
+                f.setGeometry(def_line_geom)
             if str(geom_type).startswith('Point'):
-                f.setGeometry(QgsGeometry.fromWkt('Point()'))
+                f.setGeometry(def_point_geom)
         else:
             f.setGeometry(df['geometry'])
         f.setAttributes(df.tolist()[:-1])
@@ -254,10 +255,13 @@ def create_layer_from_table(
         if geom_type != 'NoGeometry':
             data_df_column_order = data_df_column_order+['geometry']
             if any ([g == NULL for g in data_df['geometry']]):
+                no_geom_features = list(data_df.loc[data_df['geometry'] == NULL, 'Name'])
                 feedback.pushWarning(
-                            'Warning: There are missing geometries in layer \"'
-                            + str(layer_name)
-                            + '\".'
+                            'Warning: in section \"'
+                            + section_name
+                            + '\" one (or more) geometries are missing in the input file. Affected feature(s): '
+                            + ', '.join([str(x) for x in no_geom_features])
+                            + '.\nDefault geometries will be used instead. The features can be found around (0,0)'
                         )
         data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)

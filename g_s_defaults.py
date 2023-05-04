@@ -683,10 +683,16 @@ def_stylefile_dict = {
     'st_files_path': os.path.join('test_data', 'swmm_data')
 }
 
-# default raingage coord
-def_rg_geom = QgsGeometry.fromWkt(
-        'POINT(' + str(0) + ' '+str(0) + ')'
-    )
+# default geometries when no geometry is given in the input file
+def_point_geom = QgsGeometry.fromWkt(
+    'POINT(' + str(0) + ' '+str(0) + ')'
+)
+def_line_geom = QgsGeometry.fromWkt(
+    'LINESTRING (0 0, 0 1)'
+)
+def_ploygon_geom = def_point_geom.buffer(5, 5)
+
+
 
 # all possible fields in qgis files for the creation of layers
 def_annotation_field = {'Annotation': 'String'}

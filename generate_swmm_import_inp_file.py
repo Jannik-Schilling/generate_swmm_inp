@@ -57,7 +57,6 @@ from .g_s_defaults import (
     def_annotation_field,
     def_ogr_driver_dict,
     def_ogr_driver_names,
-    def_rg_geom,
     def_sections_dict,
     def_stylefile_dict,
     def_tables_dict,
