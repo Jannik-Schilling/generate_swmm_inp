@@ -576,7 +576,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     layer_name,
                     crs_result,
                     folder_save,
-                    1
+                    1,
+                    feedback
                 )
                 add_layer_on_completion3(
                     folder_save,

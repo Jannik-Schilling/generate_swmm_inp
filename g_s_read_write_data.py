@@ -35,6 +35,7 @@ from qgis.core import (
     QgsFeature,
     QgsField,
     QgsFields,
+    QgsGeometry,
     QgsProcessingException,
     QgsProject,
     QgsVectorFileWriter,
@@ -46,9 +47,11 @@ from .g_s_defaults import (
     def_ogr_driver_dict,
     def_sections_geoms_dict,
     def_tables_dict,
-    def_qgis_fields_dict
+    def_qgis_fields_dict,
+    def_point_geom,
+    def_line_geom,
+    def_ploygon_geom
 )
-
 
 # helper functions
 def replace_null_nan(attr_value):
@@ -58,17 +61,8 @@ def replace_null_nan(attr_value):
     else:
         return attr_value
 
-
 # read functions
 # layers with geometry
-def replace_null_nan(attr_value):
-    """replaces NULL with np.nan"""
-    if attr_value == NULL:
-        return np.nan
-    else:
-        return attr_value
-
-
 def read_layers_direct(
     raw_layers_dict,
     select_cols=[],
@@ -185,7 +179,6 @@ def read_data_from_table_direct(file, sheet=0):
         data_df = data_df.drop(columns=['fid'])
     return data_df
 
-
 # write functions and helpers
 def create_feature_from_df(df, pr, geom_type):
     """
@@ -196,8 +189,15 @@ def create_feature_from_df(df, pr, geom_type):
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
-        #f.setGeometry(df['geometry'])
-        f.setGeometry(df['geometry'])
+        if df['geometry'] is NULL:
+            if str(geom_type).startswith('Polygon'):
+                f.setGeometry(def_ploygon_geom)
+            if str(geom_type).startswith('LineString'):
+                f.setGeometry(def_line_geom)
+            if str(geom_type).startswith('Point'):
+                f.setGeometry(def_point_geom)
+        else:
+            f.setGeometry(df['geometry'])
         f.setAttributes(df.tolist()[:-1])
     else:
         f.setAttributes(df.tolist())
@@ -211,6 +211,7 @@ def create_layer_from_table(
     crs_result,
     folder_save,
     geodata_driver_num,
+    feedback,
     custom_fields=None,
     create_empty=False
 ):
@@ -222,7 +223,9 @@ def create_layer_from_table(
     :param str crs_result: epsg code of the desired CRS
     :param str folder_save
     :param int geodata_driver_num: key of driver in def_ogr_driver_dict
+    :param QgsProcessingFeedback feedback
     :param dict costum fields: additional fields
+    :param Bool feedback
     """
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
@@ -251,6 +254,15 @@ def create_layer_from_table(
         data_df_column_order = list(layer_fields.keys())
         if geom_type != 'NoGeometry':
             data_df_column_order = data_df_column_order+['geometry']
+            if any ([g == NULL for g in data_df['geometry']]):
+                no_geom_features = list(data_df.loc[data_df['geometry'] == NULL, 'Name'])
+                feedback.pushWarning(
+                            'Warning: in section \"'
+                            + section_name
+                            + '\" one (or more) geometries are missing in the input file. Affected feature(s): '
+                            + ', '.join([str(x) for x in no_geom_features])
+                            + '.\nDefault geometries will be used instead. The features can be found around (0,0)'
+                        )
         data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
     vector_layer.updateExtents()
