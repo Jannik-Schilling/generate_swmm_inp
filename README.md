@@ -14,7 +14,7 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 <img src="/figures/import.png" alt= “import” width="30%">
 
-4. **4_CreateSubModel**: Create a submodel (of an existing set SWMM layers in QGIS) below or above a certain node
+4. **4_CreateSubModel**: Create a submodel (of an existing set of SWMM layers in QGIS) below or above a certain node
 
 ## Workflow
 ### 0 Install 
