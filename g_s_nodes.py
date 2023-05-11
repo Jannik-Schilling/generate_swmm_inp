@@ -26,6 +26,9 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 
 import numpy as np
 import pandas as pd
+from qgis.core import (
+    QgsProcessingException
+)
 from .g_s_defaults import (
     def_qgis_fields_dict,
     def_tables_dict
@@ -79,6 +82,17 @@ def get_storages_from_geodata(storages_raw):
                   ['Type'],
                   storage_df.keys())
     occuring_storage_types = list(set(storages_raw['Type']))
+    unknown_storage_types = [
+        str(x) for x in occuring_storage_types if not x in st_types_def.keys()
+    ]
+    if len(unknown_storage_types) > 0:
+        raise QgsProcessingException(
+            'Unknown storage type(s) (-> field (\"Type\"): '
+            + ', '.join(unknown_storage_types)
+            + '. Please check if the correct file/layer was selected. '
+            + '\"Type\" must be one of '
+            + ', '.join(st_types_def.keys())
+        )
     st_types_needed = list(set([col for s_t in occuring_storage_types for col in st_types_def[s_t]]))
     st_types_not_needed = [col for col in all_st_type_cols if col not in st_types_needed]
     storages_cols = list(def_qgis_fields_dict['STORAGE'].keys())

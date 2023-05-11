@@ -83,7 +83,9 @@ def write_inp(
                     annotations_df.index = replace_index
                     missing_cols = print_df.columns.drop('Name')
                     annotations_df[missing_cols] = ''
-                    print_df = print_df.append(annotations_df)
+                    print_df = pd.concat(
+                        [print_df, annotations_df]
+                    )
                     print_df = print_df.sort_index(ascending=True)
             if only_cols is not None:
                 print_df = print_df[only_cols]
@@ -353,10 +355,10 @@ def write_inp(
         file1.write('\n')
 
     # subcatchment polygons
-    if 'Polygons' in inp_dict.keys():
-        feedback.setProgressText('writing [Polygons]...')
-        polygons_dict = inp_dict['Polygons']['data']
-        file1.write('[Polygons]\n')
+    if 'POLYGONS' in inp_dict.keys():
+        feedback.setProgressText('writing [POLYGONS]...')
+        polygons_dict = inp_dict['POLYGONS']['data']
+        file1.write('[POLYGONS]\n')
         for pol_key in polygons_dict.keys():
             pol_df = polygons_dict[pol_key].copy()
             pol_df['subcatch']=pol_key

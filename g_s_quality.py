@@ -91,13 +91,16 @@ def get_quality_params_from_table(quality_raw_dict, subcatchments_df=None):
                 'BuildupExponent_SatConst',
                 'BuildupPerUnit'
             ]]
-            buildup_df = buildup_df.append(
-                fill_landuse_params(
+            buildup_df = pd.concat(
+                [
                     buildup_df,
-                    pollutant_names,
-                    landuses_names,
-                    'b'
-                )
+                    fill_landuse_params(
+                        buildup_df,
+                        pollutant_names,
+                        landuses_names,
+                        'b'
+                    )
+                ]
             )
             washoff_df = q_df_raw[[
                 'Name',
@@ -108,13 +111,16 @@ def get_quality_params_from_table(quality_raw_dict, subcatchments_df=None):
                 'WashoffCleaninfEfficiency',
                 'WashoffBmpEfficiency'
             ]]
-            washoff_df = washoff_df.append(
-                fill_landuse_params(
+            washoff_df = pd.concat(
+                [
                     washoff_df,
-                    pollutant_names,
-                    landuses_names,
-                    'w'
-                )
+                    fill_landuse_params(
+                        washoff_df,
+                        pollutant_names,
+                        landuses_names,
+                        'w'
+                    )
+                ]
             )
         if q_p == 'COVERAGES':
             coverages_df = q_df_raw[q_df_raw['Subcatchment'] != ';']

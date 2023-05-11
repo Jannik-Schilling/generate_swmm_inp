@@ -286,7 +286,7 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         pass
     else:
         err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
-        err_message = err_message+'. Plaese add columns or check if the correct file was selected. '
+        err_message = err_message+'. Please add columns or check if the correct file/layer was selected. '
         err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)
 
