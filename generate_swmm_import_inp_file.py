@@ -751,33 +751,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 return data
 
-        # def add_layer_on_completion(folder_save, layer_name, style_file):
-        #     """
-        #     adds the current layer on completen to canvas
-        #     :param str folder_save
-        #     :param str layer_name
-        #     :param str style_file: file name of the qml file
-        #     """
-        #     layer_filename = layer_name+'.'+geodata_driver_extension
-        #     vlayer = QgsVectorLayer(
-        #         os.path.join(folder_save, layer_filename),
-        #         layer_name,
-        #         "ogr"
-        #     )
-        #     qml_file_path = os.path.join(
-        #         pluginPath,
-        #         def_stylefile_dict['st_files_path']
-        #     )
-        #     vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
-        #     context.temporaryLayerStore().addMapLayer(vlayer)
-        #     context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
-            
         def add_layer_on_completion2(section_name, folder_save, result_prefix):
             """
             adds the current layer on completen to canvas
+            :param str section_name
             :param str folder_save
-            :param str layer_name
-            :param str style_file: file name of the qml file
+            :param str result_prefix
             """
             section_import_defs = def_layer_import_params[section_name]
             layer_name = section_import_defs['layer_name']
