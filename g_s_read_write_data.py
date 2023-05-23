@@ -34,8 +34,6 @@ from qgis.core import (
     NULL,
     QgsFeature,
     QgsField,
-    QgsFields,
-    QgsGeometry,
     QgsProcessingException,
     QgsProject,
     QgsVectorFileWriter,
@@ -203,8 +201,7 @@ def create_feature_from_df(df, pr, geom_type):
         f.setAttributes(df.tolist())
     pr.addFeature(f)
 
-
-def create_layer_from_table(
+def create_layer_from_table2(
     data_df,
     section_name,
     layer_name,
@@ -216,7 +213,7 @@ def create_layer_from_table(
     create_empty=False
 ):
     """
-    creates a QgsVectorLayer from data in data_df
+    creates a QgsVectorLayer from data in geodata_dict
     :param pd.DataFrame data_df
     :param str section_name: name of SWMM section
     :param str layer_name

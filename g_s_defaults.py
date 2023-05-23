@@ -877,3 +877,51 @@ def_ogr_driver_dict = {
     'KML': 'kml'
 }
 def_ogr_driver_names = list(def_ogr_driver_dict.keys())
+
+# layer import parameters
+def_layer_import_params = {
+    'RAINGAGES': {
+        'layer_name': 'SWMM_raingages',
+        'style_file': 'style_raingages.qml'
+    },
+    'SUBCATCHMENTS': {
+        'layer_name': 'SWMM_subcatchments',
+        'style_file': 'style_catchments.qml'
+    },
+    'JUNCTIONS': {
+        'layer_name': 'SWMM_junctions',
+        'style_file': 'style_junctions.qml'
+    },
+    'OUTFALLS': {
+        'layer_name': 'SWMM_outfalls',
+        'style_file': 'style_outfalls.qml'
+    },
+    'DIVIDERS': {
+        'layer_name': 'SWMM_dividers',
+        'style_file': 'style_dividers.qml'
+    },
+    'STORAGE': {
+        'layer_name': 'SWMM_storages',
+        'style_file': 'style_storages.qml'
+    },
+    'CONDUITS': {
+        'layer_name': 'SWMM_conduits',
+        'style_file': 'style_conduits.qml'
+    },
+    'PUMPS': {
+        'layer_name': 'SWMM_pumps',
+        'style_file': 'style_pumps.qml'
+    },
+    'ORIFICES': {
+        'layer_name': 'SWMM_orifices',
+        'style_file': 'style_orifices.qml'
+    },
+    'WEIRS': {
+        'layer_name': 'SWMM_weirs',
+        'style_file': 'style_weirs.qml',
+    },
+    'OUTLETS': {
+        'layer_name': 'SWMM_outlets',
+        'style_file': 'style_outlets.qml'
+    },
+}

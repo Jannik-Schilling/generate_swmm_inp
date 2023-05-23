@@ -48,7 +48,7 @@ from qgis.core import (QgsLayerTreeGroup,
                        QgsVectorFileWriter,
                        QgsVectorLayer)
 
-from .g_s_read_write_data import read_layers_direct, create_layer_from_table
+from .g_s_read_write_data import read_layers_direct, create_layer_from_table2
 from .g_s_defaults import def_ogr_driver_dict, def_stylefile_dict
 
 
@@ -570,7 +570,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 outfalls_df.loc[0, 'RouteTo'] = ''
                 outfalls_df.loc[0, 'geometry'] = start_point_geometry
                 list_move_to_group.append(layer_name)
-                create_layer_from_table(
+                create_layer_from_table2(
                     outfalls_df,
                     'OUTFALLS',
                     layer_name,

@@ -31,11 +31,7 @@ import os
 import pandas as pd
 from qgis.core import (
     NULL,
-    QgsCoordinateTransformContext,
-    QgsField,
-    QgsFeature,
     QgsGeometry,
-    QgsMessageLog,
     QgsPointXY,
     QgsProcessingAlgorithm,
     QgsProcessingContext,
@@ -48,13 +44,12 @@ from qgis.core import (
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterString,
     QgsProject,
-    QgsVectorFileWriter,
     QgsVectorLayer
 )
 from qgis.PyQt.QtCore import QCoreApplication
 from .g_s_defaults import (
     annotation_field_name,
-    def_annotation_field,
+    def_layer_import_params,
     def_ogr_driver_dict,
     def_ogr_driver_names,
     def_sections_dict,
@@ -62,9 +57,8 @@ from .g_s_defaults import (
     def_tables_dict,
     def_qgis_fields_dict
 )
-from .g_s_various_functions import field_to_value_map
 from .g_s_read_write_data import (
-    create_layer_from_table,
+    create_layer_from_table2,
     dict_to_excel
 )
 
@@ -166,12 +160,11 @@ class ImportInpFile (QgsProcessingAlgorithm):
         result_prefix = self.parameterAsString(parameters, self.PREFIX, context)
         crs_result = self.parameterAsCrs(parameters, self.DATA_CRS, context)
         crs_result = str(crs_result.authid())
-        default_data_path = os.path.join(pluginPath, 'test_data', 'swmm_data')
         geodata_driver_num = self.parameterAsEnum(parameters, self.GEODATA_DRIVER, context)
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
-
+        
         # check if the selected folder is temporary
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
             raise QgsProcessingException(
@@ -293,7 +286,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 k
             ) for k in dict_search.keys()
         }  # raw values for every section
-        dict_res_table = {}
+        
 
         def build_df_from_vals_list(section_vals, col_names):
             """
@@ -444,6 +437,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # sections which will be converted into tables
         # --------------------------------------------
+        dict_res_table = {}
         # options section
         main_infiltration_method = 'HORTON'  # assumption for main infiltration method if not in options
         if 'OPTIONS' in dict_all_raw_vals.keys():
@@ -735,8 +729,19 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 result_prefix
             )
 
+
         # sections which will be converted as geodata (e.g. shapefiles)
         # -------------------------------------------------------------
+        # export parameters
+        dict_geodata_export_parameters= {
+            'crs_result': crs_result,
+            'create_empty': create_empty,
+            'folder_save': folder_save,
+            'geodata_driver_num': geodata_driver_num,
+            'feedback': feedback
+        }
+
+        # helper functions
         def replace_nan_null(data):
             """replaces np.nan or asterisk with NULL"""
             if pd.isna(data):
@@ -746,13 +751,39 @@ class ImportInpFile (QgsProcessingAlgorithm):
             else:
                 return data
 
-        def add_layer_on_completion(folder_save, layer_name, style_file):
+        # def add_layer_on_completion(folder_save, layer_name, style_file):
+        #     """
+        #     adds the current layer on completen to canvas
+        #     :param str folder_save
+        #     :param str layer_name
+        #     :param str style_file: file name of the qml file
+        #     """
+        #     layer_filename = layer_name+'.'+geodata_driver_extension
+        #     vlayer = QgsVectorLayer(
+        #         os.path.join(folder_save, layer_filename),
+        #         layer_name,
+        #         "ogr"
+        #     )
+        #     qml_file_path = os.path.join(
+        #         pluginPath,
+        #         def_stylefile_dict['st_files_path']
+        #     )
+        #     vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
+        #     context.temporaryLayerStore().addMapLayer(vlayer)
+        #     context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+            
+        def add_layer_on_completion2(section_name, folder_save, result_prefix):
             """
             adds the current layer on completen to canvas
             :param str folder_save
             :param str layer_name
             :param str style_file: file name of the qml file
             """
+            section_import_defs = def_layer_import_params[section_name]
+            layer_name = section_import_defs['layer_name']
+            if result_prefix != '':
+                layer_name = result_prefix+'_'+layer_name
+            style_file = section_import_defs['style_file']
             layer_filename = layer_name+'.'+geodata_driver_extension
             vlayer = QgsVectorLayer(
                 os.path.join(folder_save, layer_filename),
@@ -808,21 +839,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 rg_layer_name = 'SWMM_raingages'
                 if result_prefix != '':
                     rg_layer_name = result_prefix+'_'+rg_layer_name
-                create_layer_from_table(
+                create_layer_from_table2(
                     rain_gages_df,
                     'RAINGAGES',
                     rg_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'RAINGAGES',
                     folder_save,
-                    rg_layer_name,
-                    'style_raingages.qml'
+                    result_prefix
                 )
 
         # junctions section
@@ -840,22 +866,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 junctions_layer_name = 'SWMM_junctions'
                 if result_prefix != '':
                     junctions_layer_name = result_prefix+'_'+junctions_layer_name
-                create_layer_from_table(
+                create_layer_from_table2(
                     all_junctions,
                     'JUNCTIONS',
                     junctions_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'JUNCTIONS',
                     folder_save,
-                    junctions_layer_name,
-                    'style_junctions.qml'
+                    result_prefix
                 )
 
         # storages section
@@ -882,21 +902,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 if result_prefix != '':
                     # add prefix to layer name if available
                     storages_layer_name = result_prefix+'_'+storages_layer_name
-                create_layer_from_table(
+                create_layer_from_table2(
                     all_storages,
                     'STORAGE',
                     storages_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'STORAGE',
                     folder_save,
-                    storages_layer_name,
-                    'style_storages.qml',
+                    result_prefix
                 )
 
         # outfalls section
@@ -919,21 +934,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     outfalls_layer_name = result_prefix+'_'+outfalls_layer_name
-                outfalls_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_outfalls,
                     'OUTFALLS',
                     outfalls_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'OUTFALLS',
                     folder_save,
-                    outfalls_layer_name,
-                    'style_outfalls.qml'
+                    result_prefix
                 )
 
         # dividers section
@@ -956,21 +966,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     dividers_layer_name = result_prefix+'_'+dividers_layer_name
-                dividers_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_dividers,
                     'DIVIDERS',
                     dividers_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'DIVIDERS',
                     folder_save,
-                    dividers_layer_name,
-                    'style_dividers.qml'
+                    result_prefix
                 )
 
         # LINES
@@ -1069,21 +1074,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     conduits_layer_name = result_prefix+'_'+conduits_layer_name
-                conduits_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_conduits,
                     'CONDUITS',
                     conduits_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'CONDUITS',
                     folder_save,
-                    conduits_layer_name,
-                    'style_conduits.qml'
+                    result_prefix
                 )
 
             # transects in hec2 format
@@ -1193,21 +1193,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     outlets_layer_name = result_prefix+'_'+outlets_layer_name
-                outlets_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_outlets,
                     'OUTLETS',
                     outlets_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'OUTLETS',
                     folder_save,
-                    outlets_layer_name,
-                    'style_outlets.qml'
+                    result_prefix
                 )
 
         # pumps section
@@ -1224,22 +1219,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     pumps_layer_name = result_prefix+'_'+pumps_layer_name
-                pumps_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_pumps,
                     'PUMPS',
                     pumps_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'PUMPS',
                     folder_save,
-                    pumps_layer_name,
-                    'style_pumps.qml',
+                    result_prefix
                 )
+
 
         # weirs section
         if 'WEIRS' in dict_all_raw_vals.keys():
@@ -1275,21 +1266,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     weirs_layer_name = result_prefix+'_'+weirs_layer_name
-                weirs_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_weirs,
                     'WEIRS',
                     weirs_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'WEIRS',
                     folder_save,
-                    weirs_layer_name,
-                    'style_weirs.qml'
+                    result_prefix
                 )
 
         # ORIFICES section
@@ -1316,21 +1302,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     orifices_layer_name = result_prefix+'_'+orifices_layer_name
-                orifices_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_orifices,
                     'ORIFICES',
                     orifices_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'ORIFICES',
                     folder_save,
-                    orifices_layer_name,
-                    'style_orifices.qml'
+                    result_prefix
                 )
 
         # POLYGONS
@@ -1407,22 +1388,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 # add prefix to layer name if available
                 if result_prefix != '':
                     subc_layer_name = result_prefix+'_'+subc_layer_name
-                subcatchments_layer = create_layer_from_table(
+                create_layer_from_table2(
                     all_subcatchments,
                     'SUBCATCHMENTS',
                     subc_layer_name,
-                    crs_result,
-                    folder_save,
-                    geodata_driver_num,
-                    feedback,
-                    def_annotation_field,
-                    create_empty
+                    **dict_geodata_export_parameters
                 )
-                add_layer_on_completion(
+                add_layer_on_completion2(
+                    'SUBCATCHMENTS',
                     folder_save,
-                    subc_layer_name,
-                    'style_catchments.qml'
+                    result_prefix
                 )
+        
         feedback.setProgress(99)
         feedback.setProgressText(
             self.tr('all data was saved in '+str(folder_save))
