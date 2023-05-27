@@ -111,20 +111,6 @@ def get_coords_from_geometry(df):
             'Geometry type of one or more features could not be handled'
         )
 
-
-def get_point_from_x_y(sr):
-    """
-    converts x and y coordinates from a pd.Series to a QgsPoint geometry
-    :param pd.Series sr
-    """
-    x_coord = sr['X_Coord']
-    y_coord = sr['Y_Coord']
-    geom = QgsGeometry.fromWkt(
-        'POINT(' + str(x_coord) + ' '+str(y_coord) + ')'
-    )
-    return [sr['Name'], geom]
-
-
 # functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
     """
@@ -290,16 +276,3 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)
 
-
-# input widgets
-def field_to_value_map(layer, field, list_values):
-    """
-    creates a drop down menue in QGIS layers
-    :param str layer
-    :param str field
-    :param list list_values
-    """
-    config = {'map': list_values}
-    widget_setup = QgsEditorWidgetSetup('ValueMap', config)
-    field_idx = layer.fields().indexFromName(field)
-    layer.setEditorWidgetSetup(field_idx, widget_setup)
