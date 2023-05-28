@@ -29,18 +29,15 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from qgis.core import (
-    Qgis,
-    QgsGeometry,
     QgsWkbTypes,
-    QgsProcessingException,
-    QgsEditorWidgetSetup
+    QgsProcessingException
 )
 from .g_s_defaults import (
     def_tables_dict,
     annotation_field_name
 )
 
-
+# Export
 # geometry functions
 def get_coords_from_geometry(df):
     """

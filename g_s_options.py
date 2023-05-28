@@ -129,15 +129,32 @@ def get_options_from_table(options_df):
 
 
 # import from inp file
-def convert_options_format_for_import(dict_options, feedback):
+def convert_options_format_for_import(
+    df_options,
+    import_parameters_dict,
+    feedback
+):
     '''
     converts formats in dict_options for the options file
-    :param dict dict_options
+    :param pd.DataFrame df_options
+    :param dict import_parameters_dict
     :param QgsProcessingFeedback feedback
     '''
+    dict_options = {k: v for k, v in zip(df_options['Option'], df_options['Value'])}
     dict_options = {k: adjust_options_dtypes(k, v, 'input', feedback) for k, v in dict_options.items()}
     df_options = pd.DataFrame()
     df_options['Option'] = dict_options.keys()
     df_options['Value'] = dict_options.values()
+    if 'INFILTRATION' in df_options['Option'].values:
+        main_infiltration_method = df_options.loc[df_options['Option'] == 'INFILTRATION', 'Value'].values[0]
+        if main_infiltration_method not in [
+            'HORTON',
+            'MODIFIED_HORTON',
+            'GREEN_AMPT',
+            'MODIFIED_GREEN_AMPT',
+            'CURVE_NUMBER'
+        ]:
+            main_infiltration_method = 'HORTON'
+    import_parameters_dict['main_infiltration_method'] = main_infiltration_method
     return df_options
 

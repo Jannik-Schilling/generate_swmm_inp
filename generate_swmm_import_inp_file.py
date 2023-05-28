@@ -50,6 +50,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 from .g_s_defaults import (
     annotation_field_name,
     curve_cols_dict,
+    def_annotation_field,
+    def_layer_names_dict,
     def_ogr_driver_dict,
     def_ogr_driver_names,
     def_sections_dict,
@@ -61,15 +63,15 @@ from .g_s_defaults import (
     pattern_times
 )
 from .g_s_read_write_data import (
-    create_layer_from_table2,
-    dict_to_excel
+    dict_to_excel,
+    create_layer_from_df
 )
-
 from .g_s_import_helpers import (
+    add_layer_on_completion,
     adjust_column_types,
     adjust_line_length,
-    build_df_from_vals_list,
     build_df_for_section,
+    build_df_from_vals_list,
     del_kw_from_list,
     extract_sections_from_text,
     insert_nan_after_kw,
@@ -179,6 +181,18 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
         
+        import_parameters_dict = {
+            'folder_save': folder_save,
+            'result_prefix': result_prefix,
+            'crs_result': crs_result,
+            'geodata_driver_num': geodata_driver_num,
+            'geodata_driver_name': geodata_driver_name,
+            'geodata_driver_extension': geodata_driver_extension,
+            'create_empty': create_empty,
+            'pluginPath': pluginPath,
+            'context': context
+        }
+        
         # check if the selected folder is temporary
         if parameters['SAVE_FOLDER'] == 'TEMPORARY_OUTPUT':
             raise QgsProcessingException(
@@ -243,8 +257,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         dict_res_table = {}
         
         # options section
-        # assumption for main infiltration method if not in options
-        main_infiltration_method = 'HORTON'  
+        # assumption for main infiltration method if not in options 
         if 'OPTIONS' in dict_all_vals.keys():
             feedback.setProgressText(
                 self.tr('generating options file ...')
@@ -255,8 +268,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 'OPTIONS',
                 dict_all_vals
             )
-            df_options_converted, main_infiltration_method = convert_options_format_for_import(
+            df_options_converted = convert_options_format_for_import(
                 df_options,
+                import_parameters_dict,
                 feedback
             )
             dict_res_table['OPTIONS'] = {
@@ -486,19 +500,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 feedback,
                 result_prefix
             )
-     
-     
-        # sections with geometries, which will be added as layers
-        #------------------------------
-        for section_name in def_sections_geoms_dict.keys():
-            if section_name in dict_all_vals.keys():
-                sect_list_import_handler(
-                    section_name,
-                    dict_all_vals,
-                    'geodata',
-                    feedback
-                )
 
+        # ToDo...TRANSECTS
         if 'CONDUITS' in dict_all_vals.keys():
             # transects in hec2 format
             transects_columns = [
@@ -540,6 +543,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
                 all_tr_vals = [get_transects_vals(transects_list[x:y]) for x, y in zip(tr_startp, tr_endp)]
                 all_tr_vals = [x for sublist in all_tr_vals for x in sublist]
+
                 all_tr_dats = [get_transects_data(transects_list[x:y]) for x, y in zip(tr_startp, tr_endp)]
 
                 all_tr_vals_df = build_df_from_vals_list(
@@ -577,8 +581,54 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     feedback,
                     result_prefix
                 )
-        
-        
+     
+        # sections with geometries, which will be added as layers
+        #------------------------------
+        # prepare
+        for section_name in def_sections_geoms_dict.keys():
+            if section_name in dict_all_vals.keys():
+                sect_list_import_handler(
+                    section_name,
+                    dict_all_vals,
+                    'geodata',
+                    feedback,
+                    import_parameters_dict
+                )
+                
+        # write layers    
+        for section_name in def_sections_geoms_dict.keys():
+            if section_name in dict_all_vals.keys():
+                if dict_all_vals[section_name]['status'] == ImportDataStatus.GEOM_READY:
+                    data_dict = dict_all_vals[section_name]
+                    layer_name = (
+                        str(import_parameters_dict['result_prefix'])
+                        +'_'
+                        + def_layer_names_dict[section_name]
+                    )
+                    data_dict['layer_name'] = layer_name
+                    create_layer_from_df(
+                        data_dict,
+                        section_name,
+                        feedback=feedback,
+                        custom_fields=def_annotation_field,
+                        **import_parameters_dict
+                    )
+                    dict_all_vals[section_name]['status'] = ImportDataStatus.FILE_READY
+
+        # add layers to
+        feedback.setProgressText(
+            self.tr('Adding layers to canvas')
+        )
+        for section_name in def_sections_geoms_dict.keys():
+            if section_name in dict_all_vals.keys():
+                if dict_all_vals[section_name]['status'] == ImportDataStatus.FILE_READY:
+                    data_dict = dict_all_vals[section_name]
+                    add_layer_on_completion(
+                        data_dict['layer_name'],
+                        def_stylefile_dict[section_name],
+                        **import_parameters_dict
+                    )
+                dict_all_vals[section_name]['status'] == ImportDataStatus.DONE
      
         feedback.setProgressText(
             self.tr('all data was saved in '+str(folder_save))

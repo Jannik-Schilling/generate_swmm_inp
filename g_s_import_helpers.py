@@ -27,16 +27,24 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 import pandas as pd
 import numpy as np
 import copy
+import os
 from datetime import datetime
 from qgis.core import (
     QgsProcessingException,
+    QgsProcessingContext,
+    QgsProject,
+    QgsVectorLayer,
     NULL
 )
 from .g_s_defaults import (
     annotation_field_name,
+    def_layer_names_dict,
     def_sections_dict,
     def_sections_geoms_dict,
-    ImportDataStatus
+    def_stylefile_dict,
+    def_qgis_fields_dict,
+    ImportDataStatus,
+    st_files_path
 )
 from .g_s_nodes import (
     create_points_df,
@@ -46,29 +54,26 @@ from .g_s_nodes import (
 )
 from .g_s_subcatchments import (
     get_raingages_from_inp,
-    create_polygons_df
+    create_polygons_df,
+    prepare_infiltration_inp_lines,
+    create_infiltr_df
 )
 from .g_s_links import (
     create_lines_for_section,
     adjust_xsection_df,
     adjust_outlets_list
 )
-
-def replace_nan_null(data):
-    """replaces np.nan or asterisk with NULL"""
-    if pd.isna(data):
-        return NULL
-    elif data == '*':
-        return NULL
-    else:
-        return data
+from .g_s_read_write_data import (
+    create_layer_from_df
+)
 
 # main function
 def sect_list_import_handler(
     section_name,
     dict_all_vals,
     out_type,
-    feedback
+    feedback,
+    import_parameters_dict=None
 ):
     """
     prepares raw data lists for every section
@@ -89,12 +94,22 @@ def sect_list_import_handler(
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
+            if section_name == 'INFILTRATION':
+                data_dict['data'] = [
+                    prepare_infiltration_inp_lines(
+                        inp_line,
+                        **import_parameters_dict
+                    ) for inp_line in data_dict['data']
+                ]
             df_join = build_df_sect_direct(section_name, data_dict)
             if out_type == 'geom_join':
                 dict_all_vals[section_name]['data'] = create_points_df(df_join, feedback)
             if out_type == 'data_join':
+                # adjustments
                 if section_name == 'XSECTIONS':
                     df_join = adjust_xsection_df(df_join)
+                if section_name == 'INFILTRATION':
+                    df_join = df_join.apply(lambda x: create_infiltr_df(x, feedback), axis=1)
                 df_join = df_join.applymap(replace_nan_null)
                 data_dict['data'] = df_join.set_index('Name')
             dict_all_vals[section_name]['status'] = ImportDataStatus.PROCESSED
@@ -105,37 +120,31 @@ def sect_list_import_handler(
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
             data_dict = dict_all_vals[section_name]
             if out_type == 'geodata':
-                # Points
+                # data preparation
                 if section_name == 'RAINGAGES':
                     data_dict['data'] = [get_raingages_from_inp(inp_line, feedback) for inp_line in data_dict['data']]
+                    diff_fields = list(def_qgis_fields_dict[section_name].keys())               
                 if section_name == 'STORAGE':
                     data_dict['data'] = [get_storages_from_inp(inp_line, feedback) for inp_line in data_dict['data']]
                 if section_name == 'OUTFALLS':
                     data_dict['data'] = [get_outfalls_from_inp(inp_line, feedback) for inp_line in data_dict['data']]
                 if section_name == 'DIVIDERS':
                     data_dict['data'] = [get_dividers_from_inp(inp_line, feedback) for inp_line in data_dict['data']]
-                # Lines
-                if section_name == 'CONDUITS':
-                    pass
-                    # Transects in main file
                 if section_name == 'OUTLETS':
                     data_dict['data'] = [adjust_outlets_list(inp_line, feedback) for inp_line in data_dict['data']]
-                if section_name == 'PUMPS':
-                    pass
-                if section_name == 'ORIFICES':
-                    pass
-                if section_name == 'WEIRS':
-                    pass
-                # Subcatchments / Polygons
-                if section_name == 'SUBCATCHMENTS':
-                    pass
+                if section_name == 'RAINGAGES':
+                    df_processed = build_df_sect_direct(
+                            section_name, 
+                            data_dict,
+                            with_annot=True,
+                            diff_fields = diff_fields
+                        )
                 else:
-                    pass
-                df_processed = build_df_sect_direct( #das gilt für alle!
-                        section_name, 
-                        data_dict,
-                        with_annot=True
-                    )
+                    df_processed = build_df_sect_direct(
+                            section_name, 
+                            data_dict,
+                            with_annot=True,
+                        )
                 
                 # join data
                 if section_name in ['CONDUITS', 'WEIRS', 'ORIFICES']:
@@ -146,7 +155,7 @@ def sect_list_import_handler(
                         sect_list_import_handler('LOSSES', dict_all_vals, 'data_join', feedback)
                         losses_df = dict_all_vals['LOSSES']['data']
                         df_processed = df_processed.join(losses_df, on='Name')
-                    # adjusments; ToDo: as functions
+                    # adjustments; ToDo: as functions
                     if section_name == 'WEIRS':
                         df_processed = df_processed.drop(
                             columns=['Shape', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct']
@@ -166,8 +175,11 @@ def sect_list_import_handler(
                             columns={'Geom1': 'Height', 'Geom2': 'Width'}
                         )
                 if section_name == 'SUBCATCHMENTS':
-                    pass # ToDo
-                
+                    for sect_join in ['SUBAREAS', 'INFILTRATION']:
+                        sect_list_import_handler(sect_join, dict_all_vals, 'data_join', feedback, import_parameters_dict)
+                        df_for_join = dict_all_vals[sect_join]['data']
+                        df_processed = df_processed.join(df_for_join, on='Name')
+                    
                 # get geometries          
                 if def_sections_geoms_dict[section_name] == 'Point':
                     if section_name in ['JUNCTIONS', 'STORAGE', 'OUTFALLS', 'DIVIDERS']:
@@ -191,11 +203,16 @@ def sect_list_import_handler(
                 dict_all_vals[section_name]['data'] = df_processed
                 dict_all_vals[section_name]['status'] = ImportDataStatus.GEOM_READY
                 
+            create_layer_from_df    
             if out_type == 'table':
                 pass
 
 
-def build_df_sect_direct(section_name, data_dict, with_annot=False):
+def build_df_sect_direct(section_name,
+    data_dict,
+    with_annot=False,
+    diff_fields=None
+):
     """
     builds dataframes for a section
     :param str section_name: Name of the SWMM section in the input file
@@ -203,12 +220,17 @@ def build_df_sect_direct(section_name, data_dict, with_annot=False):
     :param bool with_annot: indicates if an annotations column will be added
     :return: pd.DataFrame
     """
-    if type(def_sections_dict[section_name]) == list:
-        col_names = def_sections_dict[section_name]
+    if diff_fields is not None:
+        col_names = diff_fields
         if with_annot:
             col_names = col_names + [annotation_field_name]
-    if def_sections_dict[section_name] is None:
-        col_names = None
+    else:
+        if type(def_sections_dict[section_name]) == list:
+            col_names = def_sections_dict[section_name]
+            if with_annot:
+                col_names = col_names + [annotation_field_name]
+        if def_sections_dict[section_name] is None:
+            col_names = None
     # empty df with correct columns
     if data_dict['n_objects'] == 0:
         df = pd.DataFrame(columns=col_names)
@@ -274,6 +296,15 @@ def concat_quoted_vals(text_line):
     else:
         text_line_new = text_line
     return text_line_new 
+
+def replace_nan_null(data):
+    """replaces np.nan or asterisk with NULL"""
+    if pd.isna(data):
+        return NULL
+    elif data == '*':
+        return NULL
+    else:
+        return data
     
 
 def get_annotations(
@@ -460,3 +491,35 @@ def adjust_column_types(df, col_types):
             return [time_conversion(x) for x in col]
     df = df.apply(col_conversion, axis=0)
     return df
+    
+def add_layer_on_completion(
+    layer_name,
+    style_file,
+    geodata_driver_extension,
+    folder_save,
+    pluginPath,
+    context,
+    **kwargs
+):
+    """
+    adds the current layer to canvas
+    :param str layer_name
+    :param str style_file: file name of the qml file
+    :param str geodata_driver_extension
+    :param str folder_save
+    :param str pluginPath
+    """
+    layer_filename = layer_name+'.'+geodata_driver_extension
+    vlayer = QgsVectorLayer(
+        os.path.join(folder_save, layer_filename),
+        layer_name,
+        "ogr"
+    )
+    qml_file_path = os.path.join(
+        pluginPath,
+        st_files_path,
+        style_file
+    )
+    vlayer.loadNamedStyle(qml_file_path)
+    context.temporaryLayerStore().addMapLayer(vlayer)
+    context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))

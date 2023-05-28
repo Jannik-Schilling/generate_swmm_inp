@@ -37,6 +37,8 @@ from .g_s_defaults import (
 )
 
 
+# Export
+# Subcatchments
 def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     """
     reads subcatchment shapefile
@@ -97,9 +99,12 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     subcatchments_df = subcatchments_df[def_sections_dict['SUBCATCHMENTS']]
     return subcatchments_df, subareas_df, infiltration_df
 
-def adjust_infiltration_inp_lines(
+# import
+# infiltration
+def prepare_infiltration_inp_lines(
     inp_line,
-    main_infiltration_method
+    main_infiltration_method='HORTON',
+    **kwargs
 ):
     """
     adjusts the line length in the infiltration section
@@ -118,73 +123,58 @@ def adjust_infiltration_inp_lines(
     inp_line = inp_line+[current_infiltration_method]
     return inp_line
 
-# import 
-def create_subcatchm_attributes_from_inp_df(
-    all_subcatchments,
-    all_subareas,
-    all_infiltr
-):
-    """
-    creates pd.Dataframes from a pd.DataFrame of subcatchment attributes (from an inp file)
-    :param pd.DataFrame all_subcatchments
-    :param pd.DataFrame all_subareas
-    :param pd.DataFrame all_infiltr
-    """
-    InfiltrDtypes = [
-        'InfMethod',
-        'SuctHead',
-        'Conductiv',
-        'InitDef',
-        'MaxRate',
-        'MinRate',
-        'Decay',
-        'DryTime',
-        'MaxInf',
-        'CurveNum'
-    ]
 
-    def create_infiltr_df(infiltr_row):
-        """
-        creates a pd.DataFrame for infiltration values
-        :param pd.Series infiltr_row
-        """
-        if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
-            infiltr_row = infiltr_row.rename({
-                'Param1': 'SuctHead',
-                'Param2': 'Conductiv',
-                'Param3': 'InitDef'
-            })
-            infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
-            cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
-            for c in cols_not_in_infilt:
-                infiltr_row[c] = np.nan
-        if infiltr_row['InfMethod'] in ['HORTON', 'MODIFIED_HORTON']:
-            infiltr_row = infiltr_row.rename({
-                'Param1': 'MaxRate',
-                'Param2': 'MinRate',
-                'Param3': 'Decay',
-                'Param4': 'DryTime',
-                'Param5': 'MaxInf'
-            })
-            cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
-            for c in cols_not_in_infilt:
-                infiltr_row[c] = np.nan
-        if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
-            infiltr_row = infiltr_row.rename({
-                'Param1': 'CurveNum',
-                'Param2': 'Conductiv',
-                'Param3': 'DryTime'
-            })
-            infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
-            cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
-            for c in cols_not_in_infilt:
-                infiltr_row[c] = np.nan
-        return infiltr_row
-    all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x), axis=1)
-    all_infiltr = all_infiltr[['Name']+InfiltrDtypes]
-    all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on='Name')
-    all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on='Name')
-    return all_subcatchments
+# infiltration
+InfiltrDtypes = [
+    'InfMethod',
+    'SuctHead',
+    'Conductiv',
+    'InitDef',
+    'MaxRate',
+    'MinRate',
+    'Decay',
+    'DryTime',
+    'MaxInf',
+    'CurveNum'
+]
+   
+def create_infiltr_df(infiltr_row, feedback):
+    """
+    creates a pd.DataFrame for infiltration values
+    :param pd.Series infiltr_row
+    """
+    if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
+        infiltr_row = infiltr_row.rename({
+            'Param1': 'SuctHead',
+            'Param2': 'Conductiv',
+            'Param3': 'InitDef'
+        })
+        infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
+        cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
+        for c in cols_not_in_infilt:
+            infiltr_row[c] = np.nan
+    if infiltr_row['InfMethod'] in ['HORTON', 'MODIFIED_HORTON']:
+        infiltr_row = infiltr_row.rename({
+            'Param1': 'MaxRate',
+            'Param2': 'MinRate',
+            'Param3': 'Decay',
+            'Param4': 'DryTime',
+            'Param5': 'MaxInf'
+        })
+        cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
+        for c in cols_not_in_infilt:
+            infiltr_row[c] = np.nan
+    if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
+        infiltr_row = infiltr_row.rename({
+            'Param1': 'CurveNum',
+            'Param2': 'Conductiv',
+            'Param3': 'DryTime'
+        })
+        infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
+        cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
+        for c in cols_not_in_infilt:
+            infiltr_row[c] = np.nan
+    return infiltr_row
 
 # geometries
 def get_polygon_from_verts(polyg_name, dict_all_vals, feedback):

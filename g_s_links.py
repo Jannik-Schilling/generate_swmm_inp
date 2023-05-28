@@ -37,6 +37,24 @@ from .g_s_defaults import (
 )
 from .g_s_various_functions import check_columns
 
+# Definitions
+# Inlets
+inl_types_def = {
+    'GRATE': ['Length', 'Width', 'Shape'],
+    'CUSTOM': ['Shape'],
+    'CURB': ['Length', 'Heigth', 'Shape'],
+    'SLOTTED': ['Length', 'Width'],
+    'DROP_GRATE': ['Length', 'Width', 'Shape'],
+    'DROP_CURB': ['Length', 'Heigth']}
+all_inl_type_cols = [
+    'Length',
+    'Width',
+    'Heigth',
+    'Shape',
+    'OpenFract',
+    'SplashVel'
+]
+
 
 # Export
 # conduits
@@ -100,25 +118,7 @@ def get_conduits_from_shapefile(conduits_raw):
     losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
-
-# Inlets
-inl_types_def = {
-    'GRATE': ['Length', 'Width', 'Shape'],
-    'CUSTOM': ['Shape'],
-    'CURB': ['Length', 'Heigth', 'Shape'],
-    'SLOTTED': ['Length', 'Width'],
-    'DROP_GRATE': ['Length', 'Width', 'Shape'],
-    'DROP_CURB': ['Length', 'Heigth']}
-all_inl_type_cols = [
-    'Length',
-    'Width',
-    'Heigth',
-    'Shape',
-    'OpenFract',
-    'SplashVel'
-]
-
-
+# Streets
 def get_street_from_tables(streets_inlets_raw):
     streets_df = streets_inlets_raw['STREETS']
     inlets_usage_df = streets_inlets_raw['INLET_USAGE']
@@ -143,13 +143,13 @@ def get_street_from_tables(streets_inlets_raw):
     inlets_df = inlets_df.drop(columns=all_inl_type_cols)
     return streets_df, inlets_df, inlets_usage_df
 
+# geometries
 def del_first_last_vt(link):
     """
     deletes first and last vertex as it is already in nodes coordinates
     :param list link
     """
     return link[1:-1]
-
 
 # pumps
 def get_pumps_from_shapefile(pumps_raw):
@@ -171,8 +171,6 @@ def get_pumps_from_shapefile(pumps_raw):
     pumps_df = pumps_df.reset_index(drop=True)
     return pumps_df
 
-
-
 # weirs
 weirs_shape_dict = {
     'TRANSVERSE': 'RECT_OPEN',
@@ -181,9 +179,6 @@ weirs_shape_dict = {
     'TRAPEZOIDAL': 'TRAPEZOIDAL',
     'ROADWAY': 'RECT_OPEN'
 }
-
-
-
 def get_weirs_from_shapefile(weirs_raw):
     """prepares weirs data for writing an input file"""
     weirs_qgis_cols = list(def_qgis_fields_dict['WEIRS'].keys())
@@ -227,7 +222,6 @@ def get_weirs_from_shapefile(weirs_raw):
     xsections_df['Culvert'] = ''
     return weirs_df, xsections_df
 
-
 # orifices
 def get_orifices_from_shapefile(orifices_raw):
     """
@@ -265,7 +259,6 @@ def get_orifices_from_shapefile(orifices_raw):
     xsections_df['Barrels'] = ''
     xsections_df['Culvert'] = ''
     return orifices_df, xsections_df
-
 
 # outlets
 def get_outlets_from_shapefile(outlets_raw):
@@ -329,6 +322,7 @@ def get_transects_from_table(transects_raw):
         return tr_string
     transects_string_list = [write_transect_lines(x) for x in tr_data['TransectName']]
     return transects_string_list
+
 
 # Import
 # Inlets

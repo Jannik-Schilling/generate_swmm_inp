@@ -41,7 +41,22 @@ def_curve_types = [
     'Tidal',
     'Diversion',
     'Shape'
-]
+] # delete
+
+curve_cols_dict = {
+    'Pump1': ['Name', 'Volume', 'Flow'],
+    'Pump2': ['Name', 'Depth', 'Flow'],
+    'Pump3': ['Name', 'Head', 'Flow'],
+    'Pump4': ['Name', 'Depth', 'Flow'],
+    'Pump5': ['Name', 'Head', 'Flow'],
+    'Storage': ['Name', 'Depth', 'Area'],
+    'Rating': ['Name', 'Head/Depth', 'Outflow'],
+    'Tidal': ['Name', 'Hour_of_Day', 'Stage'],
+    'Control': ['Name', 'Value', 'Setting'],
+    'Diversion': ['Name', 'Inflow', 'Outflow'],
+    'Shape': ['Name', 'Depth', 'Width'],
+    'Weir': ['Name', 'Head', 'Coefficient']
+}
 
 def_infiltration_types = [
     'GREEN_AMPT',
@@ -50,6 +65,29 @@ def_infiltration_types = [
     'MODIFIED_HORTON',
     'CURVE_NUMBER'
 ]
+
+pattern_times = {
+    'HOURLY': [
+        '0:00', '1:00', '2:00', '3:00',
+        '4:00', '5:00', '6:00', '7:00',
+        '8:00', '9:00', '10:00', '11:00',
+        '12:00', '13:00', '14:00', '15:00',
+        '16:00', '17:00', '18:00', '19:00',
+        '20:00', '21:00', '22:00', '23:00'
+    ],
+    'DAILY': ['So', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+    'MONTHLY': [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ],
+    'WEEKEND': [
+        '0:00', '1:00', '2:00', '3:00', '4:00',
+        '5:00', '6:00', '7:00', '8:00', '9:00',
+        '10:00', '11:00', '12:00', '13:00', '14:00',
+        '15:00', '16:00', '17:00', '18:00', '19:00',
+        '20:00', '21:00', '22:00', '23:00'
+    ]
+}
 
 # all possible columns in the input file
 def_sections_dict = {
@@ -667,21 +705,34 @@ def_sections_geoms_dict = {
 
 # style_file
 def_stylefile_dict = {
-    'st_files': {
-        'RAINGAGES': 'style_raingages.qml',
-        'SUBCATCHMENTS': 'style_catchments.qml',
-        'JUNCTIONS': 'style_junctions.qml',
-        'OUTFALLS': 'style_outfalls.qml',
-        'DIVIDERS': 'style_dividers.qml',
-        'STORAGE': 'style_storages.qml',
-        'CONDUITS': 'style_conduits.qml',
-        'PUMPS': 'style_pumps.qml',
-        'ORIFICES': 'style_orifices.qml',
-        'WEIRS': 'style_weirs.qml',
-        'OUTLETS': 'style_outlets.qml'
-    },
-    'st_files_path': os.path.join('test_data', 'swmm_data')
+    'RAINGAGES': 'style_raingages.qml',
+    'SUBCATCHMENTS': 'style_catchments.qml',
+    'JUNCTIONS': 'style_junctions.qml',
+    'OUTFALLS': 'style_outfalls.qml',
+    'DIVIDERS': 'style_dividers.qml',
+    'STORAGE': 'style_storages.qml',
+    'CONDUITS': 'style_conduits.qml',
+    'PUMPS': 'style_pumps.qml',
+    'ORIFICES': 'style_orifices.qml',
+    'WEIRS': 'style_weirs.qml',
+    'OUTLETS': 'style_outlets.qml'
 }
+
+def_layer_names_dict = {
+    'RAINGAGES': 'SWMM_raingages',
+    'SUBCATCHMENTS': 'SWMM_catchments',
+    'JUNCTIONS': 'SWMM_junctions',
+    'OUTFALLS': 'SWMM_outfalls',
+    'DIVIDERS': 'SWMM_dividers',
+    'STORAGE': 'SWMM_storages',
+    'CONDUITS': 'SWMM_conduits',
+    'PUMPS': 'SWMM_pumps',
+    'ORIFICES': 'SWMM_orifices',
+    'WEIRS': 'SWMM_weirs',
+    'OUTLETS': 'SWMM_outlets'
+}
+
+st_files_path = os.path.join('test_data', 'swmm_data')
 
 # default geometries when no geometry is given in the input file
 def_point_geom = QgsGeometry.fromWkt(
@@ -878,50 +929,10 @@ def_ogr_driver_dict = {
 }
 def_ogr_driver_names = list(def_ogr_driver_dict.keys())
 
-# layer import parameters
-def_layer_import_params = {
-    'RAINGAGES': {
-        'layer_name': 'SWMM_raingages',
-        'style_file': 'style_raingages.qml'
-    },
-    'SUBCATCHMENTS': {
-        'layer_name': 'SWMM_subcatchments',
-        'style_file': 'style_catchments.qml'
-    },
-    'JUNCTIONS': {
-        'layer_name': 'SWMM_junctions',
-        'style_file': 'style_junctions.qml'
-    },
-    'OUTFALLS': {
-        'layer_name': 'SWMM_outfalls',
-        'style_file': 'style_outfalls.qml'
-    },
-    'DIVIDERS': {
-        'layer_name': 'SWMM_dividers',
-        'style_file': 'style_dividers.qml'
-    },
-    'STORAGE': {
-        'layer_name': 'SWMM_storages',
-        'style_file': 'style_storages.qml'
-    },
-    'CONDUITS': {
-        'layer_name': 'SWMM_conduits',
-        'style_file': 'style_conduits.qml'
-    },
-    'PUMPS': {
-        'layer_name': 'SWMM_pumps',
-        'style_file': 'style_pumps.qml'
-    },
-    'ORIFICES': {
-        'layer_name': 'SWMM_orifices',
-        'style_file': 'style_orifices.qml'
-    },
-    'WEIRS': {
-        'layer_name': 'SWMM_weirs',
-        'style_file': 'style_weirs.qml',
-    },
-    'OUTLETS': {
-        'layer_name': 'SWMM_outlets',
-        'style_file': 'style_outlets.qml'
-    },
-}
+class ImportDataStatus:
+    RAW = 0
+    PROCESSED = 1
+    TABLE_READY = 2
+    GEOM_READY = 3
+    FILE_READY = 4
+    DONE = 10
