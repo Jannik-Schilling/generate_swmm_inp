@@ -27,7 +27,8 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 import numpy as np
 import pandas as pd
 from qgis.core import (
-    QgsProcessingException
+    QgsProcessingException,
+    QgsGeometry
 )
 from .g_s_defaults import (
     def_qgis_fields_dict,
@@ -38,22 +39,7 @@ from .g_s_various_functions import (
     get_coords_from_geometry
 )
 
-
-# Outfalls
-def get_outfalls_from_shapefile(outfalls_raw):
-    outfalls_raw['Name'] = [str(x) for x in outfalls_raw['Name']]
-    outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Curve_TS']
-    outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Curve_TS']
-    outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'FixedStage']
-    outfalls_raw.loc[outfalls_raw['Type'] == 'FREE', 'Data'] = ''
-    outfalls_raw.loc[outfalls_raw['Type'] == 'NORMAL', 'Data'] = ''
-    outfalls_raw['RouteTo'] = outfalls_raw['RouteTo'].fillna('')
-    outfalls_raw['FlapGate'] = outfalls_raw['FlapGate'].fillna('NO')
-    outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
-    return outfalls_raw
-
-
-# Storages
+# Definitions for Storages
 st_types_def = {
     'FUNCTIONAL': ['Coeff', 'Exponent', 'Constant'],
     'TABULAR': ['Curve'],
@@ -73,7 +59,22 @@ all_st_type_cols = [
     'SurfHeight'
 ]
 
+# Export
+#----------
+# Outfalls
+def get_outfalls_from_shapefile(outfalls_raw):
+    outfalls_raw['Name'] = [str(x) for x in outfalls_raw['Name']]
+    outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Curve_TS']
+    outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Curve_TS']
+    outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'FixedStage']
+    outfalls_raw.loc[outfalls_raw['Type'] == 'FREE', 'Data'] = ''
+    outfalls_raw.loc[outfalls_raw['Type'] == 'NORMAL', 'Data'] = ''
+    outfalls_raw['RouteTo'] = outfalls_raw['RouteTo'].fillna('')
+    outfalls_raw['FlapGate'] = outfalls_raw['FlapGate'].fillna('NO')
+    outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
+    return outfalls_raw
 
+# Storages
 def get_storages_from_geodata(storages_raw):
     """creates a df for storages from raw storage data"""
     storages_layer_name = 'Storages Layer'
@@ -124,32 +125,6 @@ def get_storages_from_geodata(storages_raw):
     storage_df = storage_df.drop(columns=st_types_needed)
     return storage_df
 
-
-def get_storages_from_inp(st_raw_line):
-    """
-    adjusts the inp line according to the storage type
-    :param list st_raw_line
-    :return list
-    """
-    init_elems = st_raw_line[:5]
-    st_type_i = st_raw_line[4]
-    st_cols_i = st_types_def[st_type_i]
-    st_vals_i = {col: st_raw_line[5+i] for i, col in enumerate(st_cols_i)}
-    st_missing = {col_0: np.nan for col_0 in all_st_type_cols if col_0 not in st_vals_i.keys()}
-    st_vals_i.update(st_missing)
-    type_elems = [st_vals_i[t_c] for t_c in all_st_type_cols]
-    # Seepage and Evaporation loss
-    if st_type_i == 'TABULAR':
-        sur_elems = st_raw_line[6:]
-    else:
-        sur_elems = st_raw_line[8:]
-    if len(sur_elems) == 2:
-        sur_elems = sur_elems + [np.nan, np.nan, np.nan]
-    # resulting line
-    st_line_adjusted = init_elems + type_elems + sur_elems
-    return(st_line_adjusted)
-
-
 # inflows
 def compose_infl_dict(inflow, i, inf_type):
     """
@@ -183,6 +158,7 @@ def compose_infl_dict(inflow, i, inf_type):
         }            
     return i_dict
         
+# Hydrographs
 def compose_hydrograph_df(hydrog):
         """
         creates a pd.Dataframe for evey hydrograph with short, medium
@@ -215,6 +191,7 @@ def compose_hydrograph_df(hydrog):
             df_rg = pd.concat([df_rg, df_i])
         return df_rg
 
+# Inflows
 def get_inflows_from_table(inflows_raw, all_nodes, feedback):
     """
     generates a dict for direct inflow and
@@ -293,3 +270,120 @@ def get_inflows_from_table(inflows_raw, all_nodes, feedback):
                     rdii_df = rdii_df[['Node', 'UnitHydrograph', 'SewerArea']]
                                    
     return dwf_dict, inflow_dict, hydrogr_df, rdii_df
+
+
+# Import
+#-------
+# Outfalls
+def get_outfalls_from_inp(outfalls_line, feedback):
+    """
+    Prepares an outfall element
+    :param list outfalls_line
+    :param QgsProcessingFeedback feedback
+    :return list
+    """
+    if outfalls_line[2] in ['FREE', 'NORMAL']:
+        outfalls_line.insert(3, np.nan)
+        outfalls_line.insert(4, np.nan)
+    if outfalls_line[2] == 'FIXED':
+        outfalls_line.insert(4, np.nan)
+    if outfalls_line[2] in ['TIDAL', 'TIMESERIES']:
+        outfalls_line.insert(3, np.nan)
+    return outfalls_line
+    
+# Dividers
+def get_dividers_from_inp(divider_line, feedback):
+    """
+    Prepares a divider element
+    :param list divider_line
+    :param QgsProcessingFeedback feedback
+    :return list
+    """
+    if divider_line[3] == 'OVERFLOW':
+        for pos in [4, 5, 6, 7, 8]:
+            divider_line.insert(pos, np.nan)
+    if divider_line[3] == 'CUTOFF':
+        for pos in [5, 6, 7, 8]:
+            divider_line.insert(pos, np.nan)
+    if divider_line[3] == 'TABULAR':
+        for pos in [4, 6, 7, 8]:
+            divider_line.insert(pos, np.nan)
+    if divider_line[3] == 'WEIR':
+        for pos in [4, 5]:
+            divider_line.insert(pos, np.nan)
+    return divider_line
+
+# Storage
+def get_storages_from_inp(st_raw_line, feedback):
+    """
+    adjusts the inp line according to the storage type
+    :param list st_raw_line
+    :param QgsProcessingFeedback feedback
+    :return list
+    """
+    init_elems = st_raw_line[:5]
+    st_type_i = st_raw_line[4]
+    st_cols_i = st_types_def[st_type_i]
+    st_vals_i = {col: st_raw_line[5+i] for i, col in enumerate(st_cols_i)}
+    st_missing = {col_0: np.nan for col_0 in all_st_type_cols if col_0 not in st_vals_i.keys()}
+    st_vals_i.update(st_missing)
+    type_elems = [st_vals_i[t_c] for t_c in all_st_type_cols]
+    # Seepage and Evaporation loss
+    if st_type_i == 'TABULAR':
+        sur_elems = st_raw_line[6:]
+    else:
+        sur_elems = st_raw_line[8:]
+    if len(sur_elems) == 2:
+        sur_elems = sur_elems + [np.nan, np.nan, np.nan]
+    # resulting line
+    st_line_adjusted = init_elems + type_elems + sur_elems
+    return(st_line_adjusted)
+    
+# Hydrographs
+def get_hydrogrphs(hg_name, df_hydrographs_raw):
+    '''
+    creates a flat hydrograph df
+    :param str hg_name
+    :param pd.DataFrame df_hydrographs_raw
+    '''
+    subdf = df_hydrographs_raw[df_hydrographs_raw['Name'] == hg_name]
+    hg_rg = subdf[pd.isna(subdf['Response'])]
+    hg_rg = hg_rg[['Name', 'RG_Month']].rename(columns={'RG_Month': 'Rain_Gage'})
+    for t in ['Short', 'Medium', 'Long']:
+        hg_i = subdf[subdf['Response'] == t]
+        if t == 'Short':
+            hg_rg['Months'] = list(hg_i['RG_Month'])[0]
+        hg_i = hg_i.drop(columns = ['RG_Month', 'Response'])
+        ren_dict = {c: c+'_'+t+'Term' for c in hg_i.columns if c != 'Name'}
+        hg_i = hg_i.rename(columns=ren_dict)
+        hg_rg = hg_rg.join(
+            hg_i.set_index('Name'),
+            on='Name'
+        )
+    return (hg_rg)
+
+# Geometry helpers
+def create_point_from_x_y(sr):
+    """
+    converts x and y coordinates from a pd.Series to a QgsPoint geometry
+    :param pd.Series sr
+    """
+    x_coord = sr['X_Coord']
+    y_coord = sr['Y_Coord']
+    geom = QgsGeometry.fromWkt(
+        'POINT(' + str(x_coord) + ' '+str(y_coord) + ')'
+    )
+    return [sr['Name'], geom]
+def create_points_df(data, feedback):
+    """
+    converts a point x-y-list into POINT-df
+    :param pd.DataFrame data
+    :param QgsProcessingFeedback feedback
+    """
+    n = len(data)
+    if n > 0:
+        all_geoms = [create_point_from_x_y(data.loc[i,]) for i in data.index] # point geometries
+        df_out = pd.DataFrame(all_geoms, columns=['Name', 'geometry']).set_index('Name')
+    else:
+        df_out = pd.DataFrame(columns = ['Name', 'geometry']).set_index('Name')
+    return df_out

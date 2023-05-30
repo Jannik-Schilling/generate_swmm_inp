@@ -35,21 +35,27 @@ import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
-from qgis.core import (QgsLayerTreeGroup,
-                       QgsProject,
-                       QgsProcessing,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingContext,
-                       QgsProcessingException,
-                       QgsProcessingParameterEnum,
-                       QgsProcessingParameterString,
-                       QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterVectorLayer,
-                       QgsVectorFileWriter,
-                       QgsVectorLayer)
-
-from .g_s_read_write_data import read_layers_direct, create_layer_from_table
-from .g_s_defaults import def_ogr_driver_dict, def_stylefile_dict
+from qgis.core import (
+    QgsLayerTreeGroup,
+    QgsProject,
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingContext,
+    QgsProcessingException,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterString,
+    QgsProcessingParameterFolderDestination,
+    QgsProcessingParameterVectorLayer,
+    QgsVectorFileWriter,
+    QgsVectorLayer
+)
+from .g_s_read_write_data import read_layers_direct, create_layer_from_df
+from .g_s_defaults import (
+    def_ogr_driver_dict,
+    def_stylefile_dict,
+    ImportDataStatus,
+    st_files_path
+)
 
 
 class CreateSubModel(QgsProcessingAlgorithm):
@@ -318,7 +324,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
             )
             qml_file_path = os.path.join(
                 pluginPath,
-                def_stylefile_dict['st_files_path']
+                st_files_path
             )
             vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
             vlayer.renderer().symbol().setColor(QColor('red'))
@@ -569,11 +575,15 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 outfalls_df.loc[0, 'FlapGate'] = 'NO'
                 outfalls_df.loc[0, 'RouteTo'] = ''
                 outfalls_df.loc[0, 'geometry'] = start_point_geometry
+                create_layer_dict = {
+                    'data': outfalls_df,
+                    'status': ImportDataStatus.GEOM_READY,
+                    'layer_name': layer_name
+                }
                 list_move_to_group.append(layer_name)
-                create_layer_from_table(
-                    outfalls_df,
+                create_layer_from_df(
+                    create_layer_dict,
                     'OUTFALLS',
-                    layer_name,
                     crs_result,
                     folder_save,
                     1,
@@ -662,7 +672,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     transform_context,
                     options
                 )
-                style_file = def_stylefile_dict['st_files'][k]
+                style_file = def_stylefile_dict[k]
                 add_layer_on_completion3(
                     folder_save,
                     layer_name,

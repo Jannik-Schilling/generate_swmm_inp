@@ -28,6 +28,7 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 
 import pandas as pd
 import numpy as np
+from qgis.core import QgsGeometry
 from .g_s_various_functions import check_columns
 from .g_s_defaults import (
     def_infiltration_types,
@@ -36,6 +37,8 @@ from .g_s_defaults import (
 )
 
 
+# Export
+# Subcatchments
 def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     """
     reads subcatchment shapefile
@@ -96,9 +99,12 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     subcatchments_df = subcatchments_df[def_sections_dict['SUBCATCHMENTS']]
     return subcatchments_df, subareas_df, infiltration_df
 
-def adjust_infiltration_inp_lines(
+# import
+# infiltration
+def prepare_infiltration_inp_lines(
     inp_line,
-    main_infiltration_method
+    main_infiltration_method='HORTON',
+    **kwargs
 ):
     """
     adjusts the line length in the infiltration section
@@ -117,78 +123,104 @@ def adjust_infiltration_inp_lines(
     inp_line = inp_line+[current_infiltration_method]
     return inp_line
 
-def create_subcatchm_attributes_from_inp_df(
-    all_subcatchments,
-    all_subareas,
-    all_infiltr
-):
+
+# infiltration
+InfiltrDtypes = [
+    'InfMethod',
+    'SuctHead',
+    'Conductiv',
+    'InitDef',
+    'MaxRate',
+    'MinRate',
+    'Decay',
+    'DryTime',
+    'MaxInf',
+    'CurveNum'
+]
+   
+def create_infiltr_df(infiltr_row, feedback):
     """
-    creates pd.Dataframes from a pd.DataFrame of subcatchment attributes (from an inp file)
-    :param pd.DataFrame all_subcatchments
-    :param pd.DataFrame all_subareas
-    :param pd.DataFrame all_infiltr
+    creates a pd.DataFrame for infiltration values
+    :param pd.Series infiltr_row
     """
-    InfiltrDtypes = [
-        'InfMethod',
-        'SuctHead',
-        'Conductiv',
-        'InitDef',
-        'MaxRate',
-        'MinRate',
-        'Decay',
-        'DryTime',
-        'MaxInf',
-        'CurveNum'
+    if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
+        infiltr_row = infiltr_row.rename({
+            'Param1': 'SuctHead',
+            'Param2': 'Conductiv',
+            'Param3': 'InitDef'
+        })
+        infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
+        cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
+        for c in cols_not_in_infilt:
+            infiltr_row[c] = np.nan
+    if infiltr_row['InfMethod'] in ['HORTON', 'MODIFIED_HORTON']:
+        infiltr_row = infiltr_row.rename({
+            'Param1': 'MaxRate',
+            'Param2': 'MinRate',
+            'Param3': 'Decay',
+            'Param4': 'DryTime',
+            'Param5': 'MaxInf'
+        })
+        cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
+        for c in cols_not_in_infilt:
+            infiltr_row[c] = np.nan
+    if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
+        infiltr_row = infiltr_row.rename({
+            'Param1': 'CurveNum',
+            'Param2': 'Conductiv',
+            'Param3': 'DryTime'
+        })
+        infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
+        cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
+        for c in cols_not_in_infilt:
+            infiltr_row[c] = np.nan
+    return infiltr_row
+
+# geometries
+def get_polygon_from_verts(polyg_name, dict_all_vals, feedback):
+    """
+    creates polygon geometries from vertices
+    :param str polyg_name
+    :param dict_all_vals
+    :param QgsProcessingFeedback feedback
+    :returns: list
+    """
+    all_polygons = dict_all_vals['POLYGONS']['data']
+    verts = all_polygons.copy()[all_polygons.index == polyg_name]
+    verts = verts.reset_index(drop=True)
+    if len(verts) == 0: # no geometry given
+        polyg_geom = NULL
+    elif len(verts) < 3:  # only 1 or 2 vertices
+        # set geometry to buffer around first vertice
+        verts_points = [x.asPoint() for x in verts_points]
+        polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
+    else:
+        polyg_geom = QgsGeometry.fromPolygonXY(
+            [[x.asPoint() for x in verts['geometry']]] 
+        )
+    return [polyg_name, polyg_geom]
+
+def create_polygons_df(df_processed, dict_all_vals, feedback):
+    """
+    converts a point x-y-list into POINT-df
+    :param pd.DataFrame df_processed
+    :param dict dict_all_vals
+    :param QgsProcessingFeedback feedback
+    :return: pd.DataFrame
+    """
+    polygons_created = [
+        get_polygon_from_verts(n, dict_all_vals, feedback) for n in df_processed['Name']
     ]
+    polygons_created = pd.DataFrame(
+        polygons_created,
+        columns=['Name', 'geometry']
+    ).set_index('Name')
+    return polygons_created
 
-    def create_infiltr_df(infiltr_row):
-        """
-        creates a pd.DataFrame for infiltration values
-        :param pd.Series infiltr_row
-        """
-        if infiltr_row['InfMethod'] in ['GREEN_AMPT', 'MODIFIED_GREEN_AMPT']:
-            infiltr_row = infiltr_row.rename({
-                'Param1': 'SuctHead',
-                'Param2': 'Conductiv',
-                'Param3': 'InitDef'
-            })
-            infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
-            cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
-            for c in cols_not_in_infilt:
-                infiltr_row[c] = np.nan
-        if infiltr_row['InfMethod'] in ['HORTON', 'MODIFIED_HORTON']:
-            infiltr_row = infiltr_row.rename({
-                'Param1': 'MaxRate',
-                'Param2': 'MinRate',
-                'Param3': 'Decay',
-                'Param4': 'DryTime',
-                'Param5': 'MaxInf'
-            })
-            cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
-            for c in cols_not_in_infilt:
-                infiltr_row[c] = np.nan
-        if infiltr_row['InfMethod'] == 'CURVE_NUMBER':
-            infiltr_row = infiltr_row.rename({
-                'Param1': 'CurveNum',
-                'Param2': 'Conductiv',
-                'Param3': 'DryTime'
-            })
-            infiltr_row = infiltr_row.drop(['Param4', 'Param5'])
-            cols_not_in_infilt = [k for k in InfiltrDtypes if k not in infiltr_row.index]  # missing columns
-            for c in cols_not_in_infilt:
-                infiltr_row[c] = np.nan
-        return infiltr_row
-    all_infiltr = all_infiltr.apply(lambda x: create_infiltr_df(x), axis=1)
-    all_infiltr = all_infiltr[['Name']+InfiltrDtypes]
-    all_subcatchments = all_subcatchments.join(all_subareas.set_index('Name'), on='Name')
-    all_subcatchments = all_subcatchments.join(all_infiltr.set_index('Name'), on='Name')
-    return all_subcatchments
-
-
-# for raingages
-def get_raingage_list_from_inp(rg_line):
+# import of rain gages
+def get_raingages_from_inp(rg_line, feedback):
     """
-    creates a list of raingage values in the correct order from an inp line
+    prepares a list of raingage values in the correct order from an inp line
     :param list rg_line
     :return list
     """
@@ -222,7 +254,7 @@ def get_raingage_list_from_inp(rg_line):
     ] + list(rg_source.values())
     return rg_list
 
-
+# export of rain gages
 def get_raingage_from_qgis_row(rg_row):
     """
     adjusts columns in a row from a QGIS raingage layer

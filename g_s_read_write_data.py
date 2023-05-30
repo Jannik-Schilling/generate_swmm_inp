@@ -34,8 +34,6 @@ from qgis.core import (
     NULL,
     QgsFeature,
     QgsField,
-    QgsFields,
-    QgsGeometry,
     QgsProcessingException,
     QgsProject,
     QgsVectorFileWriter,
@@ -53,7 +51,8 @@ from .g_s_defaults import (
     def_ploygon_geom
 )
 
-# helper functions
+# export
+# helper function for export
 def replace_null_nan(attr_value):
     """replaces NULL with np.nan"""
     if attr_value == NULL:
@@ -61,7 +60,6 @@ def replace_null_nan(attr_value):
     else:
         return attr_value
 
-# read functions
 # layers with geometry
 def read_layers_direct(
     raw_layers_dict,
@@ -179,6 +177,7 @@ def read_data_from_table_direct(file, sheet=0):
         data_df = data_df.drop(columns=['fid'])
     return data_df
 
+# import
 # write functions and helpers
 def create_feature_from_df(df, pr, geom_type):
     """
@@ -190,11 +189,11 @@ def create_feature_from_df(df, pr, geom_type):
     f = QgsFeature()
     if geom_type != 'NoGeometry':
         if df['geometry'] is NULL:
-            if str(geom_type).startswith('Polygon'):
+            if geom_type == 'Polygon':
                 f.setGeometry(def_ploygon_geom)
-            if str(geom_type).startswith('LineString'):
+            if geom_type == 'LineString':
                 f.setGeometry(def_line_geom)
-            if str(geom_type).startswith('Point'):
+            if geom_type == 'Point':
                 f.setGeometry(def_point_geom)
         else:
             f.setGeometry(df['geometry'])
@@ -203,38 +202,42 @@ def create_feature_from_df(df, pr, geom_type):
         f.setAttributes(df.tolist())
     pr.addFeature(f)
 
-
-def create_layer_from_table(
-    data_df,
+def create_layer_from_df(
+    data_dict,
     section_name,
-    layer_name,
     crs_result,
     folder_save,
     geodata_driver_num,
     feedback,
     custom_fields=None,
-    create_empty=False
+    create_empty=False,
+    **kwargs
 ):
     """
-    creates a QgsVectorLayer from data in data_df
-    :param pd.DataFrame data_df
+    creates a QgsVectorLayer from data in geodata_dict
+    :param dict data_dict
     :param str section_name: name of SWMM section
     :param str layer_name
     :param str crs_result: epsg code of the desired CRS
     :param str folder_save
     :param int geodata_driver_num: key of driver in def_ogr_driver_dict
     :param QgsProcessingFeedback feedback
-    :param dict costum fields: additional fields
+    :param dict costum fields: additional fields e.g. annotations
     :param Bool feedback
     """
+    feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
+    data_df = data_dict['data']
+    layer_name = data_dict['layer_name']
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+    
     # set geometry type and provider
     geom_type = def_sections_geoms_dict[section_name]
-    geom_type = geom_type+'?crs='+crs_result
-    vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
+    geom_type_and_crs = geom_type+'?crs='+crs_result
+    vector_layer = QgsVectorLayer(geom_type_and_crs, layer_name, 'memory')
     pr = vector_layer.dataProvider()
+    
     # set fields
     field_types_dict = {
         'Double': QVariant.Double,
@@ -249,6 +252,7 @@ def create_layer_from_table(
         field_type = field_types_dict[field_type_string]
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
+    
     # get data_df columns in the correct order
     if not create_empty:
         data_df_column_order = list(layer_fields.keys())
@@ -257,15 +261,16 @@ def create_layer_from_table(
             if any ([g == NULL for g in data_df['geometry']]):
                 no_geom_features = list(data_df.loc[data_df['geometry'] == NULL, 'Name'])
                 feedback.pushWarning(
-                            'Warning: in section \"'
-                            + section_name
-                            + '\" one (or more) geometries are missing in the input file. Affected feature(s): '
-                            + ', '.join([str(x) for x in no_geom_features])
-                            + '.\nDefault geometries will be used instead. The features can be found around (0,0)'
-                        )
+                    'Warning: in section \"'
+                    + section_name
+                    + '\" one (or more) geometries are missing in the input file. Affected feature(s): '
+                    + ', '.join([str(x) for x in no_geom_features])
+                    + '.\nDefault geometries will be used instead. The features can be found around (0,0)'
+                )
         data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
     vector_layer.updateExtents()
+    
     # create layer
     try:
         options = QgsVectorFileWriter.SaveVectorOptions()
@@ -281,8 +286,7 @@ def create_layer_from_table(
             transform_context,
             options
         )
-    except BaseException:
-        # for older QGIS versions
+    except BaseException:        # for older QGIS versions
         QgsVectorFileWriter.writeAsVectorFormat(
             vector_layer,
             os.path.join(
@@ -295,7 +299,6 @@ def create_layer_from_table(
         )
     del vector_layer
     del pr
-    return ()
 
 
 # Tables to Excel files
