@@ -2,7 +2,7 @@
 A QGIS plugin which provides tools to create a SWMM input file from layers in QGIS, and to import input files into QGIS. The plugin was recently updated according to new functions in SWMM 5.2. Input files from SWMM 5.1.15 will still work. 
 
 ## Documentation
-[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_29.pdf) to the documentation file
+[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_30.pdf) to the documentation file
 
 ## Provided tools:
 1. **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
@@ -39,20 +39,22 @@ When you start from scratch, a useful tool to create a network from a line layer
 
 Now apply the processing tool **(2_GenerateSwmmInpFile)** as described above.
 
-### 2.2 Work existing inp files (for future edits)
-You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended. You can choose a prefix (e.g. "v2") which will be added and the data format (.shp, .gpkg, .gml, .kml, .geojson).
+### 2.2 Work with existing inp files (edits)
+You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended. 
+SWMM not necessarily requires "real" coordinates. QGIS does. So you´ll either need coordinate reference system of the input file or you can try to impoort the input file in any coordinate reference system and (move/rotate/scale) the imported features later.
+You can choose a prefix (e.g. "v2") which will be added and the data format (.shp, .gpkg, .gml, .kml, .geojson).
 Some formats seem to have problems with certain coordinate reference systems. GPKG and SHP worked fine so far.
 
-You can apply the **4_CreateSubModel** to the layers, in order to simplify an existing model. Again, creating a new folder an working with a prefix for the resulting files is recommended.
+The tool **4_CreateSubModel** allows you to simplify an existing model. Again, creating a new folder an working with a prefix for the resulting files is recommended.
 
 
 ## Further useful packages
 Python:
-- [SWMM5 for Python](https://pypi.org/project/SWMM5/)
+- [pyswmm](https://github.com/OpenWaterAnalytics/pyswmm)
 - [swmm_api](https://gitlab.com/markuspichler/swmm_api) 
 - [swmmio](https://github.com/aerispaha/swmmio)
-- [pyswmm](https://github.com/OpenWaterAnalytics/pyswmm)
 - [swmmtoolbox](https://pypi.org/project/swmmtoolbox/)
+- [SWMM5 for Python](https://pypi.org/project/SWMM5/)
 
 
 R:
@@ -66,6 +68,7 @@ R:
 - You can fork this repository to implement your own code and send a pull request
 
 ## Cite
+If you use the plugin in scientific work or other studies, please cite as:
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
 
 ## Funding

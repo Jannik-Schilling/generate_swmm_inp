@@ -720,7 +720,7 @@ def_stylefile_dict = {
 
 def_layer_names_dict = {
     'RAINGAGES': 'SWMM_raingages',
-    'SUBCATCHMENTS': 'SWMM_catchments',
+    'SUBCATCHMENTS': 'SWMM_subcatchments',
     'JUNCTIONS': 'SWMM_junctions',
     'OUTFALLS': 'SWMM_outfalls',
     'DIVIDERS': 'SWMM_dividers',
