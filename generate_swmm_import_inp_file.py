@@ -89,6 +89,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
     PREFIX = 'PREFIX'
     DATA_CRS = 'DATA_CRS'
     CREATE_EMPTY = 'CREATE_EMPTY'
+    TRANSFORM_CRS = 'TRANSFORM_CRS'
 
     def initAlgorithm(self, config):
         """
@@ -143,6 +144,15 @@ class ImportInpFile (QgsProcessingAlgorithm):
         self.addParameter(empt_param)
         empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
 
+        transform_crs = QgsProcessingParameterString(
+        self.TRANSFORM_CRS,
+        self.tr('Transform to Crs'),
+        defaultValue='NA',
+        )
+        # Hide the parameter CREATE_EMPTY , because it´s only for the default data to
+        self.addParameter(transform_crs)
+        transform_crs.setFlags(transform_crs.flags() | QgsProcessingParameterDefinition.FlagHidden)
+
     def name(self):
         return 'ImportInpFile'
 
@@ -180,7 +190,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
-        
+        transform_crs_string = self.parameterAsString(parameters, self.TRANSFORM_CRS, context)
+
         import_parameters_dict = {
             'folder_save': folder_save,
             'result_prefix': result_prefix,
@@ -190,7 +201,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             'geodata_driver_extension': geodata_driver_extension,
             'create_empty': create_empty,
             'pluginPath': pluginPath,
-            'context': context
+            'context': context,
+            'transform_crs_string': transform_crs_string
         }
         
         # check if the selected folder is temporary
@@ -629,7 +641,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         **import_parameters_dict
                     )
                 dict_all_vals[section_name]['status'] == ImportDataStatus.DONE
-     
+
         feedback.setProgressText(
             self.tr('all data was saved in '+str(folder_save))
         )

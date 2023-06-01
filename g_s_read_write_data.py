@@ -32,8 +32,11 @@ import numpy as np
 import copy
 from qgis.core import (
     NULL,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsFeature,
     QgsField,
+    QgsGeometry,
     QgsProcessingException,
     QgsProject,
     QgsVectorFileWriter,
@@ -202,6 +205,37 @@ def create_feature_from_df(df, pr, geom_type):
         f.setAttributes(df.tolist())
     pr.addFeature(f)
 
+def transform_crs_function(
+    vector_layer,
+    current_crs_string,
+    transform_crs_string
+):
+    """
+    transforms a layer CRS
+    :param QgsVectorLayer vector_layer
+    :param str current_crs_string
+    :param str transform_crs_string
+    """
+    print('layer_transformed')
+    current_crs = QgsCoordinateReferenceSystem(current_crs_string)
+    transform_crs = QgsCoordinateReferenceSystem(transform_crs_string)
+    vector_layer.startEditing()
+    for ft in vector_layer.getFeatures():
+        geom = ft.geometry()
+        geom = QgsGeometry(geom)
+        geom.transform(
+            QgsCoordinateTransform(
+                current_crs,
+                transform_crs,
+                QgsProject.instance()
+            )
+        )
+        fid = ft.id()
+        vector_layer.changeGeometry(fid,geom)
+    vector_layer.commitChanges()
+    vector_layer.setCrs(transform_crs)
+
+
 def create_layer_from_df(
     data_dict,
     section_name,
@@ -211,6 +245,7 @@ def create_layer_from_df(
     feedback,
     custom_fields=None,
     create_empty=False,
+    transform_crs_string='NA',
     **kwargs
 ):
     """
@@ -231,13 +266,13 @@ def create_layer_from_df(
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-    
+
     # set geometry type and provider
     geom_type = def_sections_geoms_dict[section_name]
     geom_type_and_crs = geom_type+'?crs='+crs_result
     vector_layer = QgsVectorLayer(geom_type_and_crs, layer_name, 'memory')
     pr = vector_layer.dataProvider()
-    
+
     # set fields
     field_types_dict = {
         'Double': QVariant.Double,
@@ -252,7 +287,7 @@ def create_layer_from_df(
         field_type = field_types_dict[field_type_string]
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
-    
+
     # get data_df columns in the correct order
     if not create_empty:
         data_df_column_order = list(layer_fields.keys())
@@ -270,8 +305,23 @@ def create_layer_from_df(
         data_df = data_df[data_df_column_order]
     data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
     vector_layer.updateExtents()
-    
+
+    # transformation of CRS
+    if transform_crs_string != 'NA':
+        transform_crs_function(
+            vector_layer,
+            crs_result,
+            transform_crs_string
+        )
+
     # create layer
+    fname = os.path.join(
+        folder_save, 
+        layer_name+ '.' +geodata_driver_extension
+    )
+    if os.path.isfile(fname):
+        raise QgsProcessingException('File '+fname
+        + ' already exists. Please choose another folder.')
     try:
         options = QgsVectorFileWriter.SaveVectorOptions()
         options.fileEncoding = 'utf-8'
@@ -279,24 +329,19 @@ def create_layer_from_df(
         transform_context = QgsProject.instance().transformContext()
         QgsVectorFileWriter.writeAsVectorFormatV3(
             vector_layer,
-            os.path.join(
-                folder_save,
-                layer_name + '.' + geodata_driver_extension
-            ),
+            fname,
             transform_context,
             options
         )
     except BaseException:        # for older QGIS versions
         QgsVectorFileWriter.writeAsVectorFormat(
             vector_layer,
-            os.path.join(
-                folder_save,
-                layer_name + '.' + geodata_driver_extension
-            ),
+            fname,
             'utf-8',
             vector_layer.crs(),
             driverName=geodata_driver_name
         )
+
     del vector_layer
     del pr
 
@@ -320,53 +365,32 @@ def dict_to_excel(
     :param str desired_format
     """
     save_name = def_tables_dict[file_key]['filename']
+    table_ext_list = ['.xlsx', '.xls', '.ods']
     if res_prefix != '':
         save_name = res_prefix+'_'+save_name
     if desired_format is not None:
+        table_ext_list = [desired_format] + table_ext_list
+    for ext in table_ext_list:
+        save_name_ext = save_name + ext
+        fname = os.path.join(folder_save, save_name_ext)
+        write_success = False
+        if os.path.isfile(fname):
+            raise QgsProcessingException('File '+fname
+            + ' already exists. Please choose another folder.')
         try:
-            save_name = save_name+desired_format
-            with pd.ExcelWriter(os.path.join(folder_save, save_name)) as writer:
+            with pd.ExcelWriter(fname) as writer:
                 for sheet_name, df in data_dict.items():
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
         except BaseException:
-            raise QgsProcessingException(self.tr(
-                'Could not write tables in the desired file format.'
-                ' Please install the package \"openpyxl\" (or alternatively'
-                ' the package \"odf\"). Instructions can be found on the in '
-                'the documentation or on GitHub '
-                '(https://github.com/Jannik-Schilling/generate_swmm_inp)'
-            ))
-    else:
-        try:
-            save_name_xlsx = save_name+'.xlsx'
-            with pd.ExcelWriter(os.path.join(folder_save, save_name_xlsx)) as writer:
-                for sheet_name, df in data_dict.items():
-                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-        except BaseException:
-            try:
-                save_name_xls = save_name+'.xls'
-                with pd.ExcelWriter(os.path.join(folder_save, save_name_xls)) as writer:
-                    for sheet_name, df in data_dict.items():
-                        df.to_excel(
-                            writer,
-                            sheet_name=sheet_name,
-                            index=False
-                        )
-            except BaseException:
-                try:
-                    save_name_ods = save_name+'.ods'
-                    with pd.ExcelWriter(os.path.join(folder_save, save_name_ods)) as writer:
-                        for sheet_name, df in data_dict.items():
-                            df.to_excel(
-                                writer,
-                                sheet_name=sheet_name,
-                                index=False
-                            )
-                except BaseException:
-                    raise QgsProcessingException(self.tr(
-                        'Could not write tables in .xlsx, .xls, or .ods'
-                        ' format. Please install the package \"openpyxl\" '
-                        '(or alternatively the package "odf"). Instructions '
-                        'can be found on the in the documentation or on '
-                        'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
-                    ))
+            feedback.setProgressText('could not write %s file , trying different file type' % ext)
+        else:
+            write_success = True
+            break
+    if not write_success:
+        raise QgsProcessingException(self.tr(
+            'Could not write tables in .xlsx, .xls, or .ods'
+            ' format. Please install the package \"openpyxl\" '
+            '(or alternatively the package "odf"). Instructions '
+            'can be found on the in the documentation or on '
+            'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
+        ))
