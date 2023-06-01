@@ -80,7 +80,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterCrs(
                 self.TRANSFORM_CRS,
-                self.tr('CRS of the SWMM input file'),
+                self.tr('Desired CRS for the data set (default is epsg:25833)'),
                 optional=True
             )
         )

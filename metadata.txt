@@ -25,6 +25,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.30 2023-06
+	- add check if file exist in import function
+	- new option CRS in default data tool
 
 
 # Tags are comma separated with spaces allowed
