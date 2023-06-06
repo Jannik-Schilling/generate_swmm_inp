@@ -83,17 +83,21 @@ def sect_list_import_handler(
     :parama QgsProcessingFeedback feedback
     """
     if out_type in ['geom_join', 'data_join']:
+        #create empty data if the section is not available
         if not section_name in dict_all_vals.keys():
-            #not available
             dict_all_vals[section_name]={}
             dict_all_vals[section_name]['data'] = []
             dict_all_vals[section_name]['n_objects'] = 0
             dict_all_vals[section_name]['status'] = ImportDataStatus.RAW
         data_dict = dict_all_vals[section_name]
+
+        # skip if the section is already processed
         if data_dict['status'] == ImportDataStatus.PROCESSED:
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
+
+            # preparation
             if section_name == 'INFILTRATION':
                 data_dict['data'] = [
                     prepare_infiltration_inp_lines(
@@ -101,6 +105,8 @@ def sect_list_import_handler(
                         **import_parameters_dict
                     ) for inp_line in data_dict['data']
                 ]
+
+            # build df
             df_join = build_df_sect_direct(section_name, data_dict)
             if out_type == 'geom_join':
                 dict_all_vals[section_name]['data'] = create_points_df(df_join, feedback)
@@ -202,8 +208,7 @@ def sect_list_import_handler(
                 df_processed = df_processed.applymap(replace_nan_null)
                 dict_all_vals[section_name]['data'] = df_processed
                 dict_all_vals[section_name]['status'] = ImportDataStatus.GEOM_READY
-                
-            create_layer_from_df    
+
             if out_type == 'table':
                 pass
 

@@ -271,9 +271,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # options section
         # assumption for main infiltration method if not in options 
         if 'OPTIONS' in dict_all_vals.keys():
-            feedback.setProgressText(
-                self.tr('generating options file ...')
-            )
+            section_name = 'OPTIONS'
+            feedback.setProgressText('Preparing section \"'+section_name+'\"')
             feedback.setProgress(8)
             from .g_s_options import convert_options_format_for_import
             df_options = build_df_for_section(
@@ -291,7 +290,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
             
 
         # inflows section
-        feedback.setProgressText(self.tr('generating inflows file ...'))
+        section_name = 'INFLOWS'
+        feedback.setProgressText('Preparing section \"'+section_name+'\"')
         feedback.setProgress(12)
         if 'INFLOWS' in dict_all_vals.keys():
             df_inflows = build_df_for_section(
@@ -351,7 +351,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
         pattern_cols = {k: list(v.keys())for k, v in def_tables_dict['PATTERNS']['tables'].items()}
 
         if 'PATTERNS' in dict_all_vals.keys():
-            feedback.setProgressText(self.tr('generating patterns file ...'))
+            section_name = 'PATTERNS'
+            feedback.setProgressText('Preparing section \"'+section_name+'\"')
             feedback.setProgress(16)
             all_patterns = build_df_for_section('PATTERNS', dict_all_vals)
             if len(all_patterns) == 0:
@@ -410,7 +411,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # curves section
         if 'CURVES' in dict_all_vals.keys():
-            feedback.setProgressText(self.tr('generating curves file ...'))
+            section_name = 'CURVES'
+            feedback.setProgressText('Preparing section \"'+section_name+'\"')
             feedback.setProgress(22)
             curve_type_dict = {x[0]: x[1] for x in dict_all_vals['CURVES']['data'] if x[1].capitalize() in curve_cols_dict.keys()}
             occuring_curve_types = list(set(curve_type_dict.values()))
@@ -433,7 +435,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         dict_res_table['CURVES'] = all_curves
 
         # quality section
-        feedback.setProgressText(self.tr('generating quality file ...'))
+        feedback.setProgressText('Preparing QUALITY parameters')
         feedback.setProgress(28)
         quality_cols_dict = {
             k: def_sections_dict[k] for k in [
@@ -490,7 +492,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # streets and inlets section
         if 'STREETS' in dict_all_vals.keys() or 'INLETS' in dict_all_vals.keys():
-            feedback.setProgressText(self.tr('generating streets and inlets file ...'))
+            section_name = 'STREETS'
+            feedback.setProgressText('Preparing section \"'+section_name+'\"')
             feedback.setProgress(35)
             street_data = {}
             street_data['STREETS'] = build_df_for_section('STREETS', dict_all_vals)
@@ -502,16 +505,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 street_data['INLETS'] = build_df_for_section('INLETS', dict_all_vals)
             street_data['INLET_USAGE'] = build_df_for_section('INLET_USAGE', dict_all_vals)
             dict_res_table['STREETS'] = street_data
-
-        # writing tables:
-        for k, v in dict_res_table.items():
-            dict_to_excel(
-                v,
-                k,
-                folder_save,
-                feedback,
-                result_prefix
-            )
 
         # ToDo...TRANSECTS
         if 'CONDUITS' in dict_all_vals.keys():
@@ -528,7 +521,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 'ModifierElevations'
             ]    
             if 'TRANSECTS' in dict_all_vals.keys():
-                feedback.setProgressText(self.tr('generating transects file ...'))
+                section_name = 'TRANSECTS'
+                feedback.setProgressText('Preparing section \"'+section_name+'\"')
                 feedback.setProgress(70)
                 transects_list = dict_all_vals['TRANSECTS']['data'].copy()
                 tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
@@ -593,6 +587,17 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     feedback,
                     result_prefix
                 )
+                
+        # writing tables:
+        feedback.setProgressText('Writing tables ...')
+        for k, v in dict_res_table.items():
+            dict_to_excel(
+                v,
+                k,
+                folder_save,
+                feedback,
+                result_prefix
+            )
      
         # sections with geometries, which will be added as layers
         #------------------------------
@@ -627,7 +632,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     )
                     dict_all_vals[section_name]['status'] = ImportDataStatus.FILE_READY
 
-        # add layers to
+        # add layers to canvas
         feedback.setProgressText(
             self.tr('Adding layers to canvas')
         )
