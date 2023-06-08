@@ -17,7 +17,7 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 - **4_CreateSubModel**: Create a submodel (of an existing set of SWMM layers in QGIS) below or above a certain node
 
-### 3 additional features
+### additional features
 - style files (.qml) with **custom feature forms** for every SWMM layer; The styles will be added to the layers with the first tool. Alternatively you can download the style files or copy them from your QGIS plugin folder 
     <img src="/figures/feature_forms.png" alt= “export” width="50%">
 - import of SWMM report file sections (see below)
