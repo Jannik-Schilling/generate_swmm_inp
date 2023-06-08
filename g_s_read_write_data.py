@@ -216,7 +216,6 @@ def transform_crs_function(
     :param str current_crs_string
     :param str transform_crs_string
     """
-    print('layer_transformed')
     current_crs = QgsCoordinateReferenceSystem(current_crs_string)
     transform_crs = QgsCoordinateReferenceSystem(transform_crs_string)
     vector_layer.startEditing()
