@@ -4,6 +4,9 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 ## Documentation
 [Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_30.pdf) to the documentation file
 
+If you use the plugin in scientific work or other studies, please cite as:
+> *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
+
 ## Provided Tools:
 
 - **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
@@ -17,9 +20,9 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 - **4_CreateSubModel**: Create a submodel (of an existing set of SWMM layers in QGIS) below or above a certain node
 
-### additional features
+### Additional features
 - style files (.qml) with **custom feature forms** for every SWMM layer; The styles will be added to the layers with the first tool. Alternatively you can download the style files or copy them from your QGIS plugin folder 
-    <img src="/figures/feature_forms.png" alt= “export” width="50%">
+    <img src="/figures/feature_forms.png" alt= “export” width="65%">
 - import of SWMM report file sections (see below)
 
 ## Workflow
@@ -56,15 +59,15 @@ The tool **4_CreateSubModel** allows you to simplify an existing model. Again, c
 ### 3 run simulation / import results from report files
 After you ran a simulation in SWMM (or with a python package, see below) you can add the results from a report file. You´ll find the button for the [QgisAction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html) in the feature form of a SWMM layer:
 
-<img src="/figures/action_report.png" alt= “export” width="50%">
+<img src="/figures/action_report.png" alt= “export” width="65%">
 
 You select the report file, the SWMM feature type, the desired report section and a location to save the data. By default, the resulting table will be added to the QGIS project (if you don´t want this, uncheck the checkbox)
 
-<img src="/figures/action_report2.png" alt= “export” width="50%">
+<img src="/figures/action_report2.png" alt= “export” width="65%">
 
 Now you can join the table to the SWMM layer: 
 
-<img src="/figures/action_report3.png" alt= “export” width="50%">
+<img src="/figures/action_report3.png" alt= “export” width="65%">
 
 There´s also a [video with a detailled instruction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html) for table joins.
 
@@ -87,9 +90,6 @@ R:
 - you can also propose new features and discuss them at the issues page. 
 - You can fork this repository to implement your own code and send a pull request
 
-## Cite
-If you use the plugin in scientific work or other studies, please cite as:
-> *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
 
 ## Funding
 First versions of this plugin have been developed within the project PROSPER-RO, funded by BMBF, grant number 033L212
