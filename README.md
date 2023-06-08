@@ -4,17 +4,23 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 ## Documentation
 [Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_30.pdf) to the documentation file
 
-## Provided tools:
-1. **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
-2. **2_GenerateSwmmInpFile**: Select a set of layers in QGIS to create an input file for a SWMM simulation
+## Provided Tools:
 
-<img src="/figures/export.png" alt= “export” width="40%">
+- **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
+- **2_GenerateSwmmInpFile**: Select a set of layers in QGIS to create an input file for a SWMM simulation
 
-3. **3_ImportInpFile**: Import an existing SWMM model into QGIS (layers and tables).
+    <img src="/figures/export.png" alt= “export” width="40%">
 
-<img src="/figures/import.png" alt= “import” width="30%">
+- **3_ImportInpFile**: Import an existing SWMM model into QGIS (layers and tables).
 
-4. **4_CreateSubModel**: Create a submodel (of an existing set of SWMM layers in QGIS) below or above a certain node
+    <img src="/figures/import.png" alt= “import” width="30%">
+
+- **4_CreateSubModel**: Create a submodel (of an existing set of SWMM layers in QGIS) below or above a certain node
+
+### 3 additional features
+- style files (.qml) with **custom feature forms** for every SWMM layer; The styles will be added to the layers with the first tool. Alternatively you can download the style files or copy them from your QGIS plugin folder 
+    <img src="/figures/feature_forms.png" alt= “export” width="50%">
+- import of SWMM report file sections (see below)
 
 ## Workflow
 ### 0 Install 
@@ -47,6 +53,18 @@ Some formats seem to have problems with certain coordinate reference systems. GP
 
 The tool **4_CreateSubModel** allows you to simplify an existing model. Again, creating a new folder an working with a prefix for the resulting files is recommended.
 
+### 3 run simulation / import results from report files
+After you ran a simulation in SWMM (or with a python package, see below) you can add the results from a report file. You´ll find the button for the [QgisAction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html) in the feature form of a SWMM layer:
+
+<img src="/figures/action_report.png" alt= “export” width="50%">
+
+You select the report file, the SWMM feature type, the desired report section and a location to save the data. By default, the resulting table will be added to the QGIS project (if you don´t want this, uncheck the checkbox)
+
+<img src="/figures/action_report2.png" alt= “export” width="50%">
+
+Now you can join the table to the SWMM layer. Here´s a [video with a detailled instruction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html)
+
+<img src="/figures/action_report2.png" alt= “export” width="50%">
 
 ## Further useful packages
 Python:
