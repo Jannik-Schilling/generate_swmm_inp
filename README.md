@@ -20,7 +20,7 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 ### additional features
 - style files (.qml) with **custom feature forms** for every SWMM layer; The styles will be added to the layers with the first tool. Alternatively you can download the style files or copy them from your QGIS plugin folder 
     <img src="/figures/feature_forms.png" alt= “export” width="50%">
-- import of SWMM report file sections (see [below](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/README.md#3-run-simulation--import-results-from-report-files))
+- import of SWMM report file sections (see below)
 
 ## Workflow
 ### 0 Install 
@@ -62,9 +62,11 @@ You select the report file, the SWMM feature type, the desired report section an
 
 <img src="/figures/action_report2.png" alt= “export” width="50%">
 
-Now you can join the table to the SWMM layer. Here´s a [video with a detailled instruction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html)
+Now you can join the table to the SWMM layer: 
 
-<img src="/figures/action_report2.png" alt= “export” width="50%">
+<img src="/figures/action_report3.png" alt= “export” width="50%">
+
+There´s also a [video with a detailled instruction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html) for table joins.
 
 ## Further useful packages
 Python:
