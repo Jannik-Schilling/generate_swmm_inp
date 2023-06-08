@@ -7,7 +7,8 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 If you use the plugin in scientific work or other studies, please cite as:
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
 
-## Provided Tools:
+## Provided features:
+### Processing tools
 
 - **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
 - **2_GenerateSwmmInpFile**: Select a set of layers in QGIS to create an input file for a SWMM simulation
@@ -23,7 +24,7 @@ If you use the plugin in scientific work or other studies, please cite as:
 ### Additional features
 - style files (.qml) with **custom feature forms** for every SWMM layer; The styles will be added to the layers with the first tool. Alternatively you can download the style files or copy them from your QGIS plugin folder 
     <img src="/figures/feature_forms.png" alt= “export” width="65%">
-- import of SWMM report file sections (see below)
+- **import of SWMM report file sections** (see below)
 
 ## Workflow
 ### 0 Install 
