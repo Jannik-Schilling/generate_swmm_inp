@@ -35,6 +35,7 @@ from qgis.core import (QgsProject,
                        QgsProcessingAlgorithm,
                        QgsProcessingContext,
                        QgsProcessingException,
+                       QgsProcessingParameterCrs,
                        QgsProcessingParameterEnum,
                        QgsCoordinateReferenceSystem,
                        QgsProcessingParameterFolderDestination,
@@ -53,6 +54,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
     # Constants
     SWMM_FOLDER = 'SWMM_FOLDER'
     SWMM_VERSION = 'SWMM_VERSION'
+    TRANSFORM_CRS = 'TRANSFORM_CRS'
 
     def initAlgorithm(self, config):
         """
@@ -65,7 +67,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             self.tr('Where should the default data be saved? Select/Create a folder')
             )
         )
-        
+
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.SWMM_VERSION,
@@ -75,9 +77,22 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterCrs(
+                self.TRANSFORM_CRS,
+                self.tr('Desired CRS for the data set (default is epsg:25833)'),
+                optional=True
+            )
+        )
+
     def processAlgorithm(self, parameters, context, feedback):
         data_save_folder = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
         swmm_version_num = self.parameterAsEnum(parameters, self.SWMM_VERSION, context)
+        transform_crs = self.parameterAsCrs(parameters, self.TRANSFORM_CRS, context)
+        transform_crs_string = str(transform_crs.authid())
+        if transform_crs_string == '':
+            transform_crs_string = 'NA'
+
         if parameters['SWMM_FOLDER'] == 'TEMPORARY_OUTPUT':
             raise QgsProcessingException('The default data set needs to be saved in a directory (temporary folders won´t work). Please select a directoy')
 
@@ -107,12 +122,13 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             version_prefix = 'empty'
             
         alg_params = {
-            'DATA_CRS':QgsCoordinateReferenceSystem('epsg:25833'),
-            'GEODATA_DRIVER':1,  # GPKG
-            'INP_FILE':read_file,
-            'PREFIX':version_prefix,
-            'SAVE_FOLDER':data_save_folder,
-            'CREATE_EMPTY':create_empty
+            'DATA_CRS': QgsCoordinateReferenceSystem('epsg:25833'),
+            'GEODATA_DRIVER': 1,  # GPKG
+            'INP_FILE': read_file,
+            'PREFIX': version_prefix,
+            'SAVE_FOLDER': data_save_folder,
+            'CREATE_EMPTY': create_empty,
+            'TRANSFORM_CRS': transform_crs_string
         }
         subalg_outputs = processing.run('GenSwmmInp:ImportInpFile', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
