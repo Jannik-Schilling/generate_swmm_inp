@@ -30,7 +30,6 @@ import numpy as np
 import os
 import pandas as pd
 from qgis.core import (
-    NULL,
     QgsGeometry,
     QgsPointXY,
     QgsProcessingAlgorithm,
@@ -617,11 +616,14 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if section_name in dict_all_vals.keys():
                 if dict_all_vals[section_name]['status'] == ImportDataStatus.GEOM_READY:
                     data_dict = dict_all_vals[section_name]
-                    layer_name = (
-                        str(import_parameters_dict['result_prefix'])
-                        +'_'
-                        + def_layer_names_dict[section_name]
-                    )
+                    if result_prefix != '':
+                        layer_name = (
+                            str(import_parameters_dict['result_prefix'])
+                            +'_'
+                            + def_layer_names_dict[section_name]
+                        )
+                    else:
+                        layer_name = def_layer_names_dict[section_name]
                     data_dict['layer_name'] = layer_name
                     create_layer_from_df(
                         data_dict,

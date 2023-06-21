@@ -28,7 +28,10 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 
 import pandas as pd
 import numpy as np
-from qgis.core import QgsGeometry
+from qgis.core import (
+    NULL,
+    QgsGeometry
+)
 from .g_s_various_functions import check_columns
 from .g_s_defaults import (
     def_infiltration_types,
