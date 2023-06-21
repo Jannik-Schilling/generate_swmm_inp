@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
+__date__ = '2023-07-01'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
 from datetime import datetime
@@ -273,7 +273,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'OPTIONS' in dict_all_vals.keys():
             section_name = 'OPTIONS'
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
-            feedback.setProgress(8)
+            feedback.setProgress(5)
             from .g_s_options import convert_options_format_for_import
             df_options = build_df_for_section(
                 'OPTIONS',
@@ -292,7 +292,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         # inflows section
         section_name = 'INFLOWS'
         feedback.setProgressText('Preparing section \"'+section_name+'\"')
-        feedback.setProgress(12)
+        feedback.setProgress(8)
         if 'INFLOWS' in dict_all_vals.keys():
             df_inflows = build_df_for_section(
                 'INFLOWS',
@@ -353,7 +353,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'PATTERNS' in dict_all_vals.keys():
             section_name = 'PATTERNS'
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
-            feedback.setProgress(16)
+            feedback.setProgress(12)
             all_patterns = build_df_for_section('PATTERNS', dict_all_vals)
             if len(all_patterns) == 0:
                 all_patterns = dict()
@@ -413,7 +413,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'CURVES' in dict_all_vals.keys():
             section_name = 'CURVES'
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
-            feedback.setProgress(22)
+            feedback.setProgress(16)
             curve_type_dict = {x[0]: x[1] for x in dict_all_vals['CURVES']['data'] if x[1].capitalize() in curve_cols_dict.keys()}
             occuring_curve_types = list(set(curve_type_dict.values()))
             all_curves = [del_kw_from_list(x, occuring_curve_types, 1) for x in dict_all_vals['CURVES']['data'].copy()]
@@ -436,7 +436,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
 
         # quality section
         feedback.setProgressText('Preparing QUALITY parameters')
-        feedback.setProgress(28)
+        feedback.setProgress(20)
         quality_cols_dict = {
             k: def_sections_dict[k] for k in [
                 'POLLUTANTS',
@@ -494,7 +494,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         if 'STREETS' in dict_all_vals.keys() or 'INLETS' in dict_all_vals.keys():
             section_name = 'STREETS'
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
-            feedback.setProgress(35)
+            feedback.setProgress(25)
             street_data = {}
             street_data['STREETS'] = build_df_for_section('STREETS', dict_all_vals)
             if 'INLETS' in dict_all_vals.keys():
@@ -523,7 +523,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             if 'TRANSECTS' in dict_all_vals.keys():
                 section_name = 'TRANSECTS'
                 feedback.setProgressText('Preparing section \"'+section_name+'\"')
-                feedback.setProgress(70)
+                feedback.setProgress(30)
                 transects_list = dict_all_vals['TRANSECTS']['data'].copy()
                 tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
                 tr_endp = tr_startp[1:]+[len(transects_list)]
