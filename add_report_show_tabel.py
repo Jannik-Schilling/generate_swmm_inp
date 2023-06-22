@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
+    QPushButton,
     QVBoxLayout,
     QTableWidget,
     QTableWidgetItem,
@@ -9,6 +10,7 @@ from PyQt5.QtWidgets import (
     QComboBox
 )
 from PyQt5.QtGui import QColor
+from PyQt5.QtCore import Qt
 from qgis.core import (
     QgsProject,
     QgsFeature,
@@ -255,7 +257,7 @@ def get_dict_report_cols(topic, header_lines):
         ]
     if topic == 'flow_classification': 
         cols = [
-            'Conduit',
+            'Name',
             'AdjustedActualLength',
             'FractionOfTimeDry',
             'FractionOfTimeUpDry',
@@ -369,29 +371,33 @@ def get_rpt_df(topic, readfile):
 
 
 def get_rpt_txt(readfile):
-    encodings = ['utf-8', 'windows-1250', 'windows-1252']  # add more
+    # open file with different encodings
+    encodings = [
+        'utf-8',
+        'windows-1250',
+        'windows-1252'
+    ]  # add more?
     for e in encodings:
         try:
             with open(readfile, 'r', encoding=e) as f:
                 rpt_text = f.readlines()
         except UnicodeDecodeError:
             pass
-            #print('got unicode error with %s , trying different encoding' % e)
         else:
-            #print('opening the file with encoding:  %s ' % e)
             break
     rpt_text = [x for x in rpt_text if x != '\n']
     rpt_text = [x for x in rpt_text if x != '\r']
     rpt_text = [x.strip() for x in rpt_text]
     rpt_text = [x for x in rpt_text if len(x)>0]
-    rpt_text = rpt_text[:-3] #delete last three lines
+    # delete last three lines of the file (information on start and end time)
+    rpt_text = rpt_text[:-3]
     return rpt_text
 
 # third dialog
 class saveCsvDialog(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        self.setWindowTitle('Save report section as CSV')
+        self.setWindowTitle('Save table section as CSV')
         self.df = parent.df
         self.topic = parent.topic
         self.layout = QVBoxLayout()
@@ -424,7 +430,11 @@ class saveCsvDialog(QDialog):
     def save_csv_action(self):
         csvpath = self.CsvFile.filePath()
         if csvpath=='':
-            QtWidgets.QMessageBox.information(None,"Warning", 'Resulting CSV file can`t be empty. Please select a file')
+            QtWidgets.QMessageBox.information(
+                None,
+                "Warning",
+                'Resulting CSV file can`t be empty. Please select a file'
+            )
         else:
             self.df.to_csv(csvpath, index=False)
             self.add_to_project = self.addcheckbox.isChecked()
@@ -432,7 +442,11 @@ class saveCsvDialog(QDialog):
                 showname = self.topic+' ('+os.path.split(csvpath)[1]+')'
                 csv_layer = QgsVectorLayer(csvpath, showname , 'ogr')
                 QgsProject.instance().addMapLayer(csv_layer)
-            QtWidgets.QMessageBox.information(None,"Info", 'Report data was saved in '+ csvpath)
+            QtWidgets.QMessageBox.information(
+                None,
+                "Info",
+                'Report data was saved in '+ csvpath
+            )
             self.closeaction()
 
 
@@ -451,16 +465,22 @@ class showTableDialog(QDialog):
         self.tableWidget.setRowCount(
             len(self.df.index)
         )
+        self.tableWidget.setSortingEnabled(True)
         if any([x in feat_names for x in self.df['Name']]):
-            self.infotext = QLabel('Features of the current layer are highlighted in yellow')
+            self.infotext = QLabel(
+                'Features of the current layer are highlighted in yellow'
+            )
         else:
-            self.infotext = QLabel('No features of current layer were found in this report section!')
+            self.infotext = QLabel(
+                'No features of current layer were found in this report section!'
+            )
         self.layout.addWidget(self.infotext)
         for i in self.df.index:
             val0 = self.df['Name'][i]
             for j, col in enumerate(self.df.columns):
                 val = self.df[col][i]
                 item1 = QTableWidgetItem(str(val))
+                item1.setFlags(Qt.ItemIsEditable)
                 if val0 in feat_names:
                     item1.setBackground(QColor('yellow'))
                 self.tableWidget.setItem(i, j, item1)
@@ -469,13 +489,12 @@ class showTableDialog(QDialog):
         )
 
         # button to save csv
-        self.button_save = QPushButton('Save report section as CSV')
+        self.button_save = QPushButton('Close and save table as CSV')
         self.button_save.clicked.connect(self.open_save_csv)
-
         self.layout.addWidget(self.button_save)
         self.layout.addWidget(self.tableWidget)
         self.setLayout(self.layout)
-        
+
     def open_save_csv(self):
         self.w3 = saveCsvDialog(self)
         self.w3.show()
@@ -527,7 +546,11 @@ class joinSwmmReportDialog(QDialog):
             self.layout.addWidget(self.label_topic_selBox)
             self.layout.addWidget(self.topic_selBox)
         else:
-            QtWidgets.QMessageBox.information(None,"Warning", 'No suitable data can be accessed')
+            QtWidgets.QMessageBox.information(
+                None,
+                "Warning",
+                'No suitable data can be accessed'
+            )
             self.close()
         
         # OK/Cancel-Buttons
@@ -550,7 +573,11 @@ class joinSwmmReportDialog(QDialog):
         self.topic = self.topic_selBox.currentText()
         readfile = self.swmmRptFile.filePath()
         if readfile=='':
-            QtWidgets.QMessageBox.information(None,"Warning", 'SWMM report file can`t be empty. Please select a file')
+            QtWidgets.QMessageBox.information(
+                None,
+                "Warning",
+                'SWMM report file can`t be empty. Please select a file'
+            )
             w.show()
         else:
             self.df = get_rpt_df(self.topic, readfile)
