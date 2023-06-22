@@ -515,16 +515,24 @@ def add_layer_on_completion(
     :param str pluginPath
     """
     layer_filename = layer_name+'.'+geodata_driver_extension
-    vlayer = QgsVectorLayer(
-        os.path.join(folder_save, layer_filename),
-        layer_name,
-        "ogr"
-    )
-    qml_file_path = os.path.join(
-        pluginPath,
-        st_files_path,
-        style_file
-    )
-    vlayer.loadNamedStyle(qml_file_path)
-    context.temporaryLayerStore().addMapLayer(vlayer)
-    context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+    file_path = os.path.join(folder_save, layer_filename)
+    if os.path.isfile(file_path):
+        vlayer = QgsVectorLayer(
+            file_path,
+            layer_name,
+            "ogr"
+        )
+        qml_file_path = os.path.join(
+            pluginPath,
+            st_files_path,
+            style_file
+        )
+        vlayer.loadNamedStyle(qml_file_path)
+        context.temporaryLayerStore().addMapLayer(vlayer)
+        context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+    else:
+        raise QgsProcessingException(
+                'File '
+                + file_path
+                + ' could not be loaded to the project.' 
+            )

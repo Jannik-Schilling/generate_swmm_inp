@@ -341,9 +341,6 @@ def create_layer_from_df(
             driverName=geodata_driver_name
         )
 
-    del vector_layer
-    del pr
-
 
 # Tables to Excel files
 def dict_to_excel(

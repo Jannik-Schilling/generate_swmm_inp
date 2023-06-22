@@ -2,7 +2,7 @@
 A QGIS plugin which provides tools to create a SWMM input file from layers in QGIS, and to import input files into QGIS. The plugin was recently updated according to new functions in SWMM 5.2. Input files from SWMM 5.1.15 will still work. 
 
 ## Documentation
-[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_30.pdf) to the documentation file
+[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_31.pdf) to the documentation file
 
 If you use the plugin in scientific work or other studies, please cite as:
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
@@ -62,7 +62,11 @@ After you ran a simulation in SWMM (or with a python package, see below) you can
 
 <img src="/figures/action_report.png" alt= “export” width="65%">
 
-You select the report file, the SWMM feature type, the desired report section and a location to save the data. By default, the resulting table will be added to the QGIS project (if you don´t want this, uncheck the checkbox)
+You select the report file, the SWMM feature type and the desired report section. The resulting table will shown as a new table widget.
+
+<img src="/figures/action_report2_n.png" alt= “export” width="65%">
+
+You can save the table as a csv file and add it to the QGIS project (if you don´t want this, uncheck the checkbox).
 
 <img src="/figures/action_report2.png" alt= “export” width="65%">
 

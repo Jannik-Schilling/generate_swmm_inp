@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.20
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.30
+version=0.31
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -24,9 +24,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.30 2023-06
-	- add check if file exist in import function
-	- new option CRS in default data tool
+changelog= 0.31 2023-07
+	- update for import of report files
+	- fix for import of NULL geometries
 
 
 # Tags are comma separated with spaces allowed
