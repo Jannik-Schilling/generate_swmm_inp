@@ -517,6 +517,8 @@ def add_layer_on_completion(
     layer_filename = layer_name+'.'+geodata_driver_extension
     file_path = os.path.join(folder_save, layer_filename)
     if os.path.isfile(file_path):
+        if geodata_driver_extension in ['gpkg', 'fgb', 'gml', 'kml']:
+            file_path = file_path+'|layername='+layer_name
         vlayer = QgsVectorLayer(
             file_path,
             layer_name,

@@ -341,7 +341,6 @@ def create_layer_from_df(
             driverName=geodata_driver_name
         )
 
-
 # Tables to Excel files
 def dict_to_excel(
     data_dict,
