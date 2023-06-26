@@ -347,8 +347,6 @@ def write_inp(
         for vert_key in vertices_dict.keys():
             vert_df = vertices_dict[vert_key].copy()
             vert_df['vertice'] = vert_key
-            vert_df['y'] = round(vert_df['y'], 2)
-            vert_df['x'] = round(vert_df['x'], 2)
             vert_df = vert_df[['vertice', 'x', 'y']]
             file1.write(vert_df.to_string(header=False, index=False))
             file1.write('\n')
@@ -362,8 +360,6 @@ def write_inp(
         for pol_key in polygons_dict.keys():
             pol_df = polygons_dict[pol_key].copy()
             pol_df['subcatch']=pol_key
-            pol_df['y'] = round(pol_df['y'], 2)
-            pol_df['x'] = round(pol_df['x'], 2)
             pol_df = pol_df[['subcatch', 'x', 'y']]
             file1.write(pol_df.to_string(header=False, index=False))
             file1.write('\n')
