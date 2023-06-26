@@ -623,7 +623,6 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 options.fileEnconding = 'utf-8'
                 options.driverName = geodata_driver_name
                 options.onlySelectedFeatures = True
-                options.ct 
                 transform_context = QgsProject.instance().transformContext()
                 fname = os.path.join(
                     folder_save, layer_name+'.'+geodata_driver_extension
