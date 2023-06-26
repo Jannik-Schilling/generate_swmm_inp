@@ -34,7 +34,6 @@ import os
 import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtGui import QColor
 from qgis.core import (
     QgsLayerTreeGroup,
     QgsProject,
@@ -56,6 +55,7 @@ from .g_s_defaults import (
     ImportDataStatus,
     st_files_path
 )
+from .g_s_import_helpers import add_layer_on_completion
 
 
 class CreateSubModel(QgsProcessingAlgorithm):
@@ -299,44 +299,6 @@ class CreateSubModel(QgsProcessingAlgorithm):
             context
         )
         pluginPath = os.path.dirname(__file__)
-
-        def add_layer_on_completion3(
-            folder_save,
-            layer_name,
-            style_file,
-            geodata_driver_extension
-        ):
-            """
-            adds the current layer on completen to canvas with color red
-            :param str folder_save
-            :param str layer_name
-            :param str style_file: file name of the qml file
-            :param str geodata_driver_extension
-            """
-            layer_filename = layer_name+'.'+geodata_driver_extension
-            vlayer = QgsVectorLayer(
-                os.path.join(
-                    folder_save,
-                    layer_filename
-                ),
-                layer_name,
-                "ogr"
-            )
-            qml_file_path = os.path.join(
-                pluginPath,
-                st_files_path
-            )
-            vlayer.loadNamedStyle(os.path.join(qml_file_path, style_file))
-            vlayer.renderer().symbol().setColor(QColor('red'))
-            context.temporaryLayerStore().addMapLayer(vlayer)
-            context.addLayerToLoadOnCompletion(
-                vlayer.id(),
-                QgsProcessingContext.LayerDetails(
-                    "",
-                    QgsProject.instance(),
-                    ""
-                )
-            )
 
         feedback.setProgressText(self.tr('Loading layers...'))
         # list for all layer names which will be added
@@ -589,11 +551,14 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     1,
                     feedback
                 )
-                add_layer_on_completion3(
-                    folder_save,
+                add_layer_on_completion(
                     layer_name,
                     'style_outfalls.qml',
-                    'gpkg'
+                    'gpkg',
+                    folder_save,
+                    pluginPath,
+                    context,
+                    layer_color = 'red'
                 )
                 feedback.setProgressText(self.tr('done \n'))
                 feedback.setProgress(55)
@@ -643,21 +608,22 @@ class CreateSubModel(QgsProcessingAlgorithm):
         dict_all_layers.update(raingages_layer_dict)
 
         # add layers to canvas
+        #print(crs_dict)
         feedback.setProgressText(self.tr('Adding layerst to canvas...'))
         for k, v in dict_all_layers.items():
             if v.selectedFeatureCount() > 0:
                 vector_layer = v
                 layer_name = str(result_prefix)+'_SWMM_'+k.lower()
-                crs_dict
                 geodata_crs = crs_dict[k]
                 geodata_driver_name = drivers_dict[k]
                 geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-                vector_layer.setCrs(geodata_crs)
+                # vector_layer.setCrs(geodata_crs)
                 # create layer
                 options = QgsVectorFileWriter.SaveVectorOptions()
                 options.fileEnconding = 'utf-8'
                 options.driverName = geodata_driver_name
                 options.onlySelectedFeatures = True
+                options.ct 
                 transform_context = QgsProject.instance().transformContext()
                 fname = os.path.join(
                     folder_save, layer_name+'.'+geodata_driver_extension
@@ -673,11 +639,14 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     options
                 )
                 style_file = def_stylefile_dict[k]
-                add_layer_on_completion3(
-                    folder_save,
+                add_layer_on_completion(
                     layer_name,
                     style_file,
-                    geodata_driver_extension
+                    geodata_driver_extension,
+                    folder_save,
+                    pluginPath,
+                    context,
+                    layer_color = 'red'
                 )
                 list_move_to_group.append(layer_name)
         feedback.setProgress(95)

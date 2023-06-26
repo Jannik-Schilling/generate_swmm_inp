@@ -29,6 +29,7 @@ import numpy as np
 import copy
 import os
 from datetime import datetime
+from qgis.PyQt.QtGui import QColor
 from qgis.core import (
     QgsProcessingException,
     QgsProcessingContext,
@@ -504,6 +505,7 @@ def add_layer_on_completion(
     folder_save,
     pluginPath,
     context,
+    layer_color = None,
     **kwargs
 ):
     """
@@ -530,6 +532,8 @@ def add_layer_on_completion(
             style_file
         )
         vlayer.loadNamedStyle(qml_file_path)
+        if layer_color is not None:
+            vlayer.renderer().symbol().setColor(QColor(layer_color))
         context.temporaryLayerStore().addMapLayer(vlayer)
         context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
     else:
