@@ -22,8 +22,8 @@ import pandas as pd
 import numpy as np
 import os
 
-#swmm_layer = QgsProject.instance().mapLayer('[% @layer_id %]')
-swmm_layer = iface.activeLayer()
+swmm_layer = QgsProject.instance().mapLayer('[% @layer_id %]')
+#swmm_layer = iface.activeLayer()
 feat_names = [f['Name'] for f in swmm_layer.getFeatures()]
 layer_geom = swmm_layer.geometryType()
 swmm_geom_types = {
@@ -367,7 +367,7 @@ def get_rpt_df(topic, readfile):
         )
         return df
     else:
-        print('not available')
+        return(pd.DataFrame())
 
 
 def get_rpt_txt(readfile):
@@ -581,8 +581,16 @@ class joinSwmmReportDialog(QDialog):
             w.show()
         else:
             self.df = get_rpt_df(self.topic, readfile)
-            w2 = showTableDialog(self)
-            w2.show()
+            if len(self.df) == 0:
+                QtWidgets.QMessageBox.information(
+                None,
+                "Warning",
+                'This report section is not available in the chosen report file. Please select another report file or topic'
+                )
+                w.show()
+            else:
+                w2 = showTableDialog(self)
+                w2.show()
 
 if layer_geom in swmm_geom_types.keys():
     swmm_type = swmm_geom_types[layer_geom]

@@ -268,7 +268,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
         dict_res_table = {}
         
         # options section
-        # assumption for main infiltration method if not in options 
         if 'OPTIONS' in dict_all_vals.keys():
             section_name = 'OPTIONS'
             feedback.setProgressText('Preparing section \"'+section_name+'\"')

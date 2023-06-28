@@ -155,6 +155,6 @@ def convert_options_format_for_import(
             'CURVE_NUMBER'
         ]:
             main_infiltration_method = 'HORTON'
-    import_parameters_dict['main_infiltration_method'] = main_infiltration_method
+        import_parameters_dict['main_infiltration_method'] = main_infiltration_method
     return df_options
 
