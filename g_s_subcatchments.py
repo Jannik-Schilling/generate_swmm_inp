@@ -141,7 +141,7 @@ InfiltrDtypes = [
     'CurveNum'
 ]
    
-def create_infiltr_df(infiltr_row, feedback):
+def create_infiltr_df(infiltr_row):
     """
     creates a pd.DataFrame for infiltration values
     :param pd.Series infiltr_row
@@ -180,12 +180,11 @@ def create_infiltr_df(infiltr_row, feedback):
     return infiltr_row
 
 # geometries
-def get_polygon_from_verts(polyg_name, dict_all_vals, feedback):
+def get_polygon_from_verts(polyg_name, dict_all_vals):
     """
     creates polygon geometries from vertices
     :param str polyg_name
     :param dict_all_vals
-    :param QgsProcessingFeedback feedback
     :returns: list
     """
     all_polygons = dict_all_vals['POLYGONS']['data']
@@ -195,7 +194,8 @@ def get_polygon_from_verts(polyg_name, dict_all_vals, feedback):
         polyg_geom = NULL
     elif len(verts) < 3:  # only 1 or 2 vertices
         # set geometry to buffer around first vertice
-        verts_points = [x.asPoint() for x in verts_points]
+        print(polyg_name)
+        verts_points = [x.asPoint() for x in verts]
         polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
     else:
         polyg_geom = QgsGeometry.fromPolygonXY(
@@ -211,13 +211,21 @@ def create_polygons_df(df_processed, dict_all_vals, feedback):
     :param QgsProcessingFeedback feedback
     :return: pd.DataFrame
     """
-    polygons_created = [
-        get_polygon_from_verts(n, dict_all_vals, feedback) for n in df_processed['Name']
-    ]
+    #polygons_created = [
+    #    get_polygon_from_verts(n, dict_all_vals) for n in df_processed['Name']
+    #]
+    polygons_created = []
+    len_itms = len(df_processed['Name'])
+    for i, n in enumerate(df_processed['Name']):
+        if feedback.isCanceled():
+            break
+        polygons_created = polygons_created + [get_polygon_from_verts(n, dict_all_vals)]
+        feedback.setProgress((i+1)/len_itms*95)
     polygons_created = pd.DataFrame(
         polygons_created,
         columns=['Name', 'geometry']
     ).set_index('Name')
+    feedback.setProgress(100)
     return polygons_created
 
 # import of rain gages

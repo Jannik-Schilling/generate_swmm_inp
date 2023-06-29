@@ -363,17 +363,24 @@ def get_hydrogrphs(hg_name, df_hydrographs_raw):
     return (hg_rg)
 
 # Geometry helpers
-def create_point_from_x_y(sr):
+def create_point_from_x_y(sr, i, n, feedback):
     """
     converts x and y coordinates from a pd.Series to a QgsPoint geometry
     :param pd.Series sr
+    :param int 1
+    :param int n: length of data
+    :param QgsProcessingFeedback feedback
     """
     x_coord = sr['X_Coord']
     y_coord = sr['Y_Coord']
     geom = QgsGeometry.fromWkt(
         'POINT(' + str(x_coord) + ' '+str(y_coord) + ')'
     )
+    feedback.setProgress(((i+1)/n)*100)
+    if feedback.isCanceled():
+        pass
     return [sr['Name'], geom]
+
 def create_points_df(data, feedback):
     """
     converts a point x-y-list into POINT-df
@@ -382,7 +389,11 @@ def create_points_df(data, feedback):
     """
     n = len(data)
     if n > 0:
-        all_geoms = [create_point_from_x_y(data.loc[i,]) for i in data.index] # point geometries
+        all_geoms = [create_point_from_x_y(
+            data.loc[i,],
+            i,
+            n,
+            feedback) for i in data.index] # point geometries
         df_out = pd.DataFrame(all_geoms, columns=['Name', 'geometry']).set_index('Name')
     else:
         df_out = pd.DataFrame(columns = ['Name', 'geometry']).set_index('Name')

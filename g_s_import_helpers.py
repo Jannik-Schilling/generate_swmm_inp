@@ -83,6 +83,7 @@ def sect_list_import_handler(
     :param str out_type: geodata, table, data_join, geom_join
     :parama QgsProcessingFeedback feedback
     """
+    feedback.setProgress(0)
     if out_type in ['geom_join', 'data_join']:
         #create empty data if the section is not available
         if not section_name in dict_all_vals.keys():
@@ -90,14 +91,13 @@ def sect_list_import_handler(
             dict_all_vals[section_name]['data'] = []
             dict_all_vals[section_name]['n_objects'] = 0
             dict_all_vals[section_name]['status'] = ImportDataStatus.RAW
+            feedback.setProgress(1)
         data_dict = dict_all_vals[section_name]
-
         # skip if the section is already processed
         if data_dict['status'] == ImportDataStatus.PROCESSED:
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
-
             # preparation
             if section_name == 'INFILTRATION':
                 data_dict['data'] = [
@@ -106,26 +106,31 @@ def sect_list_import_handler(
                         **import_parameters_dict
                     ) for inp_line in data_dict['data']
                 ]
+                feedback.setProgress(4)
 
             # build df
             df_join = build_df_sect_direct(section_name, data_dict)
+            feedback.setProgress(5)
             if out_type == 'geom_join':
+                feedback.setProgressText('Creating points or vertices...')
                 dict_all_vals[section_name]['data'] = create_points_df(df_join, feedback)
             if out_type == 'data_join':
                 # adjustments
                 if section_name == 'XSECTIONS':
                     df_join = adjust_xsection_df(df_join)
                 if section_name == 'INFILTRATION':
-                    df_join = df_join.apply(lambda x: create_infiltr_df(x, feedback), axis=1)
+                    df_join = df_join.apply(lambda x: create_infiltr_df(x), axis=1)
                 df_join = df_join.applymap(replace_nan_null)
                 data_dict['data'] = df_join.set_index('Name')
             dict_all_vals[section_name]['status'] = ImportDataStatus.PROCESSED
+        feedback.setProgress(100)
     else:
         if not section_name in dict_all_vals.keys():
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
             data_dict = dict_all_vals[section_name]
+            feedback.setProgress(1)
             if out_type == 'geodata':
                 # data preparation
                 if section_name == 'RAINGAGES':
@@ -154,10 +159,12 @@ def sect_list_import_handler(
                         )
                 
                 # join data
+                feedback.setProgress(20)
                 if section_name in ['CONDUITS', 'WEIRS', 'ORIFICES']:
                     sect_list_import_handler('XSECTIONS', dict_all_vals, 'data_join', feedback)
                     xsects_df = dict_all_vals['XSECTIONS']['data']
                     df_processed = df_processed.join(xsects_df, on='Name')
+                    feedback.setProgress(50)
                     if section_name == 'CONDUITS':
                         sect_list_import_handler('LOSSES', dict_all_vals, 'data_join', feedback)
                         losses_df = dict_all_vals['LOSSES']['data']
@@ -186,8 +193,9 @@ def sect_list_import_handler(
                         sect_list_import_handler(sect_join, dict_all_vals, 'data_join', feedback, import_parameters_dict)
                         df_for_join = dict_all_vals[sect_join]['data']
                         df_processed = df_processed.join(df_for_join, on='Name')
-                    
-                # get geometries          
+                feedback.setProgress(90)
+                
+                # get geometries
                 if def_sections_geoms_dict[section_name] == 'Point':
                     if section_name in ['JUNCTIONS', 'STORAGE', 'OUTFALLS', 'DIVIDERS']:
                         sect_list_import_handler('COORDINATES', dict_all_vals, 'geom_join', feedback)
@@ -197,21 +205,26 @@ def sect_list_import_handler(
                         ft_geoms = dict_all_vals['SYMBOLS']['data']
                 if def_sections_geoms_dict[section_name] == 'LineString':
                     sect_list_import_handler('VERTICES', dict_all_vals, 'geom_join', feedback)
-                    sect_list_import_handler('COORDINATES', dict_all_vals, 'geom_join', feedback)   
+                    sect_list_import_handler('COORDINATES', dict_all_vals, 'geom_join', feedback)
+                    feedback.setProgressText('Creating lines geometries from vertices...')
                     ft_geoms = create_lines_for_section(df_processed, dict_all_vals, feedback)
                 if def_sections_geoms_dict[section_name] == 'Polygon':
                     sect_list_import_handler('POLYGONS', dict_all_vals, 'geom_join', feedback)
+                    feedback.setProgressText('Creating polygon geometries from vertices...')
                     ft_geoms = create_polygons_df(df_processed, dict_all_vals, feedback)
-                # join geometries        
+                feedback.setProgress(95)
+                # join geometries
                 df_processed = df_processed.join(ft_geoms, on='Name')
-                
+                feedback.setProgress(97)
                 # write
                 df_processed = df_processed.applymap(replace_nan_null)
                 dict_all_vals[section_name]['data'] = df_processed
+                feedback.setProgress(99)
                 dict_all_vals[section_name]['status'] = ImportDataStatus.GEOM_READY
 
             if out_type == 'table':
                 pass
+    feedback.setProgress(100)
 
 
 def build_df_sect_direct(section_name,

@@ -504,9 +504,9 @@ class ImportInpFile (QgsProcessingAlgorithm):
             street_data['INLET_USAGE'] = build_df_for_section('INLET_USAGE', dict_all_vals)
             dict_res_table['STREETS'] = street_data
 
-        # ToDo...TRANSECTS
-        if 'CONDUITS' in dict_all_vals.keys():
-            # transects in hec2 format
+        # transects in hec2 format
+        if 'TRANSECTS' in dict_all_vals.keys():
+            feedback.setProgress(1)
             transects_columns = [
                 'TransectName',
                 'RoughnessLeftBank',
@@ -517,90 +517,96 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 'ModifierMeander',
                 'ModifierStations',
                 'ModifierElevations'
-            ]    
-            if 'TRANSECTS' in dict_all_vals.keys():
-                section_name = 'TRANSECTS'
-                feedback.setProgressText('Preparing section \"'+section_name+'\"')
-                feedback.setProgress(30)
-                transects_list = dict_all_vals['TRANSECTS']['data'].copy()
-                tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
-                tr_endp = tr_startp[1:]+[len(transects_list)]
+            ]
+            section_name = 'TRANSECTS'
+            feedback.setProgressText('Preparing section \"'+section_name+'\"')
+            transects_list = dict_all_vals['TRANSECTS']['data'].copy()
+            tr_startp = [i for i, x in enumerate(transects_list) if x[0] == 'NC']
+            n_trans = len(tr_startp)
+            tr_endp = tr_startp[1:]+[len(transects_list)]
 
-                def get_transects_data(tr_i):
-                    tr_roughness = [float(x) for x in tr_i[0][1:]]
-                    tr_name = tr_i[1][1]
-                    # tr_count = tr_i[1][2]
-                    tr_bankstat_left = float(tr_i[1][3])
-                    tr_bankstat_right = float(tr_i[1][4])
-                    tr_modifier = [float(x) for x in tr_i[1][7:10]]
-                    tr_data = [tr_name]+tr_roughness+[tr_bankstat_left]+[tr_bankstat_right]+tr_modifier
-                    return tr_data
-
-                def get_transects_vals(tr_i):
-                    tr_name = tr_i[1][1]
-                    tr_count = tr_i[1][2]
-                    tr_values = [del_kw_from_list(x, 'GR', 0) for x in tr_i[2:]]
-                    tr_values = [x for sublist in tr_values for x in sublist]
-                    tr_values_splitted = [[tr_values[x*2], tr_values[(x*2)+1]] for x in range(int(tr_count))]  # split into list of lists of len 2
-                    tr_values_splitted = [[tr_name] + x for x in tr_values_splitted]
-                    return tr_values_splitted
-
-                all_tr_vals = [get_transects_vals(transects_list[x:y]) for x, y in zip(tr_startp, tr_endp)]
-                all_tr_vals = [x for sublist in all_tr_vals for x in sublist]
-
-                all_tr_dats = [get_transects_data(transects_list[x:y]) for x, y in zip(tr_startp, tr_endp)]
-
-                all_tr_vals_df = build_df_from_vals_list(
-                    all_tr_vals,
-                    ['TransectName', 'Elevation', 'Station']
-                )
-                all_tr_vals_df = all_tr_vals_df[[
-                    'TransectName',
-                    'Station',
-                    'Elevation'
-                ]]  # order of columns according to swmm interface
-                all_tr_vals_df['Station'] = [float(x) for x in all_tr_vals_df['Station']]
-                all_tr_vals_df['Elevation'] = [float(x) for x in all_tr_vals_df['Elevation']]
-                all_tr_dats_df = build_df_from_vals_list(all_tr_dats, transects_columns)
-                all_tr_dats_df = all_tr_dats_df[[
-                    'TransectName',
-                    'RoughnessLeftBank',
-                    'RoughnessRightBank',
-                    'RoughnessChannel',
-                    'BankStationLeft',
-                    'BankStationRight',
-                    'ModifierStations',
-                    'ModifierElevations',
-                    'ModifierMeander'
-                ]]  # order of columns according to swmm interface
-                transects_dict = {
-                    'Data': all_tr_dats_df,
-                    'XSections': all_tr_vals_df
-                }
-
-                dict_to_excel(
-                    transects_dict,
-                    'TRANSECTS',
-                    folder_save,
-                    feedback,
-                    result_prefix
-                )
+            def get_transects_data2(tr_i):
+                tr_roughness = [float(x) for x in tr_i[0][1:]]
+                tr_name = tr_i[1][1]
+                tr_count = tr_i[1][2]
+                tr_bankstat_left = float(tr_i[1][3])
+                tr_bankstat_right = float(tr_i[1][4])
+                tr_modifier = [float(x) for x in tr_i[1][7:10]]
+                tr_data = [tr_name]+tr_roughness+[tr_bankstat_left]+[tr_bankstat_right]+tr_modifier
+                tr_values = [del_kw_from_list(x, 'GR', 0) for x in tr_i[2:]]
+                tr_values = [x for sublist in tr_values for x in sublist]
+                tr_values_splitted = [[
+                    tr_name,
+                    float(tr_values[x*2]),   # split into list of lists of len 2
+                    float(tr_values[(x*2)+1])
+                ] for x in range(int(tr_count))]
+                return tr_values_splitted, tr_data
                 
+            all_tr_vals = []
+            all_tr_dats = []
+            for i, x in enumerate(zip(tr_startp, tr_endp)):
+                if feedback.isCanceled():
+                    break
+                val, dat = get_transects_data2(transects_list[x[0]:x[1]])
+                all_tr_vals = all_tr_vals + val
+                all_tr_dats = all_tr_dats + [dat]
+                feedback.setProgress(((i+1)/n_trans)*90)
+
+            all_tr_vals_df = build_df_from_vals_list(
+                all_tr_vals,
+                ['TransectName', 'Elevation', 'Station']
+            )
+            feedback.setProgress(92)
+            all_tr_vals_df = all_tr_vals_df[[
+                'TransectName',
+                'Station',
+                'Elevation'
+            ]]  # order of columns according to swmm interface
+            feedback.setProgress(93)
+            all_tr_dats_df = build_df_from_vals_list(all_tr_dats, transects_columns)
+            feedback.setProgress(94)
+            all_tr_dats_df = all_tr_dats_df[[
+                'TransectName',
+                'RoughnessLeftBank',
+                'RoughnessRightBank',
+                'RoughnessChannel',
+                'BankStationLeft',
+                'BankStationRight',
+                'ModifierStations',
+                'ModifierElevations',
+                'ModifierMeander'
+            ]]  # order of columns according to swmm interface
+            transects_dict = {
+                'Data': all_tr_dats_df,
+                'XSections': all_tr_vals_df
+            }
+            feedback.setProgress(95)
+            dict_res_table['TRANSECTS'] = transects_dict
+            feedback.setProgress(100)
+
+
         # writing tables:
         feedback.setProgressText('Writing tables ...')
-        for k, v in dict_res_table.items():
+        n_itms = len(dict_res_table)
+        for i, it in enumerate(dict_res_table.items()):
+            if feedback.isCanceled():
+                break
             dict_to_excel(
-                v,
-                k,
+                it[1],
+                it[0],
                 folder_save,
                 feedback,
                 result_prefix
             )
-     
+            feedback.setProgress(((i+1)/n_itms)*100)
+
         # sections with geometries, which will be added as layers
         #------------------------------
         # prepare
+        feedback.setProgress(0)
         for section_name in def_sections_geoms_dict.keys():
+            if feedback.isCanceled():
+                break
             if section_name in dict_all_vals.keys():
                 sect_list_import_handler(
                     section_name,
@@ -609,9 +615,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     feedback,
                     import_parameters_dict
                 )
-                
-        # write layers    
-        for section_name in def_sections_geoms_dict.keys():
+
+        # write layer
+        n_itms = len(def_sections_geoms_dict.keys())
+        for n, section_name in enumerate(def_sections_geoms_dict.keys()):
+            if feedback.isCanceled():
+                break
             if section_name in dict_all_vals.keys():
                 if dict_all_vals[section_name]['status'] == ImportDataStatus.GEOM_READY:
                     data_dict = dict_all_vals[section_name]
@@ -632,12 +641,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                         **import_parameters_dict
                     )
                     dict_all_vals[section_name]['status'] = ImportDataStatus.FILE_READY
+            feedback.setProgress((n+1)/n_itms*100)
 
         # add layers to canvas
         feedback.setProgressText(
             self.tr('Adding layers to canvas')
         )
-        for section_name in def_sections_geoms_dict.keys():
+        n_itms = len(def_sections_geoms_dict.keys())
+        for n, section_name in enumerate(def_sections_geoms_dict.keys()):
+            if feedback.isCanceled():
+                break
             if section_name in dict_all_vals.keys():
                 if dict_all_vals[section_name]['status'] == ImportDataStatus.FILE_READY:
                     data_dict = dict_all_vals[section_name]
