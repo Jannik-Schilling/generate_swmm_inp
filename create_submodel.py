@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
+__date__ = '2023-07-03'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
 
@@ -35,25 +35,21 @@ import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
-    QgsLayerTreeGroup,
     QgsProject,
     QgsProcessing,
     QgsProcessingAlgorithm,
-    QgsProcessingContext,
     QgsProcessingException,
     QgsProcessingParameterEnum,
     QgsProcessingParameterString,
     QgsProcessingParameterFolderDestination,
     QgsProcessingParameterVectorLayer,
-    QgsVectorFileWriter,
-    QgsVectorLayer
+    QgsVectorFileWriter
 )
 from .g_s_read_write_data import read_layers_direct, create_layer_from_df
 from .g_s_defaults import (
     def_ogr_driver_dict,
     def_stylefile_dict,
-    ImportDataStatus,
-    st_files_path
+    ImportDataStatus
 )
 from .g_s_import_helpers import add_layer_on_completion
 

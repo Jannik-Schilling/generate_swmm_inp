@@ -39,10 +39,8 @@ from qgis.core import (
 )
 from .g_s_defaults import (
     annotation_field_name,
-    def_layer_names_dict,
     def_sections_dict,
     def_sections_geoms_dict,
-    def_stylefile_dict,
     def_qgis_fields_dict,
     ImportDataStatus,
     st_files_path
@@ -64,9 +62,7 @@ from .g_s_links import (
     adjust_xsection_df,
     adjust_outlets_list
 )
-from .g_s_read_write_data import (
-    create_layer_from_df
-)
+
 
 # main function
 def sect_list_import_handler(
@@ -85,9 +81,9 @@ def sect_list_import_handler(
     """
     feedback.setProgress(0)
     if out_type in ['geom_join', 'data_join']:
-        #create empty data if the section is not available
-        if not section_name in dict_all_vals.keys():
-            dict_all_vals[section_name]={}
+        # create empty data if the section is not available
+        if section_name not in dict_all_vals.keys():
+            dict_all_vals[section_name] = {}
             dict_all_vals[section_name]['data'] = []
             dict_all_vals[section_name]['n_objects'] = 0
             dict_all_vals[section_name]['status'] = ImportDataStatus.RAW
@@ -125,7 +121,7 @@ def sect_list_import_handler(
             dict_all_vals[section_name]['status'] = ImportDataStatus.PROCESSED
         feedback.setProgress(100)
     else:
-        if not section_name in dict_all_vals.keys():
+        if section_name not in dict_all_vals.keys():
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
@@ -135,7 +131,7 @@ def sect_list_import_handler(
                 # data preparation
                 if section_name == 'RAINGAGES':
                     data_dict['data'] = [get_raingages_from_inp(inp_line, feedback) for inp_line in data_dict['data']]
-                    diff_fields = list(def_qgis_fields_dict[section_name].keys())               
+                    diff_fields = list(def_qgis_fields_dict[section_name].keys())
                 if section_name == 'STORAGE':
                     data_dict['data'] = [get_storages_from_inp(inp_line, feedback) for inp_line in data_dict['data']]
                 if section_name == 'OUTFALLS':
@@ -146,18 +142,18 @@ def sect_list_import_handler(
                     data_dict['data'] = [adjust_outlets_list(inp_line, feedback) for inp_line in data_dict['data']]
                 if section_name == 'RAINGAGES':
                     df_processed = build_df_sect_direct(
-                            section_name, 
+                            section_name,
                             data_dict,
                             with_annot=True,
-                            diff_fields = diff_fields
+                            diff_fields=diff_fields
                         )
                 else:
                     df_processed = build_df_sect_direct(
-                            section_name, 
+                            section_name,
                             data_dict,
                             with_annot=True,
                         )
-                
+
                 # join data
                 feedback.setProgress(20)
                 if section_name in ['CONDUITS', 'WEIRS', 'ORIFICES']:
@@ -194,7 +190,7 @@ def sect_list_import_handler(
                         df_for_join = dict_all_vals[sect_join]['data']
                         df_processed = df_processed.join(df_for_join, on='Name')
                 feedback.setProgress(90)
-                
+
                 # get geometries
                 if def_sections_geoms_dict[section_name] == 'Point':
                     if section_name in ['JUNCTIONS', 'STORAGE', 'OUTFALLS', 'DIVIDERS']:
@@ -227,7 +223,8 @@ def sect_list_import_handler(
     feedback.setProgress(100)
 
 
-def build_df_sect_direct(section_name,
+def build_df_sect_direct(
+    section_name,
     data_dict,
     with_annot=False,
     diff_fields=None
@@ -262,11 +259,11 @@ def build_df_sect_direct(section_name,
             section_annots = data_dict['annotations']
             df[annotation_field_name] = df['Name'].map(section_annots)
     return df
-    
+
 
 def build_df_from_vals_list(section_vals, col_names):
     """
-    builds a dataframe for a section; 
+    builds a dataframe for a section;
     missing vals at the end are set as np.nan
     :param list section_vals
     :param list col_names
@@ -299,7 +296,7 @@ def concat_quoted_vals(text_line):
                 if t_l.startswith('"'):
                     quoted_elem = 1  # set quoted
                     # t_l is not '"' and fully quoted (e.g. '"test"')
-                    if len(t_l) > 1 and t_l.endswith('"'):  
+                    if len(t_l) > 1 and t_l.endswith('"'):
                         quoted_elem = 0  # set not quoted again
                         i += 1
                 else:
@@ -314,7 +311,8 @@ def concat_quoted_vals(text_line):
         text_line_new = [' '.join(x) for x in text_line_new]  # concatenate strings
     else:
         text_line_new = text_line
-    return text_line_new 
+    return text_line_new
+
 
 def replace_nan_null(data):
     """replaces np.nan or asterisk with NULL"""
@@ -324,7 +322,7 @@ def replace_nan_null(data):
         return NULL
     else:
         return data
-    
+
 
 def get_annotations(
     section_text,
@@ -377,7 +375,8 @@ def extract_sections_from_text(
         'n_objects': len(section_vals_clean)
     }
     return inp_extracted
-    
+
+
 def build_df_for_section(section_name, dict_all_raw_vals, with_annot=False):
     """
     builds dataframes for a section
@@ -408,6 +407,7 @@ def build_df_for_section(section_name, dict_all_raw_vals, with_annot=False):
             df[annotation_field_name] = df['Name'].map(section_annots)
     return df
 
+
 # adjustments in data
 def del_kw_from_list(data_list, kw, pos):
     """
@@ -425,6 +425,7 @@ def del_kw_from_list(data_list, kw, pos):
     if data_list[pos] in kw_list:
         data_list.pop(pos)
     return data_list
+
 
 def adjust_line_length(
     ts_line,
@@ -446,6 +447,7 @@ def adjust_line_length(
     else:
         return ts_line
 
+
 def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
     """
     adds np.nan after keyword (kw)
@@ -459,7 +461,8 @@ def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
         for i_p in insert_positions:
             df_line.insert(i_p, np.nan)
     return df_line
-    
+
+
 def adjust_column_types(df, col_types):
     """
     converts column types in df according to col_types
@@ -510,7 +513,8 @@ def adjust_column_types(df, col_types):
             return [time_conversion(x) for x in col]
     df = df.apply(col_conversion, axis=0)
     return df
-    
+
+
 def add_layer_on_completion(
     layer_name,
     style_file,
@@ -518,7 +522,7 @@ def add_layer_on_completion(
     folder_save,
     pluginPath,
     context,
-    layer_color = None,
+    layer_color=None,
     **kwargs
 ):
     """
@@ -548,10 +552,17 @@ def add_layer_on_completion(
         if layer_color is not None:
             vlayer.renderer().symbol().setColor(QColor(layer_color))
         context.temporaryLayerStore().addMapLayer(vlayer)
-        context.addLayerToLoadOnCompletion(vlayer.id(), QgsProcessingContext.LayerDetails("", QgsProject.instance(), ""))
+        context.addLayerToLoadOnCompletion(
+            vlayer.id(),
+            QgsProcessingContext.LayerDetails(
+                "",
+                QgsProject.instance(),
+                ""
+            )
+        )
     else:
         raise QgsProcessingException(
                 'File '
                 + file_path
-                + ' could not be loaded to the project.' 
+                + ' could not be loaded to the project.'
             )

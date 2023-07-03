@@ -31,15 +31,14 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 __revision__ = '$Format:%H$'
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProject,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingContext,
-                       QgsProcessingException,
-                       QgsProcessingParameterCrs,
-                       QgsProcessingParameterEnum,
-                       QgsCoordinateReferenceSystem,
-                       QgsProcessingParameterFolderDestination,
-                       QgsVectorLayer)
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingException,
+    QgsProcessingParameterCrs,
+    QgsProcessingParameterEnum,
+    QgsCoordinateReferenceSystem,
+    QgsProcessingParameterFolderDestination
+)
 import os
 import shutil
 import processing

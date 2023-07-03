@@ -22,18 +22,14 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-07-01'
+__date__ = '2023-07-03'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
-from datetime import datetime
 import numpy as np
 import os
 import pandas as pd
 from qgis.core import (
-    QgsGeometry,
-    QgsPointXY,
     QgsProcessingAlgorithm,
-    QgsProcessingContext,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterCrs,
@@ -41,13 +37,10 @@ from qgis.core import (
     QgsProcessingParameterEnum,
     QgsProcessingParameterFile,
     QgsProcessingParameterFolderDestination,
-    QgsProcessingParameterString,
-    QgsProject,
-    QgsVectorLayer
+    QgsProcessingParameterString
 )
 from qgis.PyQt.QtCore import QCoreApplication
 from .g_s_defaults import (
-    annotation_field_name,
     curve_cols_dict,
     def_annotation_field,
     def_layer_names_dict,
@@ -57,7 +50,6 @@ from .g_s_defaults import (
     def_sections_geoms_dict,
     def_stylefile_dict,
     def_tables_dict,
-    def_qgis_fields_dict,
     ImportDataStatus,
     pattern_times
 )
