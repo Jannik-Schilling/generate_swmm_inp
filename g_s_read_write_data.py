@@ -382,10 +382,10 @@ def dict_to_excel(
             write_success = True
             break
     if not write_success:
-        raise QgsProcessingException(self.tr(
+        raise QgsProcessingException(
             'Could not write tables in .xlsx, .xls, or .ods'
             ' format. Please install the package \"openpyxl\" '
             '(or alternatively the package "odf"). Instructions '
             'can be found on the in the documentation or on '
             'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
-        ))
+        )
