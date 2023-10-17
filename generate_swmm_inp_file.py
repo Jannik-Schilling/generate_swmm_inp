@@ -437,6 +437,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['POLYGONS'] = {'data':
                 get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
             }
+            #print(inp_dict['POLYGONS']['data'])
             subcatchments_annot = get_annotations_from_raw_df(
                 raw_data_dict['subcatchments_raw'].copy()
             )
