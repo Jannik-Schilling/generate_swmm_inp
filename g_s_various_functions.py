@@ -37,7 +37,6 @@ from .g_s_defaults import (
     annotation_field_name
 )
 
-
 # Export
 # geometry functions
 def get_coords_from_geometry(df):
@@ -77,8 +76,8 @@ def get_coords_from_geometry(df):
 
     def extract_xy_from_simple_line(line_simple):
         """extracts x and y coordinates from a LineString"""
-        xy_arr = np.dstack([(p.x(), p.y()) for p in line_simple])[0]
-        xy_df = pd.DataFrame(xy_arr.T, columns=['x', 'y'])
+        xy_list = [[str(p.x()), str(p.y())] for p in line_simple]
+        xy_df = pd.DataFrame(xy_list, columns=['x', 'y'])
         return xy_df
 
     def extract_xy_from_line(line_row):
@@ -100,15 +99,14 @@ def get_coords_from_geometry(df):
     elif all(QgsWkbTypes.displayString(g_type.wkbType()) in polygon_t_names for g_type in df.geometry):
         def extract_xy_from_area(geom_row):
             """extraxts xy from polygon geometries"""
-            xy_arr = np.dstack([(v.x(), v.y()) for v in geom_row.vertices()])[0]
-            xy_df = pd.DataFrame(xy_arr.T, columns=['x', 'y'])
+            xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
+            xy_df = pd.DataFrame(xy_list, columns=['x', 'y'])
             return xy_df
         return {na: extract_xy_from_area(ge) for ge, na in zip(df.geometry, df.Name)}
     else:
         raise QgsProcessingException(
             'Geometry type of one or more features could not be handled'
         )
-
 
 # functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
@@ -138,7 +136,7 @@ def get_curves_from_table(curves_raw, name_col):
                         'Type': curve_type,
                         'frame': curve
                     }
-    return (curve_dict)
+    return(curve_dict)
 
 
 def get_patterns_from_table(patterns_raw, name_col):
@@ -168,7 +166,7 @@ def get_patterns_from_table(patterns_raw, name_col):
                     'Type': pattern_type,
                     'Factors': pattern
                 }
-    return (pattern_dict)
+    return(pattern_dict)
 
 
 def adjust_datetime(
@@ -235,7 +233,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                         feedback.pushWarning(
                                 'Warning: At least one date in the timeseries file is missing. Date will be set to start date')
                     ts_df['Date'] = ''
-                else:
+                else: 
                     ts_df['Date'] = adjust_datetime(
                         ts_df['Date'],
                         ['%Y-%m-%d', '%d/%m/%Y', '%d.%m.%Y'],
@@ -255,7 +253,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 'TimeSeries': ts_df[['Name', 'Date', 'Time', 'Value']],
                 'Annotations': ts_annotation
             }
-    return (ts_dict)
+    return(ts_dict)
 
 
 # errors and feedback
@@ -274,3 +272,4 @@ def check_columns(swmm_data_file, cols_expected, cols_in_df):
         err_message = err_message+'. Please add columns or check if the correct file/layer was selected. '
         err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)
+
