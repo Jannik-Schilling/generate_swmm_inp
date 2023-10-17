@@ -13,7 +13,7 @@ from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 from qgis.core import (
     QgsProject,
-    QgsFeature,
+    QgsVectorLayer,
     NULL
 )
 from qgis.PyQt import QtWidgets
@@ -23,7 +23,7 @@ import numpy as np
 import os
 
 swmm_layer = QgsProject.instance().mapLayer('[% @layer_id %]')
-#swmm_layer = iface.activeLayer()
+# swmm_layer = iface.activeLayer()
 feat_names = [f['Name'] for f in swmm_layer.getFeatures()]
 layer_geom = swmm_layer.geometryType()
 swmm_geom_types = {
@@ -33,26 +33,26 @@ swmm_geom_types = {
 }
 select_dict = {
     'NODES': {
-        'JUNCIONS':[
+        'JUNCIONS': [
             'node_depth',
             'node_inflow',
             'node_surcharge',
             'node_flooding'
         ],
-        'OUTFALLS':[
+        'OUTFALLS': [
             'node_depth',
             'node_inflow',
             'node_surcharge',
             'node_flooding',
             'outfall_loading'
         ],
-        'DIVIDERS':[
+        'DIVIDERS': [
             'node_depth',
             'node_inflow',
             'node_surcharge',
             'node_flooding'
         ],
-        'STORAGE':[
+        'STORAGE': [
             'node_depth',
             'node_inflow',
             'node_surcharge',
@@ -61,32 +61,32 @@ select_dict = {
         ]
     },
     'LINKS': {
-        'CONDUITS':[
+        'CONDUITS': [
             'link_flow',
             'flow_classification',
             'conduit_surcharge',
             'link_pollutant_load'
         ],
-        'PUMPS':[
+        'PUMPS': [
             'link_flow',
             'link_pollutant_load',
             'pumping_summary'
         ],
-        'ORIFICES':[
+        'ORIFICES': [
             'link_flow',
             'flow_classification',
             'link_pollutant_load'
         ],
-        'WEIRS':[
+        'WEIRS': [
             'link_flow',
             'link_pollutant_load'
         ],
-        'OUTLETS':[
+        'OUTLETS': [
             'link_flow',
             'link_pollutant_load'
         ],
     },
-    'SUBCATCHMENTS':[
+    'SUBCATCHMENTS': [
         'subcatchment_runoff',
         'subcatchment_washoff'
     ]
@@ -110,6 +110,7 @@ dict_report_line_sects = {
     'link_pollutant_load': 'Link Pollutant Load Summary',
 }
 
+
 def get_header_val(header_lines, h_line, start, length):
     dist_whitespace = 2  # left whitespace in rpt file
     python_adjustment = 1  # in order to have the same vals as in Fresults.pas
@@ -118,7 +119,8 @@ def get_header_val(header_lines, h_line, start, length):
     start = start - dist_whitespace
     end = start + length
     return unit_line[start:end]
-    
+
+
 def get_dict_report_cols(topic, header_lines):
     if topic == 'subcatchment_runoff':
         units_1 = get_header_val(header_lines, 2, 32, 2)
@@ -255,7 +257,7 @@ def get_dict_report_cols(topic, header_lines):
             'MaxFullFlow',
             'MaxFullDepth'
         ]
-    if topic == 'flow_classification': 
+    if topic == 'flow_classification':
         cols = [
             'Name',
             'AdjustedActualLength',
@@ -269,7 +271,7 @@ def get_dict_report_cols(topic, header_lines):
             'FractionOfTimeNormLtd',
             'FractionOfTimeInletCtrl'
         ]
-    if topic == 'conduit_surcharge': 
+    if topic == 'conduit_surcharge':
         cols = [
             'Name',
             'FullBothEnds_Hours',
@@ -294,16 +296,17 @@ def get_dict_report_cols(topic, header_lines):
             'TimeBelowPumpCurve_Pcnt',
             'TimeAbovePumpCurve_Pcnt'
         ]
-    if topic == 'link_pollutant_load': 
+    if topic == 'link_pollutant_load':
         pol_names = header_lines[0].split()
         pol_units = header_lines[1].split()[1:]
         col_pol = [n+'_'+u for n, u in zip(pol_names, pol_units)]
         cols = ['Name'] + col_pol
     return cols
 
+
 def build_df_from_vals_list(section_vals, col_names):
     """
-    builds a dataframe for a section; 
+    builds a dataframe for a section;
     missing vals at the end are set as np.nan
     :param list section_vals
     :param list col_names
@@ -319,7 +322,8 @@ def build_df_from_vals_list(section_vals, col_names):
             for i in col_names[col_len:]:
                 df[i] = np.nan
     return df
-    
+
+
 def find_rpt_section_position(i, rpt_line, rpt_text):
     """
     finds report sections in a list of text lines
@@ -340,20 +344,25 @@ def find_rpt_section_position(i, rpt_line, rpt_text):
     else:
         return 'NA'
 
+
 def get_rpt_df(topic, readfile):
     rpt_section_title = dict_report_line_sects[topic]
     rpt_text = get_rpt_txt(readfile)
     if rpt_section_title in rpt_text:
         startpos = rpt_text.index(rpt_section_title)
         rpt_text_trimmed = rpt_text[startpos:]
-        separation_lines_0 = [i for i, l in enumerate(rpt_text_trimmed) if l.startswith('**') and l.endswith('**')]
+        separation_lines_0 = [
+            i for i, l in enumerate(rpt_text_trimmed) if l.startswith('**') and l.endswith('**')
+        ]
         if len(separation_lines_0) != 1:
-            #last item
+            # last item
             endpos = separation_lines_0[1]
             sect_lines = rpt_text_trimmed[:endpos]
         else:
             sect_lines = rpt_text_trimmed
-        separation_lines = [i for i, l in enumerate(sect_lines) if l.startswith('--') and l.endswith('--')]
+        separation_lines = [
+            i for i, l in enumerate(sect_lines) if l.startswith('--') and l.endswith('--')
+        ]
         if len(separation_lines) == 2:
             # without Summary
             separation_lines = separation_lines+[len(sect_lines)]
@@ -367,7 +376,7 @@ def get_rpt_df(topic, readfile):
         )
         return df
     else:
-        return(pd.DataFrame())
+        return (pd.DataFrame())
 
 
 def get_rpt_txt(readfile):
@@ -388,10 +397,11 @@ def get_rpt_txt(readfile):
     rpt_text = [x for x in rpt_text if x != '\n']
     rpt_text = [x for x in rpt_text if x != '\r']
     rpt_text = [x.strip() for x in rpt_text]
-    rpt_text = [x for x in rpt_text if len(x)>0]
+    rpt_text = [x for x in rpt_text if len(x) > 0]
     # delete last three lines of the file (information on start and end time)
     rpt_text = rpt_text[:-3]
     return rpt_text
+
 
 # third dialog
 class saveCsvDialog(QDialog):
@@ -429,7 +439,7 @@ class saveCsvDialog(QDialog):
 
     def save_csv_action(self):
         csvpath = self.CsvFile.filePath()
-        if csvpath=='':
+        if csvpath == '':
             QtWidgets.QMessageBox.information(
                 None,
                 "Warning",
@@ -440,12 +450,12 @@ class saveCsvDialog(QDialog):
             self.add_to_project = self.addcheckbox.isChecked()
             if self.add_to_project:
                 showname = self.topic+' ('+os.path.split(csvpath)[1]+')'
-                csv_layer = QgsVectorLayer(csvpath, showname , 'ogr')
+                csv_layer = QgsVectorLayer(csvpath, showname, 'ogr')
                 QgsProject.instance().addMapLayer(csv_layer)
             QtWidgets.QMessageBox.information(
                 None,
                 "Info",
-                'Report data was saved in '+ csvpath
+                'Report data was saved in ' + csvpath
             )
             self.closeaction()
 
@@ -500,6 +510,7 @@ class showTableDialog(QDialog):
         self.w3.show()
         self.close()
 
+
 # main dialog
 class joinSwmmReportDialog(QDialog):
     def __init__(self, parent=None):
@@ -512,13 +523,13 @@ class joinSwmmReportDialog(QDialog):
 
         # swmm rpt file
         self.label_SwmmRptFile = QLabel('SWMM report File')
-        self.swmmRptFile = QgsFileWidget() #rpt
+        self.swmmRptFile = QgsFileWidget()  # rpt
         self.swmmRptFile.setFilter('SWMM report files (*.rpt)')
         self.layout.addWidget(self.label_SwmmRptFile)
         self.layout.addWidget(self.swmmRptFile)
-        
-        if swmm_type in ['NODES','LINKS']:
-            #swmm obj type
+
+        if swmm_type in ['NODES', 'LINKS']:
+            # swmm obj type
             self.label_swmmobj_selBox = QLabel('SWMM layer type')
             self.swmmobj_selBox = QComboBox()
             self.swmmobj_list = list(select_dict[swmm_type].keys())
@@ -528,8 +539,6 @@ class joinSwmmReportDialog(QDialog):
             self.swmmobj_selBox.currentIndexChanged.connect(self.update_topic_box)
             self.layout.addWidget(self.label_swmmobj_selBox)
             self.layout.addWidget(self.swmmobj_selBox)
-
-            
             self.label_topic_selBox = QLabel('SWMM report topic')
             self.topic_selBox = QComboBox()
             self.topic_list = list(select_dict[swmm_type][self.swmm_obj])
@@ -552,7 +561,7 @@ class joinSwmmReportDialog(QDialog):
                 'No suitable data can be accessed'
             )
             self.close()
-        
+
         # OK/Cancel-Buttons
         btn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(btn)
@@ -568,11 +577,11 @@ class joinSwmmReportDialog(QDialog):
         self.topic_list_neu = list(select_dict[swmm_type][self.swmm_obj])
         self.topic_selBox.addItems(self.topic_list_neu)
         self.topic_selBox.setCurrentIndex(0)
-    
+
     def join_report_vals(self):
         self.topic = self.topic_selBox.currentText()
         readfile = self.swmmRptFile.filePath()
-        if readfile=='':
+        if readfile == '':
             QtWidgets.QMessageBox.information(
                 None,
                 "Warning",
@@ -583,18 +592,27 @@ class joinSwmmReportDialog(QDialog):
             self.df = get_rpt_df(self.topic, readfile)
             if len(self.df) == 0:
                 QtWidgets.QMessageBox.information(
-                None,
-                "Warning",
-                'This report section is not available in the chosen report file. Please select another report file or topic'
+                    None,
+                    "Warning",
+                    (
+                        'This report section is not available'
+                        + ' in the chosen report file. Please '
+                        + 'select another report file or topic'
+                    )
                 )
                 w.show()
             else:
                 w2 = showTableDialog(self)
                 w2.show()
 
+
 if layer_geom in swmm_geom_types.keys():
     swmm_type = swmm_geom_types[layer_geom]
     w = joinSwmmReportDialog()
     w.show()
 else:
-    QtWidgets.QMessageBox.information(None,"Info", 'Cannot show results for this data type')
+    QtWidgets.QMessageBox.information(
+        None,
+        Info",
+        'Cannot show results for this data type'
+    )

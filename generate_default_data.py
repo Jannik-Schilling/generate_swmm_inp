@@ -31,15 +31,14 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 __revision__ = '$Format:%H$'
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProject,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingContext,
-                       QgsProcessingException,
-                       QgsProcessingParameterCrs,
-                       QgsProcessingParameterEnum,
-                       QgsCoordinateReferenceSystem,
-                       QgsProcessingParameterFolderDestination,
-                       QgsVectorLayer)
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingException,
+    QgsProcessingParameterCrs,
+    QgsProcessingParameterEnum,
+    QgsCoordinateReferenceSystem,
+    QgsProcessingParameterFolderDestination
+)
 import os
 import shutil
 import processing
@@ -100,7 +99,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             os.makedirs(data_save_folder)
             
         try:
-            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_31.pdf')
+            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_32.pdf')
             shutil.copy(doc_file, data_save_folder)
             feedback.setProgressText(self.tr('documentation file saved to folder '+data_save_folder))
             feedback.setProgress(1)

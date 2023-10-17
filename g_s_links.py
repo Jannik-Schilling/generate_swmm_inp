@@ -26,7 +26,6 @@ __copyright__ = '(C) 2023 by Jannik Schilling'
 
 import pandas as pd
 import numpy as np
-from enum import Enum
 from qgis.core import (
     NULL,
     QgsProcessingException,
@@ -90,6 +89,7 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR', 'Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET', 'Shp_Trnsct']
             xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM', 'Shp_Trnsct']
+
     def fill_empty_xsects(xs_row, col):
         if col == 'Barrels':
             if xs_row['Shape'] in ['IRREGULAR', 'STREET']:
@@ -119,6 +119,7 @@ def get_conduits_from_shapefile(conduits_raw):
     losses_df['Kavg'] = losses_df['Kavg'].fillna('0')
     return conduits_df, xsections_df, losses_df
 
+
 # Streets
 def get_street_from_tables(streets_inlets_raw):
     streets_df = streets_inlets_raw['STREETS']
@@ -144,6 +145,7 @@ def get_street_from_tables(streets_inlets_raw):
     inlets_df = inlets_df.drop(columns=all_inl_type_cols)
     return streets_df, inlets_df, inlets_usage_df
 
+
 # geometries
 def del_first_last_vt(link):
     """
@@ -151,6 +153,7 @@ def del_first_last_vt(link):
     :param list link
     """
     return link[1:-1]
+
 
 # pumps
 def get_pumps_from_shapefile(pumps_raw):
@@ -172,6 +175,7 @@ def get_pumps_from_shapefile(pumps_raw):
     pumps_df = pumps_df.reset_index(drop=True)
     return pumps_df
 
+
 # weirs
 weirs_shape_dict = {
     'TRANSVERSE': 'RECT_OPEN',
@@ -180,6 +184,8 @@ weirs_shape_dict = {
     'TRAPEZOIDAL': 'TRAPEZOIDAL',
     'ROADWAY': 'RECT_OPEN'
 }
+
+
 def get_weirs_from_shapefile(weirs_raw):
     """prepares weirs data for writing an input file"""
     weirs_qgis_cols = list(def_qgis_fields_dict['WEIRS'].keys())
@@ -223,6 +229,7 @@ def get_weirs_from_shapefile(weirs_raw):
     xsections_df['Culvert'] = ''
     return weirs_df, xsections_df
 
+
 # orifices
 def get_orifices_from_shapefile(orifices_raw):
     """
@@ -261,6 +268,7 @@ def get_orifices_from_shapefile(orifices_raw):
     xsections_df['Culvert'] = ''
     return orifices_df, xsections_df
 
+
 # outlets
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
@@ -293,6 +301,7 @@ def get_outlets_from_shapefile(outlets_raw):
     ]]
     return outlets_df
 
+
 # Transects
 def get_transects_from_table(transects_raw):
     """writes strings for transects"""
@@ -316,7 +325,7 @@ def get_transects_from_table(transects_raw):
         tr_vals_i_list_splitted = [['GR'] + x for x in tr_vals_i_list_splitted]
 
         def concat_tr_str(tr_line):
-            return'    '.join([str(i) for i in tr_line])
+            return '    '.join([str(i) for i in tr_line])
         GR_strings_i = [concat_tr_str(x) for x in tr_vals_i_list_splitted]
         GR_strings_i_joined = '\n'.join(GR_strings_i)
         tr_string = NC_string_i+'\n'+X1_string_i+'\n'+GR_strings_i_joined
@@ -343,11 +352,12 @@ def get_inlet_from_inp(inlets_raw_line):
         inl_vals_i['OpenFract'] = inlets_raw_line[6]
     type_elems = [inl_vals_i[t_c] for t_c in all_inl_type_cols]
     # resulting line
-    inl_line_adjusted = init_elems+type_elems
-    return(inl_line_adjusted)
+    inl_line_adjusted = init_elems + type_elems
+    return (inl_line_adjusted)
+
 
 # xsections
-def adjust_xsection_df(all_xsections): # no feedback!
+def adjust_xsection_df(all_xsections):  # no feedback!
     """
     fills the column 'Shp_Transct' in the xsections dataframe
     :param pd.DataFrame all_xsections
@@ -361,6 +371,7 @@ def adjust_xsection_df(all_xsections): # no feedback!
     all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2']
     all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
     return all_xsections
+
 
 # outlets
 def adjust_outlets_list(outl_list_i, feedback):
@@ -377,6 +388,7 @@ def adjust_outlets_list(outl_list_i, feedback):
     else:
         return outl_list_i+[np.nan]
 
+
 # geometry
 def get_line_from_points(
     line_name,
@@ -390,7 +402,7 @@ def get_line_from_points(
     all_geoms = dict_all_vals['COORDINATES']['data']
     all_vertices = dict_all_vals['VERTICES']['data']
     if (
-        (from_node not in all_geoms.index) 
+        (from_node not in all_geoms.index)
         or (to_node not in all_geoms.index)
     ):
         line_geom = NULL
@@ -408,7 +420,8 @@ def get_line_from_points(
         l_all_verts = [from_point]+l_verts_points+[to_point]
         line_geom = QgsGeometry.fromPolylineXY(l_all_verts)
     return [line_name, line_geom]
-    
+
+
 def create_lines_for_section(df_processed, dict_all_vals, feedback):
     """
     converts a point x-y-list into POINT-df

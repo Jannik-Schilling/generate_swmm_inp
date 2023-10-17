@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
+__date__ = '2023-07-03'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
 
@@ -34,7 +34,7 @@ import os
 import sys
 import inspect
 
-from qgis.core import QgsProcessingAlgorithm, QgsApplication
+from qgis.core import QgsApplication
 from .generate_swmm_provider import GenerateSwmmProvider
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
