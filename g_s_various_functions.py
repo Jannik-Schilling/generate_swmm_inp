@@ -136,7 +136,7 @@ def get_curves_from_table(curves_raw, name_col):
                         'Type': curve_type,
                         'frame': curve
                     }
-    return(curve_dict)
+    return (curve_dict)
 
 
 def get_patterns_from_table(patterns_raw, name_col):
@@ -166,7 +166,7 @@ def get_patterns_from_table(patterns_raw, name_col):
                     'Type': pattern_type,
                     'Factors': pattern
                 }
-    return(pattern_dict)
+    return (pattern_dict)
 
 
 def adjust_datetime(
@@ -253,7 +253,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 'TimeSeries': ts_df[['Name', 'Date', 'Time', 'Value']],
                 'Annotations': ts_annotation
             }
-    return(ts_dict)
+    return (ts_dict)
 
 
 # errors and feedback
