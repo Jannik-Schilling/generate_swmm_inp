@@ -585,6 +585,24 @@ class ImportInpFile (QgsProcessingAlgorithm):
         for i, it in enumerate(dict_res_table.items()):
             if feedback.isCanceled():
                 break
+                
+            #######################
+            if it[0] == 'INFLOWS':
+                layer_list = []
+                for sheet_name, df in it[1].items():
+                    data_dict = {
+                        'data': df,
+                        'layer_name': sheet_name
+                    }
+                    created_layer = create_layer_from_df(
+                        data_dict,
+                        section_name = it[0],
+                        feedback=feedback,
+                        **import_parameters_dict
+                    )
+                    layer_list = layer_list+[created_layer]
+                print(layer_list)
+            #########################
             dict_to_excel(
                 it[1],
                 it[0],

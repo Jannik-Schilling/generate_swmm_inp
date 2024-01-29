@@ -411,23 +411,23 @@ def dict_to_excel(
         
 def layerlist_to_excel(
     layer_list,
-    file_key,
+    section_name,
     folder_save,
     feedback,
     res_prefix='',
-    desired_format=None
+    desired_format=None,
     **kwargs
 ):
     """
     writes an excel file from a data_dict
     :param list layer_list
-    :param str file_key
+    :param str section_name: name of SWMM section
     :param str folder_save
     :param QgsProcessingFeedback feedback
     :param str res_prefix: prefix for file name
     :param str desired_format
     """
-    save_name = def_tables_dict[file_key]['filename']
+    save_name = def_tables_dict[section_name]['filename']
     if res_prefix != '':
         save_name = res_prefix+'_'+save_name
     if desired_format is not None:
