@@ -30,6 +30,7 @@ import pandas as pd
 import os
 import numpy as np
 import copy
+from qgis import processing
 from qgis.core import (
     NULL,
     QgsCoordinateReferenceSystem,
@@ -267,7 +268,10 @@ def create_layer_from_df(
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
 
     # set geometry type and provider
-    geom_type = def_sections_geoms_dict[section_name]
+    if section_name in def_sections_geoms_dict.keys():
+        geom_type = def_sections_geoms_dict[section_name]
+    else:
+        geom_type = 'NoGeometry' # for simple tables
     geom_type_and_crs = geom_type+'?crs='+crs_result
     vector_layer = QgsVectorLayer(geom_type_and_crs, layer_name, 'memory')
     pr = vector_layer.dataProvider()
@@ -279,7 +283,10 @@ def create_layer_from_df(
         'Int': QVariant.Int,
         'Bool': QVariant.Bool
     }
-    layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
+    if geom_type != 'NoGeometry':
+        layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
+    else:
+        layer_fields = {k: 'String' for k in data_df.columns}
     if custom_fields is not None:
         layer_fields.update(custom_fields)
     for col, field_type_string in layer_fields.items():
@@ -306,12 +313,28 @@ def create_layer_from_df(
     vector_layer.updateExtents()
 
     # transformation of CRS
-    if transform_crs_string != 'NA':
+    if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
         transform_crs_function(
             vector_layer,
             crs_result,
             transform_crs_string
         )
+    
+    
+    #########
+    return vector_layer
+    
+def save_layer_to_file(
+    vector_layer,
+    layer_name,
+    folder_save,
+    geodata_driver_num,
+    **kwargs
+):
+    # set driver
+    geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
+    geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+    #########
 
     # create layer
     fname = os.path.join(
@@ -388,4 +411,49 @@ def dict_to_excel(
             '(or alternatively the package "odf"). Instructions '
             'can be found on the in the documentation or on '
             'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
+        )
+        
+def dict_to_excel2(
+    data_dict,
+    file_key,
+    folder_save,
+    feedback,
+    res_prefix='',
+    desired_format=None
+):
+    """
+    writes an excel file from a data_dict
+    :param dict data_dict
+    :param str save_name
+    :param str folder_save
+    :param QgsProcessingFeedback feedback
+    :param str res_prefix: prefix for file name
+    :param str desired_format
+    """
+    save_name = def_tables_dict[file_key]['filename']
+    if res_prefix != '':
+        save_name = res_prefix+'_'+save_name
+    if desired_format is not None:
+        ext = desired_format
+    else: 
+        ext = '.xlsx' # default setting
+    
+    save_name_ext = save_name + ext
+    fname = os.path.join(folder_save, save_name_ext)
+    if os.path.isfile(fname):
+        raise QgsProcessingException('File '+fname
+        + ' already exists. Please choose another folder.')
+    else:
+        processing.run(
+            "native:exporttospreadsheet", 
+            {
+                'LAYERS' :[
+                    'NoGeometry?crs=EPSG:4326&uid={0f1146f2-f0fe-4cdf-ac57-567f715fb734}',
+                    'NoGeometry?crs=EPSG:4326&field=fef:string(255,0)&field=hehq:string(255,0)&field=fwew:string(255,0)&field=fwe:string(255,0)&uid={461a21d6-83a3-4b81-8b5b-65a6813b740f}'
+                ],
+                'USE_ALIAS': False,
+                'FORMATTED_VALUES': False,
+                'OUTPUT': fname,
+                'OVERWRITE': True
+            }
         )

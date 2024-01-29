@@ -55,7 +55,8 @@ from .g_s_defaults import (
 )
 from .g_s_read_write_data import (
     dict_to_excel,
-    create_layer_from_df
+    create_layer_from_df,
+    save_layer_to_file
 )
 from .g_s_import_helpers import (
     add_layer_on_completion,
@@ -583,6 +584,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         for i, it in enumerate(dict_res_table.items()):
             if feedback.isCanceled():
                 break
+            print(it)
             dict_to_excel(
                 it[1],
                 it[0],
@@ -625,11 +627,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     else:
                         layer_name = def_layer_names_dict[section_name]
                     data_dict['layer_name'] = layer_name
-                    create_layer_from_df(
+                    created_layer = create_layer_from_df(
                         data_dict,
                         section_name,
                         feedback=feedback,
                         custom_fields=def_annotation_field,
+                        **import_parameters_dict
+                    )
+                    save_layer_to_file(
+                        created_layer,
+                        layer_name,
                         **import_parameters_dict
                     )
                     dict_all_vals[section_name]['status'] = ImportDataStatus.FILE_READY
