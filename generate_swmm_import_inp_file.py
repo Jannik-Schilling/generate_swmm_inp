@@ -184,6 +184,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
         transform_crs_string = self.parameterAsString(parameters, self.TRANSFORM_CRS, context)
 
+        # parameters shared by many functions
         import_parameters_dict = {
             'folder_save': folder_save,
             'result_prefix': result_prefix,
@@ -578,13 +579,12 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(100)
 
 
-        # writing tables:
+        # writing tables: 
         feedback.setProgressText('Writing tables ...')
         n_itms = len(dict_res_table)
         for i, it in enumerate(dict_res_table.items()):
             if feedback.isCanceled():
                 break
-            print(it)
             dict_to_excel(
                 it[1],
                 it[0],
@@ -610,7 +610,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     import_parameters_dict
                 )
 
-        # write layer
+        # make layers
         n_itms = len(def_sections_geoms_dict.keys())
         for n, section_name in enumerate(def_sections_geoms_dict.keys()):
             if feedback.isCanceled():

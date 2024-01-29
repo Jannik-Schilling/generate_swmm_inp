@@ -81,16 +81,16 @@ def sect_list_import_handler(
     """
     feedback.setProgress(0)
     if out_type in ['geom_join', 'data_join']:
-        # create empty data if the section is not available
         if section_name not in dict_all_vals.keys():
+        # create empty data if the section is not available
             dict_all_vals[section_name] = {}
             dict_all_vals[section_name]['data'] = []
             dict_all_vals[section_name]['n_objects'] = 0
             dict_all_vals[section_name]['status'] = ImportDataStatus.RAW
             feedback.setProgress(1)
         data_dict = dict_all_vals[section_name]
-        # skip if the section is already processed
-        if data_dict['status'] == ImportDataStatus.PROCESSED:
+        if data_dict['status'] >= ImportDataStatus.PROCESSED:
+            # skip if the section is already processed
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')
@@ -122,6 +122,7 @@ def sect_list_import_handler(
         feedback.setProgress(100)
     else:
         if section_name not in dict_all_vals.keys():
+            # do nothing if the section is not in the import file
             pass
         else:
             feedback.setProgressText('Preparing section \"'+section_name+'\"')

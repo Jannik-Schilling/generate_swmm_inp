@@ -319,9 +319,6 @@ def create_layer_from_df(
             crs_result,
             transform_crs_string
         )
-    
-    
-    #########
     return vector_layer
     
 def save_layer_to_file(
@@ -334,7 +331,6 @@ def save_layer_to_file(
     # set driver
     geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
     geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
-    #########
 
     # create layer
     fname = os.path.join(
@@ -376,7 +372,7 @@ def dict_to_excel(
     """
     writes an excel file from a data_dict
     :param dict data_dict
-    :param str save_name
+    :param str file_key
     :param str folder_save
     :param QgsProcessingFeedback feedback
     :param str res_prefix: prefix for file name
@@ -413,18 +409,19 @@ def dict_to_excel(
             'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
         )
         
-def dict_to_excel2(
-    data_dict,
+def layerlist_to_excel(
+    layer_list,
     file_key,
     folder_save,
     feedback,
     res_prefix='',
     desired_format=None
+    **kwargs
 ):
     """
     writes an excel file from a data_dict
-    :param dict data_dict
-    :param str save_name
+    :param list layer_list
+    :param str file_key
     :param str folder_save
     :param QgsProcessingFeedback feedback
     :param str res_prefix: prefix for file name
@@ -437,7 +434,6 @@ def dict_to_excel2(
         ext = desired_format
     else: 
         ext = '.xlsx' # default setting
-    
     save_name_ext = save_name + ext
     fname = os.path.join(folder_save, save_name_ext)
     if os.path.isfile(fname):
@@ -447,10 +443,7 @@ def dict_to_excel2(
         processing.run(
             "native:exporttospreadsheet", 
             {
-                'LAYERS' :[
-                    'NoGeometry?crs=EPSG:4326&uid={0f1146f2-f0fe-4cdf-ac57-567f715fb734}',
-                    'NoGeometry?crs=EPSG:4326&field=fef:string(255,0)&field=hehq:string(255,0)&field=fwew:string(255,0)&field=fwe:string(255,0)&uid={461a21d6-83a3-4b81-8b5b-65a6813b740f}'
-                ],
+                'LAYERS' : layer_list,
                 'USE_ALIAS': False,
                 'FORMATTED_VALUES': False,
                 'OUTPUT': fname,
