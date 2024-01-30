@@ -56,7 +56,8 @@ from .g_s_defaults import (
 from .g_s_read_write_data import (
     dict_to_excel,
     create_layer_from_df,
-    save_layer_to_file
+    save_layer_to_file,
+    layerlist_to_excel
 )
 from .g_s_import_helpers import (
     add_layer_on_completion,
@@ -585,32 +586,27 @@ class ImportInpFile (QgsProcessingAlgorithm):
         for i, it in enumerate(dict_res_table.items()):
             if feedback.isCanceled():
                 break
-                
-            #######################
-            if it[0] == 'INFLOWS':
-                layer_list = []
-                for sheet_name, df in it[1].items():
-                    data_dict = {
-                        'data': df,
-                        'layer_name': sheet_name
-                    }
-                    created_layer = create_layer_from_df(
-                        data_dict,
-                        section_name = it[0],
-                        feedback=feedback,
-                        **import_parameters_dict
-                    )
-                    layer_list = layer_list+[created_layer]
-                print(layer_list)
-            #########################
-            dict_to_excel(
-                it[1],
-                it[0],
-                folder_save,
-                feedback,
-                result_prefix
+            layer_list = []
+            section_name = it[0]
+            for sheet_name, df in it[1].items():
+                data_dict = {
+                    'data': df,
+                    'layer_name': sheet_name
+                }
+                created_layer = create_layer_from_df(
+                    data_dict,
+                    section_name,
+                    feedback=feedback,
+                    **import_parameters_dict
+                )
+                layer_list = layer_list+[created_layer]
+            layerlist_to_excel(
+                layer_list,
+                section_name,
+                feedback = feedback,
+                **import_parameters_dict
             )
-            feedback.setProgress(((i+1)/n_itms)*100)
+            del layer_list
 
         # sections with geometries, which will be added as layers
         #------------------------------

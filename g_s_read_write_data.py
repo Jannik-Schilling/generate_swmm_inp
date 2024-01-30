@@ -54,8 +54,9 @@ from .g_s_defaults import (
     def_line_geom,
     def_ploygon_geom
 )
+from .g_s_import_helpers import replace_nan_null
 
-# export
+# export functions
 # helper function for export
 def replace_null_nan(attr_value):
     """replaces NULL with np.nan"""
@@ -134,7 +135,11 @@ def read_layers_direct(
 
 # tables
 def read_data_from_table_direct(file, sheet=0):
-    '''reads curves or other tables from excel or csv'''
+    """
+    reads curves or other tables from excel or csv
+    :param str file
+    :param str/int sheet
+    """
     filename, file_extension = os.path.splitext(file)
     if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
         try:
@@ -252,13 +257,13 @@ def create_layer_from_df(
     creates a QgsVectorLayer from data in geodata_dict
     :param dict data_dict
     :param str section_name: name of SWMM section
-    :param str layer_name
     :param str crs_result: epsg code of the desired CRS
     :param str folder_save
     :param int geodata_driver_num: key of driver in def_ogr_driver_dict
     :param QgsProcessingFeedback feedback
-    :param dict costum fields: additional fields e.g. annotations
-    :param Bool feedback
+    :param dict custom_fields: additional fields e.g. annotations
+    :param bool create_empty
+    :param str transform_crs_string
     """
     feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
     data_df = data_dict['data']
@@ -281,12 +286,14 @@ def create_layer_from_df(
         'Double': QVariant.Double,
         'String': QVariant.String,
         'Int': QVariant.Int,
-        'Bool': QVariant.Bool
+        'Bool': QVariant.Bool,
+        'Date': QVariant.String,
+        'Time': QVariant.String
     }
     if geom_type != 'NoGeometry':
         layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
     else:
-        layer_fields = {k: 'String' for k in data_df.columns}
+        layer_fields = def_tables_dict[section_name]['tables'][layer_name]
     if custom_fields is not None:
         layer_fields.update(custom_fields)
     for col, field_type_string in layer_fields.items():
@@ -308,9 +315,14 @@ def create_layer_from_df(
                     + ', '.join([str(x) for x in no_geom_features])
                     + '.\nDefault geometries will be used instead. The features can be found around (0,0)'
                 )
+        else:
+            # replace nan with NULL in tables
+            data_df = data_df.applymap(replace_nan_null)
         data_df = data_df[data_df_column_order]
-    data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
-    vector_layer.updateExtents()
+    if len(data_df) != 0:
+        # add features if data_df is not empty (which can be the case for tables)
+        data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
+        vector_layer.updateExtents()
 
     # transformation of CRS
     if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
@@ -366,11 +378,11 @@ def dict_to_excel(
     file_key,
     folder_save,
     feedback,
-    res_prefix='',
+    result_prefix='',
     desired_format=None
 ):
     """
-    writes an excel file from a data_dict
+    Currently unused function to write an excel file from a data_dict
     :param dict data_dict
     :param str file_key
     :param str folder_save
@@ -408,14 +420,25 @@ def dict_to_excel(
             'can be found on the in the documentation or on '
             'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
         )
-        
+def create_empty_feature(vector_layer):
+    """
+    creates an empty QgsFeature for an existing QgsVectorLayer
+    :param QgsVectorLayer vector_layer
+    :return: QgsFeature
+    """
+    new_ft = QgsFeature()
+    layer_fields = vector_layer.fields()
+    new_ft.setFields(layer_fields)
+    new_ft.setAttributes([NULL] * len(layer_fields))
+    return new_ft
+
 def layerlist_to_excel(
     layer_list,
     section_name,
     folder_save,
     feedback,
-    res_prefix='',
-    desired_format=None,
+    result_prefix='',
+    desired_table_format=None,
     **kwargs
 ):
     """
@@ -424,18 +447,24 @@ def layerlist_to_excel(
     :param str section_name: name of SWMM section
     :param str folder_save
     :param QgsProcessingFeedback feedback
-    :param str res_prefix: prefix for file name
-    :param str desired_format
+    :param str result_prefix: prefix for file name
+    :param str desired_table_format
     """
     save_name = def_tables_dict[section_name]['filename']
-    if res_prefix != '':
-        save_name = res_prefix+'_'+save_name
-    if desired_format is not None:
-        ext = desired_format
+    if result_prefix != '':
+        save_name = result_prefix+'_'+save_name
+    if desired_table_format is not None:
+        ext = desired_table_format
     else: 
         ext = '.xlsx' # default setting
     save_name_ext = save_name + ext
     fname = os.path.join(folder_save, save_name_ext)
+    for vector_layer in layer_list:
+        if vector_layer.featureCount() == 0:
+            vector_layer.startEditing()
+            new_ft = create_empty_feature(vector_layer)
+            vector_layer.addFeature(new_ft)
+            vector_layer.commitChanges()
     if os.path.isfile(fname):
         raise QgsProcessingException('File '+fname
         + ' already exists. Please choose another folder.')
@@ -445,7 +474,7 @@ def layerlist_to_excel(
             {
                 'LAYERS' : layer_list,
                 'USE_ALIAS': False,
-                'FORMATTED_VALUES': False,
+                'FORMATTED_VALUES': True,
                 'OUTPUT': fname,
                 'OVERWRITE': True
             }
