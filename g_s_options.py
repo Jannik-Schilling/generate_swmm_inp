@@ -141,7 +141,6 @@ def convert_options_format_for_import(
     :param QgsProcessingFeedback feedback
     '''
     dict_options = {k: v for k, v in zip(df_options['Option'], df_options['Value'])}
-    dict_options = {k: adjust_options_dtypes(k, v, 'input', feedback) for k, v in dict_options.items()}
     df_options = pd.DataFrame()
     df_options['Option'] = dict_options.keys()
     df_options['Value'] = dict_options.values()

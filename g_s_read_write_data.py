@@ -22,13 +22,14 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
-__copyright__ = '(C) 2023 by Jannik Schilling'
+__date__ = '2024-01-31'
+__copyright__ = '(C) 2024 by Jannik Schilling'
 
 
 import pandas as pd
 import os
 import numpy as np
+from xlrd import open_workbook
 import copy
 from qgis import processing
 from qgis.core import (
@@ -65,6 +66,58 @@ def replace_null_nan(attr_value):
     else:
         return attr_value
 
+def del_none_bool(df):
+    """
+    replaces None or NULL with np.nan
+    replaces True and False with 'YES' and 'NO'
+    except of geometry column
+    :param pd.DataFrame df
+    :return: pd.DataFrame
+    """
+    df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
+    df = df.applymap(replace_null_nan)
+    df[df.columns[:-1]] = df[df.columns[:-1]].replace('True', 'YES').replace('False', 'NO')
+    return df
+
+def load_layer_to_df(
+    vlayer,
+    select_cols=[],
+    with_id=False
+):
+    """
+    reads layer attributes and geometries
+    :param QgsVectorLayer vlayer
+    :param list select_cols
+    :param bool with_id
+    :return: pd.DataFrame
+    """
+    cols = [f.name() for f in vlayer.fields()]
+    if len(select_cols) > 0:
+        if all([x in cols for x in select_cols]):
+            cols = select_cols
+        else:
+            missing_cols = [x for x in select_cols if x not in cols]
+            raise QgsProcessingException(
+                'Missing colums in layer '
+                + vlayer.name()
+                + ': ' + ', '.join(missing_cols)
+            )
+    # check for null geometries
+    if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
+        name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
+        raise QgsProcessingException(
+            'Failed to load layer: missing geometries in '
+            + vlayer.name()+': '+', '.join(name_missing_geom)
+        )
+    # data generator
+    if with_id is True:
+        datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
+        df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry', 'id'])
+    else:
+        datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
+        df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
+    return df
+
 # layers with geometry
 def read_layers_direct(
     raw_layers_dict,
@@ -77,56 +130,6 @@ def read_layers_direct(
     :param list select_cols
     :param bool with_id
     """
-
-    def del_none_bool(df):
-        """
-        replaces None or NULL with np.nan
-        replaces True and False with 'YES' and 'NO'
-        except of geometry column
-        :param pd.DataFrame df
-        """
-        df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
-        df = df.applymap(replace_null_nan)
-        df[df.columns[:-1]] = df[df.columns[:-1]].replace('True', 'YES').replace('False', 'NO')
-        return df
-
-    def load_layer_to_df(
-        vlayer,
-        select_cols=[],
-        with_id=False
-    ):
-        """
-        reads layer attributes and geometries
-        :param QgsVectorLayer vlayer
-        :param list select_cols
-        :param bool with_id
-        """
-        cols = [f.name() for f in vlayer.fields()]
-        if len(select_cols) > 0:
-            if all([x in cols for x in select_cols]):
-                cols = select_cols
-            else:
-                missing_cols = [x for x in select_cols if x not in cols]
-                raise QgsProcessingException(
-                    'Missing colums in layer '
-                    + vlayer.name()
-                    + ': ' + ', '.join(missing_cols)
-                )
-        # check for null geometries
-        if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
-            name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
-            raise QgsProcessingException(
-                'Failed to load layer: missing geometries in '
-                + vlayer.name()+': '+', '.join(name_missing_geom)
-            )
-        # data generator
-        if with_id is True:
-            datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
-            df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry', 'id'])
-        else:
-            datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
-            df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
-        return df
     data_dict = {n: load_layer_to_df(d, select_cols, with_id) for n, d in raw_layers_dict.items() if d is not None}
     data_dict_out = {n: d for n, d in data_dict.items() if len(d) > 0}
     data_dict_out = {n: del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
@@ -136,54 +139,35 @@ def read_layers_direct(
 # tables
 def read_data_from_table_direct(file, sheet=0):
     """
-    reads curves or other tables from excel or csv
+    reads curves or other tables from excel
     :param str file
     :param str/int sheet
     """
-    filename, file_extension = os.path.splitext(file)
-    if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
-        try:
-            sheets = list(pd.read_excel(file, None, engine='openpyxl').keys())
-        except BaseException:
-            sheets = pd.ExcelFile(file).sheet_names
-        if sheet == 0:
-            s_n = 0
+    wb = open_workbook(file)
+    sheets = wb.sheet_names()
+    if sheet == 0:
+        s_n = sheets[0]
+    else:
+        if sheet in sheets:
+            s_n = sheet
+        elif str(sheet).upper() in sheets:
+            s_n = str(sheet).upper()
+        elif str(sheet).lower() in sheets:
+            s_n = str(sheet).lower()
+        elif str(sheet).capitalize() in sheets:
+            s_n = str(sheet).capitalize()
         else:
-            if sheet in sheets:
-                s_n = sheet
-            elif str(sheet).upper() in sheets:
-                s_n = str(sheet).upper()
-            elif str(sheet).lower() in sheets:
-                s_n = str(sheet).lower()
-            elif str(sheet).capitalize() in sheets:
-                s_n = str(sheet).capitalize()
-            else:
-                s_n = None
-        if s_n is not None:
-            try:
-                data_df = pd.read_excel(file, sheet_name=s_n)
-            except BaseException:
-                data_df = pd.read_excel(
-                    file,
-                    sheet_name=s_n,
-                    engine='openpyxl'
-                )
-        else:
-            data_df = pd.DataFrame()
-    if file_extension == '.gpkg':
-        if sheet == 0:
-            gpkg_layers = QgsVectorLayer(file, 'NoGeometry', 'ogr')
-            gpkg_provider = gpkg_layers.dataProvider()
-            sublayer_0 = gpkg_provider.subLayers()[0]
-            name_separator = gpkg_provider.sublayerSeparator()
-            sheet = sublayer_0.split(name_separator)[1]
-        read_file = file+'|layername='+str(sheet)
-        vlayer = QgsVectorLayer(read_file, 'NoGeometry', 'ogr')
-        cols = [f.name() for f in vlayer.fields()]
-        datagen = ([f[col] for col in cols] for f in vlayer.getFeatures())
-        data_df = pd.DataFrame.from_records(data=datagen, columns=cols)
-        data_df = data_df.applymap(replace_null_nan)
-        data_df = data_df.drop(columns=['fid'])
+            s_n = None
+    if s_n is not None:
+        tab_data = wb.sheet_by_name(s_n)
+        headers = [cell.value for cell in tab_data.row(0)]
+        data = []
+        for row_index in range(1, tab_data.nrows):
+            row_data = [cell.value for cell in tab_data.row(row_index)]
+            data = data+[row_data]
+        data_df = pd.DataFrame(data, columns=headers)
+    else:
+        data_df = pd.DataFrame()
     return data_df
 
 # import

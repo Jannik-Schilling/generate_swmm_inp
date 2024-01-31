@@ -22,8 +22,8 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-07-03'
-__copyright__ = '(C) 2023 by Jannik Schilling'
+__date__ = '2024-01-31'
+__copyright__ = '(C) 2024 by Jannik Schilling'
 
 import numpy as np
 import os
