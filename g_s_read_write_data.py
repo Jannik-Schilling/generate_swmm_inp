@@ -29,7 +29,6 @@ __copyright__ = '(C) 2024 by Jannik Schilling'
 import pandas as pd
 import os
 import numpy as np
-from xlrd import open_workbook
 import copy
 from qgis import processing
 from qgis.core import (
@@ -137,14 +136,17 @@ def read_layers_direct(
 
 
 # tables
-def read_data_from_table_direct(file, sheet=0):
+def read_data_from_table_direct(tab_file, sheet=0):
     """
-    reads curves or other tables from excel
+    reads curves or other tables from excel or gpkg
     :param str file
     :param str/int sheet
     """
-    wb = open_workbook(file)
-    sheets = wb.sheet_names()
+    table_layers = QgsVectorLayer(tab_file, 'NoGeometry', 'ogr')
+    table_provider = table_layers.dataProvider()
+    sublayers = table_provider.subLayers()
+    name_separator = table_provider.sublayerSeparator()
+    sheets = [x.split(name_separator)[1] for x in sublayers]
     if sheet == 0:
         s_n = sheets[0]
     else:
@@ -159,13 +161,19 @@ def read_data_from_table_direct(file, sheet=0):
         else:
             s_n = None
     if s_n is not None:
-        tab_data = wb.sheet_by_name(s_n)
-        headers = [cell.value for cell in tab_data.row(0)]
-        data = []
-        for row_index in range(1, tab_data.nrows):
-            row_data = [cell.value for cell in tab_data.row(row_index)]
-            data = data+[row_data]
-        data_df = pd.DataFrame(data, columns=headers)
+        tab_layer_to_load = tab_file+'|layername='+str(s_n)
+        vlayer = QgsVectorLayer(tab_layer_to_load, 'NoGeometry', 'ogr')
+        cols = [f.name() for f in vlayer.fields()]
+        datagen = ([f[col] for col in cols] for f in vlayer.getFeatures())
+        data_df = pd.DataFrame.from_records(data=datagen, columns=cols)
+        data_df = data_df.applymap(replace_null_nan)
+        if all([x.startswith('Field') for x in data_df.columns]):
+            rename_cols = {i:j for i, j in zip(cols, data_df.loc[0,:].tolist())}
+            data_df = data_df.drop(index=0)
+            data_df.reset_index(drop=True, inplace=True)
+            data_df.rename(columns=rename_cols, inplace=True)
+        if 'fid' in cols:
+            data_df = data_df.drop(columns=['fid'])
     else:
         data_df = pd.DataFrame()
     return data_df

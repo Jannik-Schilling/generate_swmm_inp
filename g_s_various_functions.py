@@ -223,6 +223,7 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     else:
         for i in ts_raw[name_col].unique():
             ts_df = ts_raw[ts_raw[name_col] == i]
+            print(ts_df['File_Name'])
             if 'File_Name' in ts_raw.columns and not all(pd.isna(ts_df['File_Name'])):  # external time series
                 ts_df['Date'] = 'FILE'
                 ts_df['Time'] = ts_df['File_Name']
