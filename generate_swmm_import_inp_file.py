@@ -479,7 +479,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
             )
         else:
             all_time_series = build_df_from_vals_list([], list(ts_cols_dict.keys()))
-        # all_time_series = all_time_series.fillna('')
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_res_table['TIMESERIES'] = {'TIMESERIES': all_time_series}
 

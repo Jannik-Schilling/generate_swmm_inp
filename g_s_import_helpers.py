@@ -28,8 +28,11 @@ import pandas as pd
 import numpy as np
 import copy
 import os
-from datetime import datetime
 from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtCore import (
+    QDate,
+    QTime
+)
 from qgis.core import (
     QgsProcessingException,
     QgsProcessingContext,
@@ -465,6 +468,38 @@ def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
             df_line.insert(i_p, np.nan)
     return df_line
 
+# dtype adjustment
+def date_conversion(x):
+    """Converts a value into a QDate"""
+    if pd.isna(x):
+        return NULL
+    else:
+        return QDate().fromString(x, 'MM/dd/yyyy')
+
+def time_conversion(x):
+    """Converts a value into a QTime"""
+    if pd.isna(x):
+        return NULL
+    else:
+        time_hours = '0'
+        time_minutes = '0'
+        time_seconds = '0'
+        time_elem_list = x.split(':')
+        if len(time_elem_list) == 1:
+            time_hours = time_elem_list[0]
+        elif len(time_elem_list) == 2:
+            time_hours = time_elem_list[0]
+            time_minutes = time_elem_list[1]
+        elif len(time_elem_list) == 3:
+            time_hours = time_elem_list[0]
+            time_minutes = time_elem_list[1]
+            time_seconds = time_elem_list[2]
+        else:
+            pass  # maybe a warning could be useful, here
+        time_hours = int(time_hours)
+        time_minutes = int(time_minutes)
+        time_seconds = int(time_seconds)
+    return QTime(time_hours, time_minutes, time_seconds)
 
 def adjust_column_types(df, col_types):
     """
@@ -476,43 +511,17 @@ def adjust_column_types(df, col_types):
     def col_conversion(col):
         """applies the type conversion on a column"""
         col = col.replace('*', np.nan)
-
-        def val_conversion(x):
-            if pd.isna(x):
-                return np.nan
-            else:
-                if col_types[col.name] == 'Double':
-                    return float(x)
-                if col_types[col.name] == 'String':
-                    return str(x)
-                if col_types[col.name] == 'Int':
-                    return int(x)
-                if col_types[col.name] == 'Bool':
-                    return bool(x)
-        if col_types[col.name] in ['Double', 'String', 'Int', 'Bool']:
-            return [val_conversion(x) for x in col]
+        if col_types[col.name] == 'String':
+            return [str(x) if not pd.isna(x) else x for x in col]
+        if col_types[col.name] == 'Int':
+            return [int(x) if not pd.isna(x) else x for x in col]
+        if col_types[col.name] == 'Double':
+            return [float(x) if not pd.isna(x) else x for x in col]
+        if col_types[col.name] == 'Bool':
+            return [bool(x) if not pd.isna(x) else x for x in col]
         if col_types[col.name] == 'Date':
-            def date_conversion(x):
-                if pd.isna(x):
-                    return ''
-                else:
-                    return datetime.strptime(x, '%m/%d/%Y').date()
             return [date_conversion(x) for x in col]
         if col_types[col.name] == 'Time':
-            def time_conversion(x):
-                if pd.isna(x):
-                    return x
-                else:
-                    try:
-                        return datetime.strptime(str(x), '%H:%M:%S').time()
-                    except BaseException:
-                        try:
-                            return datetime.strptime(str(x), '%H:%M').time()
-                        except BaseException:
-                            try:
-                                return datetime.strptime(str(x), '%H').time()
-                            except BaseException:
-                                return x  # when over 48 h
             return [time_conversion(x) for x in col]
     df = df.apply(col_conversion, axis=0)
     return df

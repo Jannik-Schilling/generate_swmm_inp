@@ -265,7 +265,6 @@ def create_layer_from_df(
     :param bool create_empty
     :param str transform_crs_string
     """
-    feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
     data_df = data_dict['data']
     layer_name = data_dict['layer_name']
     # set driver
@@ -274,6 +273,7 @@ def create_layer_from_df(
 
     # set geometry type and provider
     if section_name in def_sections_geoms_dict.keys():
+        feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
         geom_type = def_sections_geoms_dict[section_name]
     else:
         geom_type = 'NoGeometry' # for simple tables
@@ -287,8 +287,8 @@ def create_layer_from_df(
         'String': QVariant.String,
         'Int': QVariant.Int,
         'Bool': QVariant.Bool,
-        'Date': QVariant.String,
-        'Time': QVariant.String
+        'Date': QVariant.Date,
+        'Time': QVariant.Time
     }
     if geom_type != 'NoGeometry':
         layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
@@ -323,7 +323,6 @@ def create_layer_from_df(
         # add features if data_df is not empty (which can be the case for tables)
         data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
         vector_layer.updateExtents()
-
     # transformation of CRS
     if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
         transform_crs_function(
@@ -459,6 +458,13 @@ def layerlist_to_excel(
         ext = '.xlsx' # default setting
     save_name_ext = save_name + ext
     fname = os.path.join(folder_save, save_name_ext)
+    feedback.setProgressText(
+        'Writing file '
+        + str(fname)
+        +' for section \"'
+        +section_name
+        +'\"'
+    )
     for vector_layer in layer_list:
         if vector_layer.featureCount() == 0:
             vector_layer.startEditing()
@@ -474,7 +480,7 @@ def layerlist_to_excel(
             {
                 'LAYERS' : layer_list,
                 'USE_ALIAS': False,
-                'FORMATTED_VALUES': True,
+                'FORMATTED_VALUES': False,
                 'OUTPUT': fname,
                 'OVERWRITE': True
             }
