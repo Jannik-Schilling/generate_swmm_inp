@@ -54,7 +54,6 @@ from .g_s_defaults import (
     pattern_times
 )
 from .g_s_read_write_data import (
-    dict_to_excel,
     create_layer_from_df,
     save_layer_to_file,
     layerlist_to_excel

@@ -25,7 +25,6 @@ __author__ = 'Jannik Schilling'
 __date__ = '2023-05-09'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
-import numpy as np
 import pandas as pd
 from qgis.PyQt.QtCore import QTime, QDate
 from qgis.core import (

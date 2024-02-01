@@ -262,9 +262,6 @@ def create_layer_from_df(
     """
     data_df = data_dict['data']
     layer_name = data_dict['layer_name']
-    # set driver
-    geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
-    geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
 
     # set geometry type and provider
     if section_name in def_sections_geoms_dict.keys():
@@ -386,8 +383,8 @@ def dict_to_excel(
     """
     save_name = def_tables_dict[file_key]['filename']
     table_ext_list = ['.xlsx', '.xls', '.ods']
-    if res_prefix != '':
-        save_name = res_prefix+'_'+save_name
+    if result_prefix != '':
+        save_name = result_prefix+'_'+save_name
     if desired_format is not None:
         table_ext_list = [desired_format] + table_ext_list
     for ext in table_ext_list:

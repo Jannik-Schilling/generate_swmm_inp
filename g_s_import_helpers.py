@@ -44,7 +44,6 @@ from .g_s_defaults import (
     annotation_field_name,
     def_sections_dict,
     def_sections_geoms_dict,
-    def_tables_dict,
     def_qgis_fields_dict,
     ImportDataStatus,
     st_files_path

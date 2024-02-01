@@ -6,11 +6,11 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.20
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.32
+version=0.33
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
-about=This plugin provides tools to generate SWMM input files from layers in QGIS, and to import SWMM input files into QGIS. You can create submodels above or below a certain node in your model layers. The plugin needs the python libraries 'pandas' and 'openpyxl' (for the import tool) which should be included in current QGIS versions. If they are not already installed, they can be added in a advanced QGIS installation or via pip. Instructions and a documentation can be found on the plugin´s GIT (see link "homepage" below). 
+about=This plugin provides tools to generate SWMM input files from layers in QGIS, and to import SWMM input files into QGIS. You can create submodels above or below a certain node in your model layers. The plugin needs the python library 'pandas' which should be included in current QGIS versions. If it is not already installed, it can be added in a advanced QGIS installation or via pip. Instructions and a documentation can be found on the plugin´s GIT (see link "homepage" below). 
 
 	Cite as: Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262
 
@@ -24,9 +24,9 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.32 2023-10
-	- fix error text for missing packages
-	- fix rounding error for polygons and vertices
+changelog= 0.33 2023-10
+	- removal of "openpyxl" due to several crashes
+	- updated processing feedback
 
 
 # Tags are comma separated with spaces allowed
@@ -36,7 +36,7 @@ homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
 icon=icons/icon.png
 # experimental flag
-experimental=False
+experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
