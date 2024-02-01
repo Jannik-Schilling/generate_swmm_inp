@@ -2,7 +2,7 @@
 A QGIS plugin which provides tools to create a SWMM input file from layers in QGIS, and to import input files into QGIS. The plugin was recently updated according to new functions in SWMM 5.2. Input files from SWMM 5.1.15 will still work. 
 
 ## Documentation
-[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_31.pdf) to the documentation file
+[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_33.pdf) to the documentation file
 
 If you use the plugin in scientific work or other studies, please cite as:
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
@@ -29,7 +29,7 @@ If you use the plugin in scientific work or other studies, please cite as:
 ## Workflow
 ### 0 Install 
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
-- if needed: the python packages "pandas" and "openpyxl": 
+- if needed: the python package "pandas": 
     - for windows: https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/
     - for linux, install via pip 
 - [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
