@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
+__date__ = '2024-02-02'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
 
@@ -320,7 +320,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(12)
 
         # reading data in tables (curves, patterns, inflows ...)
-        feedback.setProgressText(self.tr('Reading tables'))
+        feedback.setProgressText('Reading tables...')
         file_curves = self.parameterAsString(parameters, self.FILE_CURVES, context)
         file_patterns = self.parameterAsString(parameters, self.FILE_PATTERNS, context)
         file_options = self.parameterAsString(parameters, self.FILE_OPTIONS, context)
@@ -334,7 +334,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if file_options != '':
             raw_data_dict['options_df'] = read_data_from_table_direct(
                 file_options,
-                sheet='OPTIONS'
+                sheet='OPTIONS',
+                feedback=feedback
             )
         # curves table
         if file_curves != '':
@@ -342,7 +343,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             for curve_type in def_curve_types:
                 curve_df = read_data_from_table_direct(
                     file_curves,
-                    sheet=curve_type
+                    sheet=curve_type,
+                    feedback=feedback
                 )
                 if len(curve_df) > 0:
                     raw_data_dict['curves'][curve_type] = curve_df
@@ -352,7 +354,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             for pattern_type in ['HOURLY', 'DAILY', 'MONTHLY', 'WEEKEND']:
                 raw_data_dict['patterns'][pattern_type] = read_data_from_table_direct(
                     file_patterns,
-                    sheet=pattern_type
+                    sheet=pattern_type,
+                    feedback=feedback
                 )
         # inflows table
         if file_inflows != '':
@@ -360,12 +363,15 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs', 'RDII']:
                 raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(
                     file_inflows,
-                    sheet=inflow_type
+                    sheet=inflow_type,
+                    feedback=feedback
                 )
         # timeseries table
         if file_timeseries != '':
             raw_data_dict['timeseries'] = read_data_from_table_direct(
-                file_timeseries
+                file_timeseries,
+                sheet='TIMESERIES',
+                feedback=feedback
             )
         # quality table
         if file_quality != '':
@@ -373,7 +379,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             for quality_param in ['POLLUTANTS', 'LANDUSES', 'COVERAGES', 'LOADINGS']:
                 raw_data_dict['quality'][quality_param] = read_data_from_table_direct(
                     file_quality,
-                    sheet=quality_param
+                    sheet=quality_param,
+                    feedback=feedback
                 )
         # transects table
         if file_transects != '':
@@ -381,7 +388,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             for transects_param in ['Data', 'XSections']:
                 raw_data_dict['transects'][transects_param] = read_data_from_table_direct(
                     file_transects,
-                    sheet=transects_param
+                    sheet=transects_param,
+                    feedback=feedback
                 )
         # streets table
         if file_streets != '':
@@ -389,7 +397,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             for streets_param in ['STREETS', 'INLETS', 'INLET_USAGE']:
                 raw_data_dict['streets'][streets_param] = read_data_from_table_direct(
                     file_streets,
-                    sheet=streets_param
+                    sheet=streets_param,
+                    feedback=feedback
                 )
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(20)
@@ -437,7 +446,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['POLYGONS'] = {'data':
                 get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
             }
-            #print(inp_dict['POLYGONS']['data'])
             subcatchments_annot = get_annotations_from_raw_df(
                 raw_data_dict['subcatchments_raw'].copy()
             )
@@ -747,6 +755,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'timeseries' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
             from .g_s_various_functions import get_timeseries_from_table
+            print(raw_data_dict['timeseries']['Time'])
             inp_dict['TIMESERIES'] = {
                 'data': get_timeseries_from_table(
                     raw_data_dict['timeseries'],
