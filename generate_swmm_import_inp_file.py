@@ -22,8 +22,8 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-07-03'
-__copyright__ = '(C) 2023 by Jannik Schilling'
+__date__ = '2024-01-31'
+__copyright__ = '(C) 2024 by Jannik Schilling'
 
 import numpy as np
 import os
@@ -54,8 +54,9 @@ from .g_s_defaults import (
     pattern_times
 )
 from .g_s_read_write_data import (
-    dict_to_excel,
-    create_layer_from_df
+    create_layer_from_df,
+    save_layer_to_file,
+    layerlist_to_excel
 )
 from .g_s_import_helpers import (
     add_layer_on_completion,
@@ -183,6 +184,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
         transform_crs_string = self.parameterAsString(parameters, self.TRANSFORM_CRS, context)
 
+        # parameters shared by many functions
         import_parameters_dict = {
             'folder_save': folder_save,
             'result_prefix': result_prefix,
@@ -476,7 +478,6 @@ class ImportInpFile (QgsProcessingAlgorithm):
             )
         else:
             all_time_series = build_df_from_vals_list([], list(ts_cols_dict.keys()))
-        # all_time_series = all_time_series.fillna('')
         all_time_series = adjust_column_types(all_time_series, ts_cols_dict)
         dict_res_table['TIMESERIES'] = {'TIMESERIES': all_time_series}
 
@@ -577,20 +578,33 @@ class ImportInpFile (QgsProcessingAlgorithm):
             feedback.setProgress(100)
 
 
-        # writing tables:
+        # writing tables: 
         feedback.setProgressText('Writing tables ...')
         n_itms = len(dict_res_table)
         for i, it in enumerate(dict_res_table.items()):
             if feedback.isCanceled():
                 break
-            dict_to_excel(
-                it[1],
-                it[0],
-                folder_save,
-                feedback,
-                result_prefix
+            layer_list = []
+            section_name = it[0]
+            for sheet_name, df in it[1].items():
+                data_dict = {
+                    'data': df,
+                    'layer_name': sheet_name
+                }
+                created_layer = create_layer_from_df(
+                    data_dict,
+                    section_name,
+                    feedback=feedback,
+                    **import_parameters_dict
+                )
+                layer_list = layer_list+[created_layer]
+            layerlist_to_excel(
+                layer_list,
+                section_name,
+                feedback = feedback,
+                **import_parameters_dict
             )
-            feedback.setProgress(((i+1)/n_itms)*100)
+            del layer_list
 
         # sections with geometries, which will be added as layers
         #------------------------------
@@ -608,7 +622,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     import_parameters_dict
                 )
 
-        # write layer
+        # make layers
         n_itms = len(def_sections_geoms_dict.keys())
         for n, section_name in enumerate(def_sections_geoms_dict.keys()):
             if feedback.isCanceled():
@@ -625,11 +639,16 @@ class ImportInpFile (QgsProcessingAlgorithm):
                     else:
                         layer_name = def_layer_names_dict[section_name]
                     data_dict['layer_name'] = layer_name
-                    create_layer_from_df(
+                    created_layer = create_layer_from_df(
                         data_dict,
                         section_name,
                         feedback=feedback,
                         custom_fields=def_annotation_field,
+                        **import_parameters_dict
+                    )
+                    save_layer_to_file(
+                        created_layer,
+                        layer_name,
                         **import_parameters_dict
                     )
                     dict_all_vals[section_name]['status'] = ImportDataStatus.FILE_READY

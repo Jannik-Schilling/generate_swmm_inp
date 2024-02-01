@@ -25,9 +25,8 @@ __author__ = 'Jannik Schilling'
 __date__ = '2023-05-09'
 __copyright__ = '(C) 2023 by Jannik Schilling'
 
-import numpy as np
 import pandas as pd
-from datetime import datetime
+from qgis.PyQt.QtCore import QTime, QDate
 from qgis.core import (
     QgsWkbTypes,
     QgsProcessingException
@@ -170,31 +169,47 @@ def get_patterns_from_table(patterns_raw, name_col):
 
 
 def adjust_datetime(
-    dt_column,
-    str_input_formats,
-    str_output_format
+    dt_list,
+    dt_type,
+    str_output_format,
+    ts_name,
+    feedback
 ):
     """
     converts time values (tries different formats) into another time string
-    :param list or series dt_column: column in which the date or time is written
-    :param list str_input_formats
+    :param list or series dt_list: column in which the date or time is written
+    :param str dt_type: "Date" or "Time"
     :param str str_output_format
+    :param str ts_name
+    :param QgsProcessingFeedback feedback
     """
-    try:
-        # if already in a date or time format
-        dt_column = [t.strftime(str_output_format) for t in dt_column]
-        return dt_column
-    except BaseException:
-        # if given as string
-        for st in str_input_formats:
-            try:
-                dt_column = [datetime.strptime(str(t), st) for t in dt_column]
-                dt_column = [t.strftime(str_output_format) for t in dt_column]
-            except BaseException:
-                dt_column = [str(t) for t in dt_column]
-            else:
-                return dt_column
-                break
+    dt_formats_dict = {
+        'Date': ['yyyy-MM-dd', 'dd/MM/yyyy', 'dd.MM.yyyy'],
+        'Time': ['HH:mm:ss', 'HH:mm', 'HH']
+    }
+    dt_formats = dt_formats_dict[dt_type]
+    if all([type(dt_val) in [QDate, QTime] for dt_val in dt_list]):
+        dt_val_list = [dt_val.toString(str_output_format) for dt_val in dt_list]
+    else:
+        dt_list = [str(dt_val) for dt_val in dt_list]
+        if dt_type == 'Date':
+            for d_f in dt_formats:
+                dt_val_list = [QDate.fromString(dt_val, d_f) for dt_val in dt_list]
+                if not any([x.isNull() for x in dt_val_list]):
+                    break
+        else:
+            for st in dt_formats:
+                dt_val_list = [QTime.fromString(dt_val, d_f) for dt_val in dt_list]
+                if not any([x.isNull() for x in dt_val_list]):
+                    break
+        if not any([x.isNull() for x in dt_val_list]):
+            dt_val_list = [dt_val.toString(str_output_format) for dt_val in dt_val_list]
+            feedback.pushWarning(
+                'Timeseries \"'+ts_name+'\" '+dt_type+'column was derived from strings (assumed format: '+d_f
+            )
+        else:
+            raise QgsProcessingException(str(ts_name)+': column '+dt_type+' could not be converted properly. Tested formats: '+dt_formats)
+    return dt_val_list
 
 
 def get_timeseries_from_table(ts_raw, name_col, feedback):
@@ -206,8 +221,6 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     """
     ts_dict = dict()
     ts_raw = ts_raw[ts_raw[name_col] != ";"]
-    if 'File_Name' not in ts_raw.columns:
-        feedback.setProgressText('No external file is used in time series')
     # warning for deprecated format:
     if ('Type' in ts_raw.columns) and ('Format' in ts_raw.columns):
         feedback.reportError(
@@ -221,14 +234,15 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
     if ts_raw.empty:
         pass
     else:
-        for i in ts_raw[name_col].unique():
-            ts_df = ts_raw[ts_raw[name_col] == i]
+        for ts_name in ts_raw[name_col].unique():
+            ts_df = ts_raw[ts_raw[name_col] == ts_name]
             if 'File_Name' in ts_raw.columns and not all(pd.isna(ts_df['File_Name'])):  # external time series
                 ts_df['Date'] = 'FILE'
                 ts_df['Time'] = ts_df['File_Name']
                 ts_df['Value'] = ''
             else:
                 if sum(pd.isna(ts_df['Date'])) > 0:
+                    # handes missing dates
                     if not all(pd.isna(ts_df['Date'])):
                         feedback.pushWarning(
                                 'Warning: At least one date in the timeseries file is missing. Date will be set to start date')
@@ -236,20 +250,24 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
                 else: 
                     ts_df['Date'] = adjust_datetime(
                         ts_df['Date'],
-                        ['%Y-%m-%d', '%d/%m/%Y', '%d.%m.%Y'],
-                        '%m/%d/%Y'
+                        'Date',
+                        'MM/dd/yyyy',
+                        ts_name,
+                        feedback = None
                     )
                 ts_df['Time'] = adjust_datetime(
                     ts_df['Time'],
-                    ['%H:%M:%S', '%H:%M', '%H'],
-                    '%H:%M'
+                    'Time',
+                    'HH:mm',
+                    ts_name,
+                    feedback
                 )
             if annotation_field_name in ts_df.columns:
                 ts_annotation = ts_df[annotation_field_name].fillna('').unique()[0]
             else:
                 ts_annotation = ''
-            ts_dict[i] = {
-                'Name': i,
+            ts_dict[ts_name] = {
+                'Name': ts_name,
                 'TimeSeries': ts_df[['Name', 'Date', 'Time', 'Value']],
                 'Annotations': ts_annotation
             }

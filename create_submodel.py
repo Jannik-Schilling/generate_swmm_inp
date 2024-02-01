@@ -45,7 +45,11 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsVectorFileWriter
 )
-from .g_s_read_write_data import read_layers_direct, create_layer_from_df
+from .g_s_read_write_data import (
+    read_layers_direct,
+    create_layer_from_df,
+    save_layer_to_file
+)
 from .g_s_defaults import (
     def_ogr_driver_dict,
     def_stylefile_dict,
@@ -519,7 +523,10 @@ class CreateSubModel(QgsProcessingAlgorithm):
                 layer_name = str(result_prefix)+'_SWMM_outfalls'
                 fname = os.path.join(folder_save, layer_name+'.'+'gpkg')
                 if os.path.isfile(fname):
-                    raise QgsProcessingException('File '+fname+' already exists. Submodel features will only be selected. Please choose another folder or prefix.')
+                    raise QgsProcessingException(
+                        'File '+fname+' already exists. Submodel features will '
+                        +'only be selected. Please choose another folder or prefix.'
+                )
                 if file_outfalls is not None:
                     crs_result = file_outfalls.crs().authid()
                 else:
@@ -539,13 +546,18 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     'layer_name': layer_name
                 }
                 list_move_to_group.append(layer_name)
-                create_layer_from_df(
+                created_layer = create_layer_from_df(
                     create_layer_dict,
-                    'OUTFALLS',
-                    crs_result,
+                    section_name='OUTFALLS',
+                    crs_result=crs_result,
+                    folder_save=folder_save,
+                    feedback=feedback
+                )
+                save_layer_to_file(
+                    vector_layer,
+                    layer_name,
                     folder_save,
-                    1,
-                    feedback
+                    geodata_driver_num=1
                 )
                 add_layer_on_completion(
                     layer_name,

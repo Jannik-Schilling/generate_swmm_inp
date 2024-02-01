@@ -22,14 +22,15 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
-__copyright__ = '(C) 2023 by Jannik Schilling'
+__date__ = '2024-01-31'
+__copyright__ = '(C) 2024 by Jannik Schilling'
 
 
 import pandas as pd
 import os
 import numpy as np
 import copy
+from qgis import processing
 from qgis.core import (
     NULL,
     QgsCoordinateReferenceSystem,
@@ -38,6 +39,7 @@ from qgis.core import (
     QgsField,
     QgsGeometry,
     QgsProcessingException,
+    QgsProcessingFeedback,
     QgsProject,
     QgsVectorFileWriter,
     QgsVectorLayer
@@ -53,8 +55,9 @@ from .g_s_defaults import (
     def_line_geom,
     def_ploygon_geom
 )
+from .g_s_import_helpers import replace_nan_null
 
-# export
+# export functions
 # helper function for export
 def replace_null_nan(attr_value):
     """replaces NULL with np.nan"""
@@ -62,6 +65,58 @@ def replace_null_nan(attr_value):
         return np.nan
     else:
         return attr_value
+
+def del_none_bool(df):
+    """
+    replaces None or NULL with np.nan
+    replaces True and False with 'YES' and 'NO'
+    except of geometry column
+    :param pd.DataFrame df
+    :return: pd.DataFrame
+    """
+    df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
+    df = df.applymap(replace_null_nan)
+    df[df.columns[:-1]] = df[df.columns[:-1]].replace('True', 'YES').replace('False', 'NO')
+    return df
+
+def load_layer_to_df(
+    vlayer,
+    select_cols=[],
+    with_id=False
+):
+    """
+    reads layer attributes and geometries
+    :param QgsVectorLayer vlayer
+    :param list select_cols
+    :param bool with_id
+    :return: pd.DataFrame
+    """
+    cols = [f.name() for f in vlayer.fields()]
+    if len(select_cols) > 0:
+        if all([x in cols for x in select_cols]):
+            cols = select_cols
+        else:
+            missing_cols = [x for x in select_cols if x not in cols]
+            raise QgsProcessingException(
+                'Missing colums in layer '
+                + vlayer.name()
+                + ': ' + ', '.join(missing_cols)
+            )
+    # check for null geometries
+    if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
+        name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
+        raise QgsProcessingException(
+            'Failed to load layer: missing geometries in '
+            + vlayer.name()+': '+', '.join(name_missing_geom)
+        )
+    # data generator
+    if with_id is True:
+        datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
+        df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry', 'id'])
+    else:
+        datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
+        df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
+    return df
 
 # layers with geometry
 def read_layers_direct(
@@ -75,56 +130,6 @@ def read_layers_direct(
     :param list select_cols
     :param bool with_id
     """
-
-    def del_none_bool(df):
-        """
-        replaces None or NULL with np.nan
-        replaces True and False with 'YES' and 'NO'
-        except of geometry column
-        :param pd.DataFrame df
-        """
-        df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
-        df = df.applymap(replace_null_nan)
-        df[df.columns[:-1]] = df[df.columns[:-1]].replace('True', 'YES').replace('False', 'NO')
-        return df
-
-    def load_layer_to_df(
-        vlayer,
-        select_cols=[],
-        with_id=False
-    ):
-        """
-        reads layer attributes and geometries
-        :param QgsVectorLayer vlayer
-        :param list select_cols
-        :param bool with_id
-        """
-        cols = [f.name() for f in vlayer.fields()]
-        if len(select_cols) > 0:
-            if all([x in cols for x in select_cols]):
-                cols = select_cols
-            else:
-                missing_cols = [x for x in select_cols if x not in cols]
-                raise QgsProcessingException(
-                    'Missing colums in layer '
-                    + vlayer.name()
-                    + ': ' + ', '.join(missing_cols)
-                )
-        # check for null geometries
-        if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
-            name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
-            raise QgsProcessingException(
-                'Failed to load layer: missing geometries in '
-                + vlayer.name()+': '+', '.join(name_missing_geom)
-            )
-        # data generator
-        if with_id is True:
-            datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
-            df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry', 'id'])
-        else:
-            datagen = ([f[col] for col in cols]+[f.geometry()] for f in vlayer.getFeatures())
-            df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
-        return df
     data_dict = {n: load_layer_to_df(d, select_cols, with_id) for n, d in raw_layers_dict.items() if d is not None}
     data_dict_out = {n: d for n, d in data_dict.items() if len(d) > 0}
     data_dict_out = {n: del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
@@ -132,52 +137,48 @@ def read_layers_direct(
 
 
 # tables
-def read_data_from_table_direct(file, sheet=0):
-    '''reads curves or other tables from excel or csv'''
-    filename, file_extension = os.path.splitext(file)
-    if file_extension == '.xlsx' or file_extension == '.xls' or file_extension == '.ods':
-        try:
-            sheets = list(pd.read_excel(file, None, engine='openpyxl').keys())
-        except BaseException:
-            sheets = pd.ExcelFile(file).sheet_names
-        if sheet == 0:
-            s_n = 0
+def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedback):
+    """
+    reads curves or other tables from excel or gpkg
+    :param str file
+    :param str/int sheet
+    """
+    feedback.setProgressText('    Table: '+sheet)
+    table_layers = QgsVectorLayer(tab_file, 'NoGeometry', 'ogr')
+    table_provider = table_layers.dataProvider()
+    sublayers = table_provider.subLayers()
+    name_separator = table_provider.sublayerSeparator()
+    sheets = [x.split(name_separator)[1] for x in sublayers]
+    if sheet == 0:
+        s_n = sheets[0]
+    else:
+        if sheet in sheets:
+            s_n = sheet
+        elif str(sheet).upper() in sheets:
+            s_n = str(sheet).upper()
+        elif str(sheet).lower() in sheets:
+            s_n = str(sheet).lower()
+        elif str(sheet).capitalize() in sheets:
+            s_n = str(sheet).capitalize()
         else:
-            if sheet in sheets:
-                s_n = sheet
-            elif str(sheet).upper() in sheets:
-                s_n = str(sheet).upper()
-            elif str(sheet).lower() in sheets:
-                s_n = str(sheet).lower()
-            elif str(sheet).capitalize() in sheets:
-                s_n = str(sheet).capitalize()
-            else:
-                s_n = None
-        if s_n is not None:
-            try:
-                data_df = pd.read_excel(file, sheet_name=s_n)
-            except BaseException:
-                data_df = pd.read_excel(
-                    file,
-                    sheet_name=s_n,
-                    engine='openpyxl'
-                )
-        else:
-            data_df = pd.DataFrame()
-    if file_extension == '.gpkg':
-        if sheet == 0:
-            gpkg_layers = QgsVectorLayer(file, 'NoGeometry', 'ogr')
-            gpkg_provider = gpkg_layers.dataProvider()
-            sublayer_0 = gpkg_provider.subLayers()[0]
-            name_separator = gpkg_provider.sublayerSeparator()
-            sheet = sublayer_0.split(name_separator)[1]
-        read_file = file+'|layername='+str(sheet)
-        vlayer = QgsVectorLayer(read_file, 'NoGeometry', 'ogr')
+            s_n = None
+    if s_n is not None:
+        tab_layer_to_load = tab_file+'|layername='+str(s_n)
+        vlayer = QgsVectorLayer(tab_layer_to_load, 'NoGeometry', 'ogr')
         cols = [f.name() for f in vlayer.fields()]
         datagen = ([f[col] for col in cols] for f in vlayer.getFeatures())
         data_df = pd.DataFrame.from_records(data=datagen, columns=cols)
         data_df = data_df.applymap(replace_null_nan)
-        data_df = data_df.drop(columns=['fid'])
+        if all([x.startswith('Field') for x in data_df.columns]):
+            rename_cols = {i:j for i, j in zip(cols, data_df.loc[0,:].tolist())}
+            data_df = data_df.drop(index=0)
+            data_df.rename(columns=rename_cols, inplace=True)
+        data_df.dropna(axis=0, how='all', inplace=True)  # delete empty rows
+        data_df.reset_index(drop=True, inplace=True)
+        if 'fid' in cols:
+            data_df = data_df.drop(columns=['fid'])
+    else:
+        data_df = pd.DataFrame()
     return data_df
 
 # import
@@ -239,8 +240,6 @@ def create_layer_from_df(
     data_dict,
     section_name,
     crs_result,
-    folder_save,
-    geodata_driver_num,
     feedback,
     custom_fields=None,
     create_empty=False,
@@ -251,23 +250,21 @@ def create_layer_from_df(
     creates a QgsVectorLayer from data in geodata_dict
     :param dict data_dict
     :param str section_name: name of SWMM section
-    :param str layer_name
     :param str crs_result: epsg code of the desired CRS
-    :param str folder_save
-    :param int geodata_driver_num: key of driver in def_ogr_driver_dict
     :param QgsProcessingFeedback feedback
-    :param dict costum fields: additional fields e.g. annotations
-    :param Bool feedback
+    :param dict custom_fields: additional fields e.g. annotations
+    :param bool create_empty
+    :param str transform_crs_string
     """
-    feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
     data_df = data_dict['data']
     layer_name = data_dict['layer_name']
-    # set driver
-    geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
-    geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
 
     # set geometry type and provider
-    geom_type = def_sections_geoms_dict[section_name]
+    if section_name in def_sections_geoms_dict.keys():
+        feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
+        geom_type = def_sections_geoms_dict[section_name]
+    else:
+        geom_type = 'NoGeometry' # for simple tables
     geom_type_and_crs = geom_type+'?crs='+crs_result
     vector_layer = QgsVectorLayer(geom_type_and_crs, layer_name, 'memory')
     pr = vector_layer.dataProvider()
@@ -277,9 +274,14 @@ def create_layer_from_df(
         'Double': QVariant.Double,
         'String': QVariant.String,
         'Int': QVariant.Int,
-        'Bool': QVariant.Bool
+        'Bool': QVariant.Bool,
+        'Date': QVariant.Date,
+        'Time': QVariant.Time
     }
-    layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
+    if geom_type != 'NoGeometry':
+        layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
+    else:
+        layer_fields = def_tables_dict[section_name]['tables'][layer_name]
     if custom_fields is not None:
         layer_fields.update(custom_fields)
     for col, field_type_string in layer_fields.items():
@@ -301,17 +303,33 @@ def create_layer_from_df(
                     + ', '.join([str(x) for x in no_geom_features])
                     + '.\nDefault geometries will be used instead. The features can be found around (0,0)'
                 )
+        else:
+            # replace nan with NULL in tables
+            data_df = data_df.applymap(replace_nan_null)
         data_df = data_df[data_df_column_order]
-    data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
-    vector_layer.updateExtents()
-
+    if len(data_df) != 0:
+        # add features if data_df is not empty (which can be the case for tables)
+        data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
+        vector_layer.updateExtents()
     # transformation of CRS
-    if transform_crs_string != 'NA':
+    if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
         transform_crs_function(
             vector_layer,
             crs_result,
             transform_crs_string
         )
+    return vector_layer
+    
+def save_layer_to_file(
+    vector_layer,
+    layer_name,
+    folder_save,
+    geodata_driver_num,
+    **kwargs
+):
+    # set driver
+    geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
+    geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
 
     # create layer
     fname = os.path.join(
@@ -347,13 +365,13 @@ def dict_to_excel(
     file_key,
     folder_save,
     feedback,
-    res_prefix='',
+    result_prefix='',
     desired_format=None
 ):
     """
-    writes an excel file from a data_dict
+    Currently unused function to write an excel file from a data_dict
     :param dict data_dict
-    :param str save_name
+    :param str file_key
     :param str folder_save
     :param QgsProcessingFeedback feedback
     :param str res_prefix: prefix for file name
@@ -361,8 +379,8 @@ def dict_to_excel(
     """
     save_name = def_tables_dict[file_key]['filename']
     table_ext_list = ['.xlsx', '.xls', '.ods']
-    if res_prefix != '':
-        save_name = res_prefix+'_'+save_name
+    if result_prefix != '':
+        save_name = result_prefix+'_'+save_name
     if desired_format is not None:
         table_ext_list = [desired_format] + table_ext_list
     for ext in table_ext_list:
@@ -388,4 +406,70 @@ def dict_to_excel(
             '(or alternatively the package "odf"). Instructions '
             'can be found on the in the documentation or on '
             'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
+        )
+def create_empty_feature(vector_layer):
+    """
+    creates an empty QgsFeature for an existing QgsVectorLayer
+    :param QgsVectorLayer vector_layer
+    :return: QgsFeature
+    """
+    new_ft = QgsFeature()
+    layer_fields = vector_layer.fields()
+    new_ft.setFields(layer_fields)
+    new_ft.setAttributes([NULL] * len(layer_fields))
+    return new_ft
+
+def layerlist_to_excel(
+    layer_list,
+    section_name,
+    folder_save,
+    feedback,
+    result_prefix='',
+    desired_table_format=None,
+    **kwargs
+):
+    """
+    writes an excel file from a data_dict
+    :param list layer_list
+    :param str section_name: name of SWMM section
+    :param str folder_save
+    :param QgsProcessingFeedback feedback
+    :param str result_prefix: prefix for file name
+    :param str desired_table_format
+    """
+    save_name = def_tables_dict[section_name]['filename']
+    if result_prefix != '':
+        save_name = result_prefix+'_'+save_name
+    if desired_table_format is not None:
+        ext = desired_table_format
+    else: 
+        ext = '.xlsx' # default setting
+    save_name_ext = save_name + ext
+    fname = os.path.join(folder_save, save_name_ext)
+    feedback.setProgressText(
+        'Writing file '
+        + str(fname)
+        +' for section \"'
+        +section_name
+        +'\"'
+    )
+    for vector_layer in layer_list:
+        if vector_layer.featureCount() == 0:
+            vector_layer.startEditing()
+            new_ft = create_empty_feature(vector_layer)
+            vector_layer.addFeature(new_ft)
+            vector_layer.commitChanges()
+    if os.path.isfile(fname):
+        raise QgsProcessingException('File '+fname
+        + ' already exists. Please choose another folder.')
+    else:
+        processing.run(
+            "native:exporttospreadsheet", 
+            {
+                'LAYERS' : layer_list,
+                'USE_ALIAS': False,
+                'FORMATTED_VALUES': False,
+                'OUTPUT': fname,
+                'OVERWRITE': True
+            }
         )

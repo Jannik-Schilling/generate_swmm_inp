@@ -934,5 +934,6 @@ class ImportDataStatus:
     PROCESSED = 1
     TABLE_READY = 2
     GEOM_READY = 3
-    FILE_READY = 4
+    LAYER_READY = 4
+    FILE_READY = 5
     DONE = 10
