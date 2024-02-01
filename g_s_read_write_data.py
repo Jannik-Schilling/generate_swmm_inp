@@ -240,8 +240,6 @@ def create_layer_from_df(
     data_dict,
     section_name,
     crs_result,
-    folder_save,
-    geodata_driver_num,
     feedback,
     custom_fields=None,
     create_empty=False,
@@ -253,8 +251,6 @@ def create_layer_from_df(
     :param dict data_dict
     :param str section_name: name of SWMM section
     :param str crs_result: epsg code of the desired CRS
-    :param str folder_save
-    :param int geodata_driver_num: key of driver in def_ogr_driver_dict
     :param QgsProcessingFeedback feedback
     :param dict custom_fields: additional fields e.g. annotations
     :param bool create_empty
