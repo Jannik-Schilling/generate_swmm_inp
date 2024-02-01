@@ -62,7 +62,7 @@ S_2              RG_1             J_9              2.063503388798237 43.0     87
 ;;Subcatchment   N-Imperv   N-Perv     S-Imperv   S-Perv     PctZero    RouteTo    PctRouted 
 ;;-------------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 S_1              0.023      0.15       2.0        3.0        0.0        OUTLET    
-S_2              0.01       0.087      2.1        0.1        1.0        PERVIOUS     100.0     
+S_2              0.01       0.087      2.1        0.1        1.0        PERVIOUS   100.0     
 
 [INFILTRATION]
 ;;Subcatchment   Param1     Param2     Param3     Param4     Param5    
@@ -96,9 +96,9 @@ Out_2            0.0        FIXED      1.1              NO
 J_5              4.5        C_11             CUTOFF     0.001      0.26       0.0        0.0        400.0     
 
 [STORAGE]
-;;Name           Elev.    MaxDepth   InitDepth  Shape      Curve Name/Params            N/A      Fevap    Psi      Ksat     IMD     
-;;-------------- -------- ---------- ----------- ---------- ---------------------------- -------- --------          -------- --------
-St_1             0.0      2.0        0.4        TABULAR    StC_01                       0.0      0.0     
+;;Name           Elev.    MaxDepth   InitDepth  Shape      Curve Type/Params            SurDepth  Fevap    Psi      Ksat     IMD     
+;;-------------- -------- ---------- ----------- ---------- ---------------------------- --------- --------          -------- --------
+St_1             0.0      2.0        0.4        TABULAR    StC_01                       0.0       0.0     
 
 [CONDUITS]
 ;;Name           From Node        To Node          Length     Roughness  InOffset   OutOffset  InitFlow   MaxFlow   
@@ -139,7 +139,7 @@ R_1              J_2              J_1              0.0        FUNCTIONAL/DEPTH 1
 ;;-------------- ------------ ---------------- ---------- ---------- ---------- ---------- ----------
 C_10             CIRCULAR     0.2              0.0        0.0        0.0        1.0                  
 C_1              CIRCULAR     0.5              0.0        0.0        0.0        1.0                  
-C_4              IRREGULAR    tr_1             0          0          0          1                    
+C_4              IRREGULAR    tr_1            
 C_5              CIRCULAR     0.4              0.0        0.0        0.0        1.0                  
 C_3              EGG          2                0.0        0.0        0.0        1.0                  
 C_9              CIRCULAR     0.2              0.0        0.0        0.0        1.0                  
@@ -222,8 +222,8 @@ J_5              BOD              ""               CONCEN   1.0      1.0      3 
 [DWF]
 ;;Node           Constituent      Baseline   Patterns  
 ;;-------------- ---------------- ---------- ----------
-J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly" ""
-J_5              FLOW             2.0        "" "" ""
+J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly"
+J_5              FLOW             2.0        "" ""
 
 [CURVES]
 ;;Name           Type       X-Value    Y-Value   
@@ -282,19 +282,19 @@ wc_1                        4          0.5
 ;;Name           Date       Time       Value     
 ;;-------------- ---------- ---------- ----------
 ;RG_1
-TS_1             01/02/2021 00:00   0.0       
-TS_1             01/02/2021 01:00   0.0       
-TS_1             01/02/2021 02:00   0.0       
-TS_1             01/02/2021 03:00   0.0       
-TS_1             01/02/2021 04:00   0.0       
-TS_1             01/02/2021 05:00   0.2       
-TS_1             01/02/2021 06:00   0.3       
-TS_1             01/02/2021 07:00   0.4       
-TS_1             01/02/2021 08:00   0.5       
-TS_1             01/02/2021 09:00   0.45      
-TS_1             01/02/2021 10:00   0.11      
-TS_1             01/02/2021 11:00   0.01      
-TS_1             01/02/2021 12:00   0.0       
+TS_1             01/02/2021 00:00      0.0       
+TS_1             01/02/2021 01:00      0.0       
+TS_1             01/02/2021 02:00      0.0       
+TS_1             01/02/2021 03:00      0.0       
+TS_1             01/02/2021 04:00      0.0       
+TS_1             01/02/2021 05:00      0.2       
+TS_1             01/02/2021 06:00      0.3       
+TS_1             01/02/2021 07:00      0.4       
+TS_1             01/02/2021 08:00      0.5       
+TS_1             01/02/2021 09:00      0.45      
+TS_1             01/02/2021 10:00      0.11      
+TS_1             01/02/2021 11:00      0.01      
+TS_1             01/02/2021 12:00      0.0       
 
 [PATTERNS]
 ;;Name           Type       Multipliers
@@ -371,6 +371,10 @@ S_2              309145.500         5998448.210
 S_2              309186.830         5998519.000       
 S_2              309169.680         5998529.340       
 S_2              309206.840         5998591.770       
+
+;;Storage Node   X-Coord            Y-Coord           
+;;-------------- ------------------ ------------------
+St_1             309655.930         5998297.446       
 
 [SYMBOLS]
 ;;Gage           X-Coord            Y-Coord           

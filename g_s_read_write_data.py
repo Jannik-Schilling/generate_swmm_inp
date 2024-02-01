@@ -39,6 +39,7 @@ from qgis.core import (
     QgsField,
     QgsGeometry,
     QgsProcessingException,
+    QgsProcessingFeedback,
     QgsProject,
     QgsVectorFileWriter,
     QgsVectorLayer
@@ -136,12 +137,13 @@ def read_layers_direct(
 
 
 # tables
-def read_data_from_table_direct(tab_file, sheet=0):
+def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedback):
     """
     reads curves or other tables from excel or gpkg
     :param str file
     :param str/int sheet
     """
+    feedback.setProgressText('    Table: '+sheet)
     table_layers = QgsVectorLayer(tab_file, 'NoGeometry', 'ogr')
     table_provider = table_layers.dataProvider()
     sublayers = table_provider.subLayers()
@@ -170,8 +172,9 @@ def read_data_from_table_direct(tab_file, sheet=0):
         if all([x.startswith('Field') for x in data_df.columns]):
             rename_cols = {i:j for i, j in zip(cols, data_df.loc[0,:].tolist())}
             data_df = data_df.drop(index=0)
-            data_df.reset_index(drop=True, inplace=True)
             data_df.rename(columns=rename_cols, inplace=True)
+        data_df.dropna(axis=0, how='all', inplace=True)  # delete empty rows
+        data_df.reset_index(drop=True, inplace=True)
         if 'fid' in cols:
             data_df = data_df.drop(columns=['fid'])
     else:
