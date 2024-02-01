@@ -29,7 +29,7 @@ If you use the plugin in scientific work or other studies, please cite as:
 ## Workflow
 ### 0 Install 
 - the generate_swmm_inp plugin in QGIS (from the official QGIS plugin repository or from zip-file)
-- if needed: the python packages "pandas" and "openpyxl": 
+- if needed: the python package "pandas": 
     - for windows: https://landscapearchaeology.org/2018/installing-python-packages-in-qgis-3-for-windows/
     - for linux, install via pip 
 - [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
