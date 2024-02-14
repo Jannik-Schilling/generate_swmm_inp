@@ -100,7 +100,7 @@ def get_conduits_from_shapefile(conduits_raw):
                 else:
                     return int(xs_row[col])
         else:
-            if xs_row['Shape'] in ['IRREGULAR', 'STREET', 'CUSTOM']:
+            if xs_row['Shape'] in ['IRREGULAR', 'STREET']:
                 return ''
             else:
                 if pd.isna(xs_row[col]):
