@@ -169,7 +169,7 @@ def write_inp(
         for i in range(len(xsections_df)):
             xscn = xsections_df.loc[i, :]
             file1.write(str(xscn['Name'])+'   '+
-                        str(xscn['Shape'])+'    '+
+                        str(xscn['XsectShape'])+'    '+
                         str(xscn['Geom1'])+'    '+
                         str(xscn['Geom2'])+'    '+
                         str(xscn['Geom3'])+'    '+

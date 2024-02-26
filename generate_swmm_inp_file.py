@@ -41,7 +41,11 @@ from qgis.core import (
     QgsProcessingParameterFileDestination,
     QgsProcessingParameterVectorLayer
 )
-from .g_s_various_functions import check_columns, get_coords_from_geometry
+from .g_s_various_functions import (
+    check_columns,
+    check_deprecated,
+    get_coords_from_geometry
+)
 from .g_s_defaults import (
     annotation_field_name,
     def_qgis_fields_dict,
@@ -459,6 +463,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # conduits
         if 'conduits_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[CONDUITS] section'))
+            raw_data_dict['conduits_raw'] = check_deprecated(
+                swmm_data_file='Conduits Layer',
+                swmm_section='CONDUITS',
+                df=raw_data_dict['conduits_raw'],
+                cols_deprecated={'Shape': 'XsectShape'},
+                feedback=feedback
+            )
             from .g_s_links import get_conduits_from_shapefile, del_first_last_vt
             conduits_df, xsections_df, losses_df = get_conduits_from_shapefile(raw_data_dict['conduits_raw'].copy())
             conduits_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
@@ -537,6 +548,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # orifices
         if 'orifices_raw' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[ORIFICES] section'))
+            raw_data_dict['orifices_raw'] = check_deprecated(
+                swmm_data_file='Orifices Layer',
+                swmm_section='ORIFICES',
+                df=raw_data_dict['orifices_raw'],
+                cols_deprecated={'Shape': 'XsectShape'},
+                feedback=feedback
+            )
             from .g_s_links import get_orifices_from_shapefile, del_first_last_vt
             orifices_df, xsections_df = get_orifices_from_shapefile(raw_data_dict['orifices_raw'])
             orifices_annot = get_annotations_from_raw_df(
