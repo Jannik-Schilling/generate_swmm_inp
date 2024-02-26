@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.20
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.33
+version=0.34
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -36,7 +36,7 @@ homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
 icon=icons/icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
