@@ -24,9 +24,10 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.33 2023-10
+changelog= 0.34 2024-02
 	- removal of "openpyxl" due to several crashes
 	- updated processing feedback
+	- replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.
 
 
 # Tags are comma separated with spaces allowed
