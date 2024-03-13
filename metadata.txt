@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.20
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
-version=0.33
+version=0.34
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -24,19 +24,21 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.33 2023-10
+changelog= 0.34 2024-02
 	- removal of "openpyxl" due to several crashes
 	- updated processing feedback
+	- replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers because of issues with ESRI-Shapefiles. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.
+	- fix xsections for conduits with 'CUSTOM' shape, thanks to smaspons
 
 
 # Tags are comma separated with spaces allowed
-tags=swmm, water, modelling, flow, sewer, wastewater
+tags=swmm, water, modelling, flow, sewer, wastewater, river
 
 homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
 icon=icons/icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False

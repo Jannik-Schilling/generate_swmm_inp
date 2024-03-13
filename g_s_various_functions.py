@@ -275,7 +275,38 @@ def get_timeseries_from_table(ts_raw, name_col, feedback):
 
 
 # errors and feedback
-def check_columns(swmm_data_file, cols_expected, cols_in_df):
+def check_deprecated(
+    swmm_data_file,
+    swmm_section,
+    df,
+    cols_deprecated,
+    feedback
+):
+    """
+    :param str swmm_data_file
+    :param str swmm_section
+    :param pd.DataFrame df
+    :param dic cols_deprecated: e.g. {'DeprecatedName': 'NewName'}
+    :param QgsProcessingFeedback feedback
+    """
+    for dep_col in cols_deprecated.keys():
+        if dep_col in df.columns:
+            feedback.pushWarning(
+                'Warning: usage of columns name \"' + dep_col +'\" in section '
+                + swmm_section
+                + ' is deprecated and will be removed in future versions of the plugin. Please use \"'
+                + cols_deprecated[dep_col] + '\" instead.'
+            )
+            df = df.rename(columns={dep_col: cols_deprecated[dep_col]})
+    return df
+        
+        
+        
+def check_columns(
+    swmm_data_file,
+    cols_expected,
+    cols_in_df
+):
     """
     checks if all columns are in a dataframe
     :param str swmm_data_file

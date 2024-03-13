@@ -254,7 +254,7 @@ def_sections_dict = {
     ],
     'XSECTIONS': [
         'Name',
-        'Shape',
+        'XsectShape',
         'Geom1',
         'Geom2',
         'Geom3',
@@ -851,7 +851,7 @@ def_qgis_fields_dict = {
         'OutOffset': 'Double',
         'InitFlow': 'Double',
         'MaxFlow': 'Double',
-        'Shape': 'String',
+        'XsectShape': 'String',
         'Geom1': 'Double',
         'Geom2': 'Double',
         'Geom3': 'Double',
@@ -883,7 +883,7 @@ def_qgis_fields_dict = {
         'Qcoeff': 'Double',
         'FlapGate': 'String',
         'CloseTime': 'Double',
-        'Shape': 'String',
+        'XsectShape': 'String',
         'Height': 'Double',
         'Width': 'Double'
     },

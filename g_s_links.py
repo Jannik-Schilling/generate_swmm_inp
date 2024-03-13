@@ -35,7 +35,9 @@ from .g_s_defaults import (
     def_qgis_fields_dict,
     def_sections_dict
 )
-from .g_s_various_functions import check_columns
+from .g_s_various_functions import (
+    check_columns
+)
 
 # Definitions
 # Inlets
@@ -82,17 +84,17 @@ def get_conduits_from_shapefile(conduits_raw):
     conduits_df['MaxFlow'] = conduits_df['MaxFlow'].fillna('0')
     xsections_df = conduits_raw[xsections_cols].copy()
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
-    if any(xsections_df['Shape'] == 'IRREGULAR') or any(xsections_df['Shape'] == 'CUSTOM') or any(xsections_df['Shape'] == 'STREET'):
+    if any(xsections_df['XsectShape'] == 'IRREGULAR') or any(xsections_df['XsectShape'] == 'CUSTOM') or any(xsections_df['XsectShape'] == 'STREET'):
         if 'Shp_Trnsct' not in conduits_raw.columns:
-            raise QgsProcessingException('Column \"Shp_Trnsct\" is missing for IRREGULAR, CUSTOM or STREET Shape')
+            raise QgsProcessingException('Column \"Shp_Trnsct\" is missing for IRREGULAR, CUSTOM or STREET XsectShape')
         else:
-            xsections_df.loc[xsections_df['Shape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'IRREGULAR', 'Shp_Trnsct']
-            xsections_df.loc[xsections_df['Shape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['Shape'] == 'STREET', 'Shp_Trnsct']
-            xsections_df.loc[xsections_df['Shape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['Shape'] == 'CUSTOM', 'Shp_Trnsct']
+            xsections_df.loc[xsections_df['XsectShape'] == 'IRREGULAR', 'Geom1'] = conduits_raw.loc[xsections_df['XsectShape'] == 'IRREGULAR', 'Shp_Trnsct']
+            xsections_df.loc[xsections_df['XsectShape'] == 'STREET', 'Geom1'] = conduits_raw.loc[xsections_df['XsectShape'] == 'STREET', 'Shp_Trnsct']
+            xsections_df.loc[xsections_df['XsectShape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['XsectShape'] == 'CUSTOM', 'Shp_Trnsct']
 
     def fill_empty_xsects(xs_row, col):
         if col == 'Barrels':
-            if xs_row['Shape'] in ['IRREGULAR', 'STREET']:
+            if xs_row['XsectShape'] in ['IRREGULAR', 'STREET']:
                 return ''
             else:
                 if pd.isna(xs_row[col]):
@@ -100,7 +102,7 @@ def get_conduits_from_shapefile(conduits_raw):
                 else:
                     return int(xs_row[col])
         else:
-            if xs_row['Shape'] in ['IRREGULAR', 'STREET']:
+            if xs_row['XsectShape'] in ['IRREGULAR', 'STREET']:
                 return ''
             else:
                 if pd.isna(xs_row[col]):
@@ -214,12 +216,12 @@ def get_weirs_from_shapefile(weirs_raw):
             'SideSlope': 'Geom3'
         }
     )
-    weirs_raw['Shape'] = [weirs_shape_dict[x] for x in weirs_raw['Type']]
+    weirs_raw['XsectShape'] = [weirs_shape_dict[x] for x in weirs_raw['Type']]
     weirs_raw['Geom3'] = weirs_raw['Geom3'].fillna('0')
     weirs_raw['Geom4'] = weirs_raw['Geom3']
     xsections_df = weirs_raw[[
         'Name',
-        'Shape',
+        'XsectShape',
         'Geom1',
         'Geom2',
         'Geom3',
@@ -258,7 +260,7 @@ def get_orifices_from_shapefile(orifices_raw):
     orifices_raw['Geom4'] = 0
     xsections_df = orifices_raw[[
         'Name',
-        'Shape',
+        'XsectShape',
         'Geom1',
         'Geom2',
         'Geom3',
@@ -364,12 +366,12 @@ def adjust_xsection_df(all_xsections):  # no feedback!
     :return pd.DataFrame
     """
     all_xsections['Shp_Trnsct'] = np.nan
-    all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Geom1']
-    all_xsections.loc[all_xsections['Shape'] == 'STREET', 'Geom1'] = np.nan
-    all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1']
-    all_xsections.loc[all_xsections['Shape'] == 'IRREGULAR', 'Geom1'] = np.nan
-    all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2']
-    all_xsections.loc[all_xsections['Shape'] == 'CUSTOM', 'Geom2'] = np.nan
+    all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1']
+    all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1'] = np.nan
+    all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Geom1']
+    all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Geom1'] = np.nan
+    all_xsections.loc[all_xsections['XsectShape'] == 'CUSTOM', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'CUSTOM', 'Geom2']
+    all_xsections.loc[all_xsections['XsectShape'] == 'CUSTOM', 'Geom2'] = np.nan
     return all_xsections
 
 

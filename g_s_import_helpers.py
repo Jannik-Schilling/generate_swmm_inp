@@ -172,7 +172,7 @@ def sect_list_import_handler(
                     # adjustments; ToDo: as functions
                     if section_name == 'WEIRS':
                         df_processed = df_processed.drop(
-                            columns=['Shape', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct']
+                            columns=['XsectShape', 'Geom4', 'Barrels', 'Culvert', 'Shp_Trnsct']
                         )
                         df_processed = df_processed.rename(
                             columns={
