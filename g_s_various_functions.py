@@ -295,7 +295,7 @@ def check_deprecated(
                 'Warning: usage of columns name \"' + dep_col +'\" in section '
                 + swmm_section
                 + ' is deprecated and will be removed in future versions of the plugin. Please use \"'
-                + cols_deprecated[dep_col] + '"\ instead.'
+                + cols_deprecated[dep_col] + '\" instead.'
             )
             df = df.rename(columns={dep_col: cols_deprecated[dep_col]})
     return df
