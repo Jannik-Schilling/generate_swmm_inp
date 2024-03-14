@@ -314,7 +314,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
             hg_name_list = np.unique(df_hydrographs_raw['Name'])
             df_hydrographs = pd.DataFrame()
             for hg_name in hg_name_list:
-                df_hydrographs = pd.concat([df_hydrographs, get_hydrogrphs(hg_name)])
+                df_hydrographs = pd.concat([df_hydrographs, get_hydrogrphs(hg_name, df_hydrographs_raw)])
             df_hydrographs = df_hydrographs.reset_index(drop=True)
         else:
             df_hydrographs = build_df_from_vals_list(
