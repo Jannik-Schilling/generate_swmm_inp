@@ -153,6 +153,7 @@ def del_first_last_vt(link):
     """
     deletes first and last vertex as it is already in nodes coordinates
     :param list link
+    :return: list
     """
     return link[1:-1]
 
@@ -340,7 +341,9 @@ def get_transects_from_table(transects_raw):
 # Inlets
 def get_inlet_from_inp(inlets_raw_line):
     """
+    converts an inlet string into a list of inlet values
     :param list inlets_raw_line
+    :return: list
     """
     init_elems = inlets_raw_line[:2]
     inl_type_i = inlets_raw_line[1]
@@ -363,7 +366,7 @@ def adjust_xsection_df(all_xsections):  # no feedback!
     """
     fills the column 'Shp_Transct' in the xsections dataframe
     :param pd.DataFrame all_xsections
-    :return pd.DataFrame
+    :return: pd.DataFrame
     """
     all_xsections['Shp_Trnsct'] = np.nan
     all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1']
@@ -400,6 +403,10 @@ def get_line_from_points(
 ):
     """
     :param str line_name
+    :param str from_node
+    :param str to_node
+    :param dict dict_all_vals
+    :return: list
     """
     all_geoms = dict_all_vals['COORDINATES']['data']
     all_vertices = dict_all_vals['VERTICES']['data']

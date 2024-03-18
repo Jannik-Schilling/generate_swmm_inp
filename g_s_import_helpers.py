@@ -80,7 +80,8 @@ def sect_list_import_handler(
     :param str section_name
     :param dict dict_all_vals
     :param str out_type: geodata, table, data_join, geom_join
-    :parama QgsProcessingFeedback feedback
+    :param QgsProcessingFeedback feedback
+    :param dict import_parameters_dict
     """
     feedback.setProgress(0)
     if out_type in ['geom_join', 'data_join']:
@@ -238,6 +239,7 @@ def build_df_sect_direct(
     :param str section_name: Name of the SWMM section in the input file
     :param dict data_dict
     :param bool with_annot: indicates if an annotations column will be added
+    :param list diff_fields: list of fields to use instead of default fields
     :return: pd.DataFrame
     """
     if diff_fields is not None:
@@ -289,6 +291,7 @@ def concat_quoted_vals(text_line):
     """
     finds quoted text and cocatenates text strings if
     they have been separated by whitespace or other separators
+    :param str texline
     """
     if any([x.startswith('"') for x in text_line]):  # any quoted elements
         text_line_new = []
@@ -387,7 +390,7 @@ def build_df_for_section(section_name, dict_all_raw_vals, with_annot=False):
     builds dataframes for a section
     :param str section_name: Name of the SWMM section in the input file
     :param list dict_all_raw_vals
-    :param bool with_annot: indicates if an annotations column will be added
+    :param bool with_annot: indicates if an annotations column will be added, default: False
     :return: pd.DataFrame
     """
     if type(def_sections_dict[section_name]) == list:
@@ -468,22 +471,30 @@ def insert_nan_after_kw(df_line, kw_position, kw, insert_positions):
     return df_line
 
 # dtype adjustment
-def date_conversion(x):
-    """Converts a value into a QDate"""
-    if pd.isna(x):
+def date_conversion(datestring):
+    """
+    Converts a value into a QDate
+    :param str datestring
+    :return: QDate
+    """
+    if pd.isna(datestring):
         return NULL
     else:
-        return QDate().fromString(x, 'MM/dd/yyyy')
+        return QDate().fromString(datestring, 'MM/dd/yyyy')
 
-def time_conversion(x):
-    """Converts a value into a QTime"""
-    if pd.isna(x):
+def time_conversion(timestring):
+    """
+    Converts a string with a time information into a QTime
+    :param str timestring
+    :return: QTime
+    """
+    if pd.isna(timestring):
         return NULL
     else:
         time_hours = '0'
         time_minutes = '0'
         time_seconds = '0'
-        time_elem_list = x.split(':')
+        time_elem_list = timestring.split(':')
         if len(time_elem_list) == 1:
             time_hours = time_elem_list[0]
         elif len(time_elem_list) == 2:
@@ -543,6 +554,8 @@ def add_layer_on_completion(
     :param str geodata_driver_extension
     :param str folder_save
     :param str pluginPath
+    :param QgsProcessingContext context
+    :param str layer_color
     """
     layer_filename = layer_name+'.'+geodata_driver_extension
     file_path = os.path.join(folder_save, layer_filename)
