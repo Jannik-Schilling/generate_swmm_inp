@@ -194,7 +194,6 @@ def get_polygon_from_verts(polyg_name, dict_all_vals):
         polyg_geom = NULL
     elif len(verts) < 3:  # only 1 or 2 vertices
         # set geometry to buffer around first vertice
-        print(polyg_name)
         verts_points = [x.asPoint() for x in verts]
         polyg_geom = QgsGeometry.fromPointXY(verts_points[0]).buffer(5, 5)
     else:

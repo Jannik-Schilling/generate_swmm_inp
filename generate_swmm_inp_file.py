@@ -773,7 +773,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'timeseries' in raw_data_dict.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
             from .g_s_various_functions import get_timeseries_from_table
-            print(raw_data_dict['timeseries']['Time'])
             inp_dict['TIMESERIES'] = {
                 'data': get_timeseries_from_table(
                     raw_data_dict['timeseries'],

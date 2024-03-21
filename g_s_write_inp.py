@@ -111,6 +111,7 @@ def write_inp(
 
     # outfalls
     if 'OUTFALLS' in inp_dict.keys():
+        print(inp_dict['OUTFALLS'])
         feedback.setProgressText('writing [OUTFALLS]...')
         outfalls_df = inp_dict['OUTFALLS']['data']
         file1.write('[OUTFALLS]\n')
