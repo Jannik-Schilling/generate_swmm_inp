@@ -97,14 +97,18 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
 
         if not os.path.exists(data_save_folder):
             os.makedirs(data_save_folder)
-            
+
+        # add documentation
         try:
             doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_35.pdf')
             shutil.copy(doc_file, data_save_folder)
             feedback.setProgressText(self.tr('documentation file saved to folder '+data_save_folder))
             feedback.setProgress(1)
         except BaseException:
-            raise QgsProcessingException(self.tr('Could not add documentation file to chosen folder'))
+            feedback.pushWarning(
+                'Could not add documentation file to chosen folder. '
+                +'You can find the link to the documentation at the github page of the plugin: https://github.com/Jannik-Schilling/generate_swmm_inp'
+            )
 
         data_path = os.path.join(pluginPath,'test_data','swmm_data')
         if swmm_version_num == 0: #5.1
