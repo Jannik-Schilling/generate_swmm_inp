@@ -8,7 +8,7 @@ If you use the plugin in scientific work or other studies, please cite as:
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
 
 ## Provided features:
-### Processing tools
+### Processing tools (will be added to the processing toolbox)
 
 - **1_GenerateDefaultData**: Load a default set of layers to your QGIS project
 - **2_GenerateSwmmInpFile**: Select a set of layers in QGIS to create an input file for a SWMM simulation
@@ -35,9 +35,12 @@ If you use the plugin in scientific work or other studies, please cite as:
 - [SWMM](https://www.epa.gov/water-research/storm-water-management-model-swmm) or other software to run the simulation ([see Links below](#further-useful-packages))
 
 ### 1 First steps in QGIS
-Load the default data set with the first tool. Separate layers are provided for all "visible features" in SWMM: junctions, conduits, subcatchments, outfalls, pumps, weirs, ...
+Load a default data set with the first tool and have a look at the layers: There are separate layers for all types of "visible features" in SWMM: junctions, conduits, subcatchments, outfalls, pumps, weirs, ...
 Further data is provided in tables (which will be saved in the chosen directory) and can be edited there: curves, inflows, options, patterns, quality, timeseries, ...
-You can now modify the layers in QGIS with any processing tool. When filling the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_29.pdf) and the [SWMM user manual](https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf) might help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later. Saving layer as a new file, e.g. if you want to have different variants of conduits layers, is recommended. 
+
+You can now **modify the layers** in QGIS with any processing tool. If you want to have different variants of SWMM features (e.g. planning scenarios with various combinations of conduits and junctions), creating new sets of layers (each in one .gpkg file) is recommended. 
+
+When editing the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_29.pdf) and the [SWMM user manual](https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf) will help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later. 
 
 Now you can write a swmm input file (.inp) and run the simulation with the second tool **(2_GenerateSwmmInpFile)**. You select the layers and tables which you want to use for your new models. The column names of the attribute tables are used by the tool in order to identify the correct information for the inp file. So be careful if you renamed or deleted any columns.
 You can run the simulation directly in SWMM or with the help of scripts in R or python (see below).
@@ -51,8 +54,8 @@ Now apply the processing tool **(2_GenerateSwmmInpFile)** as described above.
 
 ### 2.2 Work with existing inp files (edits)
 You can import existing inp files with the third tool (**3_ImportInpFile**). Creating a new folder (e.g. "swmm_data_v2") for the data is recommended. 
-SWMM not necessarily requires "real" coordinates. QGIS does. So you´ll either need coordinate reference system of the input file or you can try to impoort the input file in any coordinate reference system and (move/rotate/scale) the imported features later.
-You can choose a prefix (e.g. "v2") which will be added and the data format (.shp, .gpkg, .gml, .kml, .geojson).
+SWMM not necessarily requires "real" coordinates. QGIS does. So you either need to know the coordinate reference system of the input file or you can try to impoort the input file in any coordinate reference system and (move/rotate/scale) the imported features later.
+You can choose a prefix (e.g. "v2") which will be added to the layers' names and the data format (.shp, .gpkg, .gml, .kml, .geojson).
 Some formats seem to have problems with certain coordinate reference systems. GPKG and SHP worked fine so far.
 
 The tool **4_CreateSubModel** allows you to simplify an existing model. Again, creating a new folder an working with a prefix for the resulting files is recommended.
@@ -74,7 +77,7 @@ Now you can join the table to the SWMM layer:
 
 <img src="/figures/action_report3.png" alt= “export” width="65%">
 
-There´s also a [video with a detailled instruction](https://docs.qgis.org/3.28/en/docs/training_manual/create_vector_data/actions.html) for table joins.
+There´s also a [video with a detailled instruction](https://docs.qgis.org/3.34/en/docs/training_manual/create_vector_data/actions.html) for table joins.
 
 ## Further useful packages
 Python:
