@@ -82,15 +82,18 @@ def del_none_bool(df):
 def load_layer_to_df(
     vlayer,
     select_cols=[],
-    with_id=False
+    with_id=False,
+    feedback = QgsProcessingFeedback
 ):
     """
     reads layer attributes and geometries
     :param QgsVectorLayer vlayer
     :param list select_cols
     :param bool with_id
+    :param QgsProcessingFeedback feedback
     :return: pd.DataFrame
     """
+    feedback.setProgressText('    layer: '+vlayer.name())
     cols = [f.name() for f in vlayer.fields()]
     if len(select_cols) > 0:
         if all([x in cols for x in select_cols]):
@@ -122,15 +125,18 @@ def load_layer_to_df(
 def read_layers_direct(
     raw_layers_dict,
     select_cols=[],
-    with_id=False
+    with_id=False,
+    feedback = QgsProcessingFeedback
 ):
     """
     reads layers from swmm model
     :param dict raw_layers_dict
     :param list select_cols
     :param bool with_id
+    :param QgsProcessingFeedback feedback
+    :return: dict
     """
-    data_dict = {n: load_layer_to_df(d, select_cols, with_id) for n, d in raw_layers_dict.items() if d is not None}
+    data_dict = {n: load_layer_to_df(d, select_cols, with_id, feedback) for n, d in raw_layers_dict.items() if d is not None}
     data_dict_out = {n: d for n, d in data_dict.items() if len(d) > 0}
     data_dict_out = {n: del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
     return data_dict_out

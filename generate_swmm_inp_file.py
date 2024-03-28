@@ -285,7 +285,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['VERTICES'] = {'data': dict()}
 
         # reading geodata
-        feedback.setProgressText(self.tr('Reading shapfiles'))
+        feedback.setProgressText(self.tr('Reading geodata:'))
         feedback.setProgress(1)
         file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
         file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
@@ -319,7 +319,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             feedback.pushWarning(
                 'Warning: different CRS in the selected layers.'
                 + 'This may lead to unexpected locations in SWMM')
-        raw_data_dict = read_layers_direct(raw_layers_dict)
+        raw_data_dict = read_layers_direct(raw_layers_dict, feedback = feedback)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgress(12)
 

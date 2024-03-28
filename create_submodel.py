@@ -339,7 +339,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
             subc_df_dict = read_layers_direct(
                 subcatch_layers_dict,
                 needed_subc_attrs,
-                with_id=True
+                with_id=True,
+                feedback = feedback
             )
             subc_df = subc_df_dict['SUBCATCHMENTS'][needed_subc_attrs+['id']]
 
@@ -354,7 +355,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
             rg_df_dict = read_layers_direct(
                 raingages_layer_dict,
                 needed_rg_attrs,
-                with_id=True
+                with_id=True,
+                feedback = feedback
             )
             rg_df = rg_df_dict['RAINGAGES'][needed_rg_attrs+['id']]
 
@@ -368,7 +370,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
             nodes_df_dict = read_layers_direct(
                 nodes_layers_dict,
                 needed_nodes_attrs,
-                with_id=True
+                with_id=True,
+                feedback = feedback
             )
             # get startpoint...
             start_point = ''
@@ -411,7 +414,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
             links_df_dict = read_layers_direct(
                 link_layers_dict,
                 needed_link_attrs,
-                with_id=True
+                with_id=True,
+                feedback = feedback
             )
             all_links_df = pd.concat([i for i in links_df_dict.values()])
             all_links_df = all_links_df[needed_link_attrs+['id']]
