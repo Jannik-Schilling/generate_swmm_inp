@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-07-03'
+__date__ = '2024-04-26'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 
@@ -301,10 +301,6 @@ class CreateSubModel(QgsProcessingAlgorithm):
         pluginPath = os.path.dirname(__file__)
 
         feedback.setProgressText(self.tr('Loading layers...'))
-        # list for all layer names which will be added
-        # to the project after the tool is executed
-        list_move_to_group = [] # currently not in use
-
         # create layer dictionaries
         # nodes
         nodes_layers_dict = {
@@ -432,8 +428,6 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     break
                 next_rows = np.where(Marker == all_links_df['ToNode'])[0].tolist()
                 if len(next_rows) > 0:
-                    if Marker == start_point:
-                        feedback.pushWarning('Warning: More than one link is connected to the selected node (which will be converted into an outfall node). This will lead to an error in SWMM.')
                     for Z in next_rows:
                         if all_links_df.loc[Z, 'Name'] in links_route:
                             # sometimes segments are saved in links_route...then they are deleted
@@ -442,6 +436,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     nodes_from_names = all_links_df.loc[next_rows, 'FromNode'].tolist()
                     nodes_route = nodes_route + nodes_from_names
                 if len(next_rows) > 1:
+                    if Marker == start_point:
+                        feedback.pushWarning('Warning: More than one link is connected to the selected node (which will be converted into an outfall node). This will lead to an error in SWMM.')
                     Marker = all_links_df.loc[next_rows[0], 'FromNode']
                     safe = safe + all_links_df.loc[next_rows[1:], 'FromNode'].tolist()
                 if len(next_rows) == 1:
@@ -549,7 +545,6 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     'status': ImportDataStatus.GEOM_READY,
                     'layer_name': layer_name
                 }
-                list_move_to_group.append(layer_name)
                 created_layer = create_layer_from_df(
                     create_layer_dict,
                     section_name='OUTFALLS',
@@ -558,7 +553,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     feedback=feedback
                 )
                 save_layer_to_file(
-                    vector_layer,
+                    created_layer,
                     layer_name,
                     folder_save,
                     geodata_driver_num=1
@@ -659,7 +654,6 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     context,
                     layer_color = 'red'
                 )
-                list_move_to_group.append(layer_name)
         feedback.setProgress(95)
         feedback.setProgressText(self.tr('done \n'))
         feedback.setProgressText(
