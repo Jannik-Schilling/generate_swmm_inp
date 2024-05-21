@@ -198,7 +198,7 @@ def adjust_datetime(
                 if not any([x.isNull() for x in dt_val_list]):
                     break
         else:
-            for st in dt_formats:
+            for d_f in dt_formats:
                 dt_val_list = [QTime.fromString(dt_val, d_f) for dt_val in dt_list]
                 if not any([x.isNull() for x in dt_val_list]):
                     break
