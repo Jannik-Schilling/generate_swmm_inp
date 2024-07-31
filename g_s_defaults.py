@@ -29,22 +29,6 @@ import os
 from qgis.core import QgsGeometry
 from datetime import datetime, time
 
-def_curve_types = [
-    'Control',
-    'Pump1',
-    'Pump2',
-    'Pump3',
-    'Pump4',
-    'Pump5',
-    'Storage',
-    'Rating',
-    'Weir',
-    'Tidal',
-    'Diversion',
-    'Shape'
-] # delete
-
-
 def_options_dtypes_dict = {
     'START_DATE': {
         'dtype': [datetime],
