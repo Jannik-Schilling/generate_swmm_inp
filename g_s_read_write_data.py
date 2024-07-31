@@ -292,6 +292,7 @@ def create_layer_from_df(
         layer_fields.update(custom_fields)
     for col, field_type_string in layer_fields.items():
         field_type = field_types_dict[field_type_string]
+        # QgsField is deprecated since QGIS 3.38 -> QMetaType
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
 

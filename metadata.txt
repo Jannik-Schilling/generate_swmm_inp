@@ -10,7 +10,7 @@ version=0.36
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
-about=This plugin provides tools to generate SWMM input files from layers in QGIS, and to import SWMM input files into QGIS. You can create submodels above or below a certain node in your model layers. The plugin needs the python library 'pandas' (version 2.2.1 or newer) which should be included in current QGIS versions. If it is not already installed, it can be added in a advanced QGIS installation or via pip. Instructions and a documentation can be found on the plugin´s GIT (see link "homepage" below). 
+about=This plugin provides tools to generate SWMM input files from layers in QGIS, and to import SWMM input files into QGIS. You can create submodels above or below a certain node in your model layers. The plugin needs the python library 'pandas' which should be included in current QGIS versions. If it is not already installed, it can be added in a advanced QGIS installation or via pip. Instructions and a documentation can be found on the plugin´s GIT (see link "homepage" below). 
 
 	Cite as: Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262
 
@@ -25,7 +25,6 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.36
-	- replacement of deprecated DataFrame.applymap (requires pandas 2.2.1 or newer!)
 	- fix date function
 	- fix for missing option SURCHARGE_METHOD
 	- Since version 0.34: replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers because of issues with ESRI-Shapefiles. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.

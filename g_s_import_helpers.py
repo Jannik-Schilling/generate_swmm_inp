@@ -520,7 +520,7 @@ def adjust_column_types(df, col_types):
     """
     def col_conversion(col):
         """applies the type conversion on a column"""
-        col = col.replace('*', np.nan)
+        col = col.replace('*', np.nan)  # eventuell mit liste?
         if col_types[col.name] == 'String':
             return [str(x) if not pd.isna(x) else x for x in col]
         if col_types[col.name] == 'Int':
