@@ -88,7 +88,7 @@ def load_layer_to_df(
     """
     reads layer attributes and geometries
     :param QgsVectorLayer vlayer
-    :param list select_cols
+    :param list select_cols: if not empty, these will be extracted
     :param bool with_id
     :param QgsProcessingFeedback feedback
     :return: pd.DataFrame
@@ -105,13 +105,38 @@ def load_layer_to_df(
                 + vlayer.name()
                 + ': ' + ', '.join(missing_cols)
             )
-    # check for null geometries
-    if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
-        name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
-        raise QgsProcessingException(
-            'Failed to load layer: missing geometries in '
-            + vlayer.name()+': '+', '.join(name_missing_geom)
-        )
+            
+            
+    # check for missing and duplcat names and null or missing geometries
+    check_list = [[f['Name'], f.id(), f.hasGeometry()] for f in vlayer.getFeatures()]
+    seen = set()
+    dupelicat_names_list = []
+    missing_names_list = []
+    for f in check_list:
+        feature_name = f[0]
+        if not feature_name:
+            f[0] = 'id = ' + str(f[1])  # replace with id for geometry check
+            missing_names_list.append(f[0])  # add id to list
+        else:
+            if feature_name in seen:
+                dupelicat_names_list.append(feature_name)
+            else:
+                seen.add(feature_name)
+        if not f[2]:  # no geometry
+            missing_geoms_list.append(f[0])
+    if len(missing_names_list) > 0 or len(dupelicat_names_list) > 0 or len(missing_geoms_list) > 0:
+        pass
+    
+    ## check for null geometries
+    #if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
+    #    name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
+    #    raise QgsProcessingException(
+    #        'Failed to load layer: missing geometries in '
+    #        + vlayer.name()+': '+', '.join(name_missing_geom)
+    #    )
+    
+    
+    
     # data generator
     if with_id is True:
         datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
