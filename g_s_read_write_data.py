@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2024-01-31'
+__date__ = '2024-08-07'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 
@@ -150,16 +150,8 @@ def load_layer_to_df(
             )
         )
         raise QgsProcessingException(exception_text)
-    ## check for null geometries
-    #if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
-    #    name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
-    #    raise QgsProcessingException(
-    #        'Failed to load layer: missing geometries in '
-    #        + vlayer.name()+': '+', '.join(name_missing_geom)
-    #    )
-    
-    
-    
+
+
     # data generator
     if with_id is True:
         datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
