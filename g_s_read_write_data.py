@@ -229,15 +229,39 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
 
 # import
 # write functions and helpers
-def create_feature_from_df(df, pr, geom_type):
+# def create_feature_from_df(df, pr, geom_type):
+    # """
+    # creates a QgsFeature from data in df
+    # :param pd.DataFrame df
+    # :param QgsVectorLayer.dataProvider() pr
+    # :param str geom_type
+    # """
+    # f = QgsFeature()
+    # if geom_type != 'NoGeometry':
+        # if df['geometry'] is NULL:
+            # # handle missing geometry: replace with default
+            # if geom_type == 'Polygon':
+                # f.setGeometry(def_ploygon_geom)
+            # if geom_type == 'LineString':
+                # f.setGeometry(def_line_geom)
+            # if geom_type == 'Point':
+                # f.setGeometry(def_point_geom)
+        # else:
+            # f.setGeometry(df['geometry'])
+        # f.setAttributes(df.tolist()[:-1])
+    # else:
+        # f.setAttributes(df.tolist())
+    # pr.addFeature(f)
+
+def create_feature_from_row(df, geom_type):
     """
     creates a QgsFeature from data in df
     :param pd.DataFrame df
-    :param QgsVectorLayer.dataProvider() pr
     :param str geom_type
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
+        # handle missing geometry: replace with default
         if df['geometry'] is NULL:
             if geom_type == 'Polygon':
                 f.setGeometry(def_ploygon_geom)
@@ -250,7 +274,7 @@ def create_feature_from_df(df, pr, geom_type):
         f.setAttributes(df.tolist()[:-1])
     else:
         f.setAttributes(df.tolist())
-    pr.addFeature(f)
+    return f
 
 def transform_crs_function(
     vector_layer,
@@ -356,7 +380,10 @@ def create_layer_from_df(
         data_df = data_df[data_df_column_order]
     if len(data_df) != 0:
         # add features if data_df is not empty (which can be the case for tables)
-        data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
+        # data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
+        feature_list = data_df.apply(lambda x: create_feature_from_row(x, geom_type), axis=1)
+        print(feature_list)
+        pr.addFeatures(feature_list)
         vector_layer.updateExtents()
     # transformation of CRS
     if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
