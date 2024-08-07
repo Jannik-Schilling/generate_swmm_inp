@@ -24,12 +24,13 @@ DRY_DAYS             0
 REPORT_STEP          00:05:00
 WET_STEP             00:01:00
 DRY_STEP             01:00:00
-ROUTING_STEP         0:00:01 
+ROUTING_STEP         0.5
 RULE_STEP            00:00:00
 
 INERTIAL_DAMPING     PARTIAL
 NORMAL_FLOW_LIMITED  BOTH
 FORCE_MAIN_EQUATION  D-W
+SURCHARGE_METHOD     SLOT
 VARIABLE_STEP        0.00
 LENGTHENING_STEP     0
 MIN_SURFAREA         1.167
@@ -240,7 +241,7 @@ J_5              BOD              ""               CONCEN   1.0      1.0      3 
 ;;Node           Constituent      Baseline   Patterns  
 ;;-------------- ---------------- ---------- ----------
 J_2              FLOW             0.01       "dry_weather_hourly" "dry_weather_monthly"
-J_5              FLOW             2.0        "" ""
+J_5              FLOW             2.0       
 
 [CURVES]
 ;;Name           Type       X-Value    Y-Value   

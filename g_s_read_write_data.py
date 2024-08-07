@@ -88,7 +88,7 @@ def load_layer_to_df(
     """
     reads layer attributes and geometries
     :param QgsVectorLayer vlayer
-    :param list select_cols
+    :param list select_cols: if not empty, these will be extracted
     :param bool with_id
     :param QgsProcessingFeedback feedback
     :return: pd.DataFrame
@@ -105,13 +105,61 @@ def load_layer_to_df(
                 + vlayer.name()
                 + ': ' + ', '.join(missing_cols)
             )
-    # check for null geometries
-    if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
-        name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
-        raise QgsProcessingException(
-            'Failed to load layer: missing geometries in '
-            + vlayer.name()+': '+', '.join(name_missing_geom)
+            
+            
+    # check for missing and duplcat names and null or missing geometries
+    check_list = [[f['Name'], f.id(), f.hasGeometry()] for f in vlayer.getFeatures()]
+    seen = set()
+    duplicat_names_list = []
+    missing_names_list = []
+    missing_geoms_list = []
+    for f in check_list:
+        feature_name = f[0]
+        if not feature_name:
+            missing_names_list.append(str(f[1]))  # add id to list
+            feature_name = 'id = ' + str(f[1])  # replace with id for geometry check
+        else:
+            feature_name = str(feature_name)  # just in case it is numeric
+            if feature_name in seen:
+                duplicat_names_list.append(feature_name)
+            else:
+                seen.add(feature_name)
+        if not f[2]:  # no geometry
+            missing_geoms_list.append(feature_name)
+    duplicat_names_list = list(set(duplicat_names_list))
+    if missing_names_list or duplicat_names_list or missing_geoms_list:
+        exception_text = (
+            'Error in layer '+ vlayer.name()+':\n'
+            +(
+                (
+                    '  missing attribute \"Name\" (primary key in SWMM) for feature(s) with id = '
+                    +', '.join(missing_names_list)
+                    +'\n'
+                ) if missing_names_list else ''
+            )+(
+                (
+                    '  duplicat attribute \"Name\" (primary key in SWMM): '
+                    +', '.join(duplicat_names_list)
+                    +'\n'
+                ) if duplicat_names_list else ''
+           )+(
+                (
+                    '  missing geometries: '
+                    +', '.join(missing_geoms_list)
+                ) if missing_geoms_list else ''
+            )
         )
+        raise QgsProcessingException(exception_text)
+    ## check for null geometries
+    #if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
+    #    name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
+    #    raise QgsProcessingException(
+    #        'Failed to load layer: missing geometries in '
+    #        + vlayer.name()+': '+', '.join(name_missing_geom)
+    #    )
+    
+    
+    
     # data generator
     if with_id is True:
         datagen = ([f[col] for col in cols] + [f.geometry()] + [f.id()] for f in vlayer.getFeatures())
@@ -292,6 +340,7 @@ def create_layer_from_df(
         layer_fields.update(custom_fields)
     for col, field_type_string in layer_fields.items():
         field_type = field_types_dict[field_type_string]
+        # QgsField is deprecated since QGIS 3.38 -> QMetaType
         pr.addAttributes([QgsField(col, field_type)])
     vector_layer.updateFields()
 

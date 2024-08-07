@@ -28,50 +28,7 @@ __copyright__ = '(C) 2021 by Jannik Schilling'
 import pandas as pd
 from datetime import datetime, time
 from qgis.core import QgsProcessingException
-
-
-def_options_dtypes = {
-    'START_DATE': [[datetime], '%m/%d/%Y'],
-    'REPORT_START_DATE': [[datetime], '%m/%d/%Y'],
-    'END_DATE': [[datetime], '%m/%d/%Y'],
-    'SWEEP_START': [[datetime], '%m/%d'],
-    'SWEEP_END': [[datetime], '%m/%d'],
-    'START_TIME': [[time, datetime], '%H:%M:%S'],
-    'REPORT_START_TIME': [[time, datetime], '%H:%M:%S'],
-    'END_TIME': [[time, datetime], '%H:%M:%S'],
-    'REPORT_STEP': [[time, datetime], '%H:%M:%S'],
-    'WET_STEP': [[time, datetime], '%H:%M:%S'],
-    'DRY_STEP': [[time, datetime], '%H:%M:%S'],
-    'ROUTING_STEP': [[time, datetime], '%H:%M:%S'],
-    'RULE_STEP': [[time, datetime], '%H:%M:%S'],
-    'FLOW_UNITS': [[str], ['CFS', 'GPM', 'MGD', 'CMS', 'LPS', 'MLD']],
-    'INFILTRATION': [[str], ['HORTON', 'MODIFIED_HORTON', 'GREEN_AMPT', 'MODIFIED_GREEN_AMPT', 'CURVE_NUMBER']],
-    'FLOW_ROUTING': [[str], ['STEADY', 'KINWAVE', 'DYNWAVE']],
-    'LINK_OFFSETS': [[str], ['DEPTH', 'ELEVATION']],
-    'FORCE_MAIN_EQUATION': [[str], ['H-W', 'D-W']],
-    'IGNORE_RAINFALL': [[str], ['YES', 'NO']],
-    'IGNORE_SNOWMELT': [[str], ['YES', 'NO']],
-    'IGNORE_GROUNDWATER': [[str], ['YES', 'NO']],
-    'IGNORE_RDII': [[str], ['YES', 'NO']],
-    'IGNORE_ROUTING': [[str], ['YES', 'NO']],
-    'IGNORE_QUALITY': [[str], ['YES', 'NO']],
-    'ALLOW_PONDING': [[str], ['YES', 'NO']],
-    'SKIP_STEADY_STATE': [[str], ['YES', 'NO']],
-    'SYS_FLOW_TOL': [[int, float]],
-    'LAT_FLOW_TOL': [[int, float]],
-    'DRY_DAYS': [[int]],
-    'LENGTHENING_STEP': [[int, float]],
-    'VARIABLE_STEP': [[int, float]],
-    'MINIMUM_STEP': [[int, float]],
-    'INERTIAL_DAMPING': [[str], ['NONE', 'PARTIAL', 'FULL']],
-    'NORMAL_FLOW_LIMITED': [[str], ['SLOPE', 'FROUDE', 'BOTH']],
-    'MIN_SURFAREA': [[int, float]],
-    'MIN_SLOPE': [[int, float]],
-    'MAX_TRIALS': [[int]],
-    'HEAD_TOLERANCE': [[int, float]],
-    'THREADS': [[int]],
-    'TEMPDIR': [[str]]
-}
+from .g_s_defaults import def_options_dtypes_dict
 
 
 def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback=None):
@@ -82,30 +39,41 @@ def adjust_options_dtypes(opt_key, opt_val, opt_source, feedback=None):
     :param str opt_source: 'table' (source is the options table) or 'input' (source is the SWMM input file)
     :param QgsProcessingFeedback feedback
     """
-    d_type_val = type(opt_val)
-    if opt_key in def_options_dtypes.keys():
-        d_type_def = def_options_dtypes[opt_key][0]
+    if opt_key in def_options_dtypes_dict.keys():
+        def_option_i = def_options_dtypes_dict[opt_key]
+        d_type_def = def_option_i['dtype']
     else:
         # assume str
-        d_type_def = [[str]]
+        d_type_def = [str]
     if opt_source == 'table':
-        if d_type_val in d_type_def:
+        d_type_val = type(opt_val)
+        if d_type_val in d_type_def: # correct datatype
             if d_type_def[0] in [time, datetime]:
-                d_struct = def_options_dtypes[opt_key][1]
+                # time to string; if d_type_val is not correct (e.g. float) it will be printed as str anyway
+                d_struct = def_option_i['format']
                 opt_val = opt_val.strftime(d_struct)
-            if (d_type_def[0] is str) and (opt_key != 'TEMPDIR'):
-                def_vals = def_options_dtypes[opt_key][1]
+            elif (d_type_def[0] is str) and (opt_key != 'TEMPDIR'):
+                # check if value is valid
+                def_vals = def_option_i['values']
                 if opt_val not in def_vals:
                     raise QgsProcessingException('[OPTIONS]: Value for ' + opt_key + ' must be one of '+', '.join(def_vals))
-    if opt_source == "input":
+            else: # will be printed to str in the inp file
+                pass
+    if opt_source == 'input':
         if d_type_def[0] == datetime:
-            d_struct = def_options_dtypes[opt_key][1]
+            d_struct = def_option_i['format']
             opt_val = datetime.strptime(opt_val, d_struct).date()
         if d_type_def[0] == time:
-            d_struct = def_options_dtypes[opt_key][1]
+            d_struct = def_option_i['format']
             if opt_key in ['REPORT_STEP', 'WET_STEP', 'DRY_STEP'] and int(opt_val.split(':')[0]) > 23:
                 feedback.reportError('Warning: ' + str(opt_key) + ' was more than 24h. To avoid time format errors in Python, this value was set to 01:00:00')
                 opt_val = datetime.strptime('01:00:00', d_struct).time()
+            el
+            if opt_key == 'ROUTING_STEP':
+                try:
+                    opt_val = datetime.strptime(opt_val, d_struct).time()
+                except Exception:
+                    opt_val = float(opt_val)
             else:
                 opt_val = datetime.strptime(opt_val, d_struct).time()
         if d_type_def[0] == int:

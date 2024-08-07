@@ -4,7 +4,7 @@
 
 [general]
 name=Generate SWMM inp
-qgisMinimumVersion=3.20
+qgisMinimumVersion=3.30
 description= Generate SWMM input files from layers and import input files from SWMM to QGIS
 version=0.36
 author=Jannik Schilling
@@ -26,6 +26,7 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.36
 	- fix date function
+	- fix for missing option SURCHARGE_METHOD
 	- Since version 0.34: replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers because of issues with ESRI-Shapefiles. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.
 
 

@@ -27,21 +27,163 @@ __copyright__ = '(C) 2021 by Jannik Schilling'
 
 import os
 from qgis.core import QgsGeometry
+from datetime import datetime, time
 
-def_curve_types = [
-    'Control',
-    'Pump1',
-    'Pump2',
-    'Pump3',
-    'Pump4',
-    'Pump5',
-    'Storage',
-    'Rating',
-    'Weir',
-    'Tidal',
-    'Diversion',
-    'Shape'
-] # delete
+def_options_dtypes_dict = {
+    'START_DATE': {
+        'dtype': [datetime],
+        'format': '%m/%d/%Y'
+    },
+    'START_TIME': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'END_DATE': {
+        'dtype': [datetime],
+        'format': '%m/%d/%Y'
+    },
+    'END_TIME': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'SWEEP_START': {
+        'dtype': [datetime],
+        'format': '%m/%d/%Y'
+    },
+    'SWEEP_END': {
+        'dtype': [datetime],
+        'format': '%m/%d'
+    },
+    'REPORT_START_DATE': {
+        'dtype': [datetime],
+        'format': '%m/%d/%Y'
+    },
+    'REPORT_START_TIME': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'REPORT_STEP': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'WET_STEP': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'DRY_STEP': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'RULE_STEP': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'ROUTING_STEP': {
+        'dtype': [time, datetime],
+        'format': '%H:%M:%S'
+    },
+    'FLOW_UNITS': {
+        'dtype': [str],
+        'values': ['CFS', 'GPM', 'MGD', 'CMS', 'LPS', 'MLD']
+    },
+    'INFILTRATION': {
+        'dtype': [str],
+        'values': ['HORTON', 'MODIFIED_HORTON', 'GREEN_AMPT', 'MODIFIED_GREEN_AMPT', 'CURVE_NUMBER']
+    },
+    'FLOW_ROUTING': {
+        'dtype': [str],
+        'values': ['STEADY', 'KINWAVE', 'DYNWAVE']
+    },
+    'LINK_OFFSETS': {
+        'dtype': [str],
+        'values': ['DEPTH', 'ELEVATION']
+    },
+    'FORCE_MAIN_EQUATION': {
+        'dtype': [str],
+        'values': ['H-W', 'D-W']
+    },
+    'IGNORE_RAINFALL': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'IGNORE_SNOWMELT': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'IGNORE_GROUNDWATER': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'IGNORE_RDII': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'IGNORE_ROUTING': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'IGNORE_QUALITY': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'ALLOW_PONDING': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'SKIP_STEADY_STATE': {
+        'dtype': [str],
+        'values': ['YES', 'NO']
+    },
+    'SYS_FLOW_TOL': {
+        'dtype': [int, float]
+    },
+    'LAT_FLOW_TOL': {
+        'dtype': [int, float]
+    },
+    'DRY_DAYS': {
+        'dtype': [int]
+    },
+    'LENGTHENING_STEP': {
+        'dtype': [int, float]
+    },
+    'VARIABLE_STEP': {
+        'dtype': [int, float]
+    },
+    'MINIMUM_STEP': {
+        'dtype': [int, float]
+    },
+    'INERTIAL_DAMPING': {
+        'dtype':[str], 
+        'values': ['NONE', 'PARTIAL', 'FULL']
+    },
+    'NORMAL_FLOW_LIMITED': {
+        'dtype':[str], 
+        'values': ['SLOPE', 'FROUDE', 'BOTH']
+    },
+    'SURCHARGE_METHOD': {
+        'dtype':[str], 
+        'values': ['EXTRAN', 'SLOT']
+    },
+    'MIN_SURFAREA': {
+        'dtype': [int, float]
+    },
+    'MIN_SLOPE': {
+        'dtype': [int, float]
+    },
+    'MAX_TRIALS': {
+        'dtype': [int]
+    },
+    'HEAD_TOLERANCE': {
+        'dtype': [int, float]
+    },
+    'THREADS': {
+        'dtype': [int]
+    },
+    'TEMPDIR': {
+        'dtype': [str]
+    }
+}
+
 
 curve_cols_dict = {
     'Pump1': ['Name', 'Volume', 'Flow'],

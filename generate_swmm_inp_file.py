@@ -50,7 +50,7 @@ from .g_s_defaults import (
     annotation_field_name,
     def_qgis_fields_dict,
     def_tables_dict,
-    def_curve_types,
+    curve_cols_dict,
     def_sections_dict
 )
 from .g_s_read_write_data import (
@@ -344,7 +344,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # curves table
         if file_curves != '':
             raw_data_dict['curves'] = {}
-            for curve_type in def_curve_types:
+            for curve_type in curve_cols_dict.keys():
                 curve_df = read_data_from_table_direct(
                     file_curves,
                     sheet=curve_type,
