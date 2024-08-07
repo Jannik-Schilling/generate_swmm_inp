@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2024-02-02'
+__date__ = '2024-08-07'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 

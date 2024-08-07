@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
+__date__ = '2024-08-07'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 import os
@@ -64,12 +64,13 @@ def write_inp(
         """
         writes a input file section from pd.Dataframe to file1
         :param str section_name
-        :param list only_cols
+        :param list only_cols: optional list of column names which should be printed exclusively
         """
         if section_name in inp_dict.keys():
             feedback.setProgressText('writing ['+section_name+']...')
             print_df = inp_dict[section_name]['data']
             if 'annotations' in inp_dict[section_name].keys():
+                # join annotations to df
                 annotations_dict = inp_dict[section_name]['annotations']
                 if len(annotations_dict) > 0:
                     annotations_df = pd.DataFrame.from_dict(
