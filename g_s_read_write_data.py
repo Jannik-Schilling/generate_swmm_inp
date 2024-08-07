@@ -110,23 +110,46 @@ def load_layer_to_df(
     # check for missing and duplcat names and null or missing geometries
     check_list = [[f['Name'], f.id(), f.hasGeometry()] for f in vlayer.getFeatures()]
     seen = set()
-    dupelicat_names_list = []
+    duplicat_names_list = []
     missing_names_list = []
+    missing_geoms_list = []
     for f in check_list:
         feature_name = f[0]
         if not feature_name:
-            f[0] = 'id = ' + str(f[1])  # replace with id for geometry check
-            missing_names_list.append(f[0])  # add id to list
+            missing_names_list.append(str(f[1]))  # add id to list
+            feature_name = 'id = ' + str(f[1])  # replace with id for geometry check
         else:
+            feature_name = str(feature_name)  # just in case it is numeric
             if feature_name in seen:
-                dupelicat_names_list.append(feature_name)
+                duplicat_names_list.append(feature_name)
             else:
                 seen.add(feature_name)
         if not f[2]:  # no geometry
-            missing_geoms_list.append(f[0])
-    if len(missing_names_list) > 0 or len(dupelicat_names_list) > 0 or len(missing_geoms_list) > 0:
-        pass
-    
+            missing_geoms_list.append(feature_name)
+    duplicat_names_list = list(set(duplicat_names_list))
+    if missing_names_list or duplicat_names_list or missing_geoms_list:
+        exception_text = (
+            'Error in layer '+ vlayer.name()+':\n'
+            +(
+                (
+                    '  missing attribute \"Name\" (primary key in SWMM) for feature(s) with id = '
+                    +', '.join(missing_names_list)
+                    +'\n'
+                ) if missing_names_list else ''
+            )+(
+                (
+                    '  duplicat attribute \"Name\" (primary key in SWMM): '
+                    +', '.join(duplicat_names_list)
+                    +'\n'
+                ) if duplicat_names_list else ''
+           )+(
+                (
+                    '  missing geometries: '
+                    +', '.join(missing_geoms_list)
+                ) if missing_geoms_list else ''
+            )
+        )
+        raise QgsProcessingException(exception_text)
     ## check for null geometries
     #if any(not(f.hasGeometry()) for f in vlayer.getFeatures()):
     #    name_missing_geom = [f['Name'] for f in vlayer.getFeatures() if not(f.hasGeometry())]
