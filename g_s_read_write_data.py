@@ -229,15 +229,17 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
 
 # import
 # write functions and helpers
-def create_feature_from_df(df, pr, geom_type):
+
+
+def create_feature_from_row(df, geom_type):
     """
     creates a QgsFeature from data in df
     :param pd.DataFrame df
-    :param QgsVectorLayer.dataProvider() pr
     :param str geom_type
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
+        # handle missing geometry: replace with default
         if df['geometry'] is NULL:
             if geom_type == 'Polygon':
                 f.setGeometry(def_ploygon_geom)
@@ -250,7 +252,7 @@ def create_feature_from_df(df, pr, geom_type):
         f.setAttributes(df.tolist()[:-1])
     else:
         f.setAttributes(df.tolist())
-    pr.addFeature(f)
+    return f
 
 def transform_crs_function(
     vector_layer,
@@ -312,8 +314,10 @@ def create_layer_from_df(
     else:
         geom_type = 'NoGeometry' # for simple tables
     geom_type_and_crs = geom_type+'?crs='+crs_result
+    pr = 'a'
     vector_layer = QgsVectorLayer(geom_type_and_crs, layer_name, 'memory')
     pr = vector_layer.dataProvider()
+
 
     # set fields
     field_types_dict = {
@@ -356,7 +360,8 @@ def create_layer_from_df(
         data_df = data_df[data_df_column_order]
     if len(data_df) != 0:
         # add features if data_df is not empty (which can be the case for tables)
-        data_df.apply(lambda x: create_feature_from_df(x, pr, geom_type), axis=1)
+        feature_list = data_df.apply(lambda x: create_feature_from_row(x, geom_type), axis=1)
+        pr.addFeatures(feature_list)
         vector_layer.updateExtents()
     # transformation of CRS
     if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
@@ -407,53 +412,6 @@ def save_layer_to_file(
         )
 
 # Tables to Excel files
-def dict_to_excel(
-    data_dict,
-    file_key,
-    folder_save,
-    feedback,
-    result_prefix='',
-    desired_format=None
-):
-    """
-    Currently unused function to write an excel file from a data_dict
-    :param dict data_dict
-    :param str file_key
-    :param str folder_save
-    :param QgsProcessingFeedback feedback
-    :param str res_prefix: prefix for file name
-    :param str desired_format
-    """
-    save_name = def_tables_dict[file_key]['filename']
-    table_ext_list = ['.xlsx', '.xls', '.ods']
-    if result_prefix != '':
-        save_name = result_prefix+'_'+save_name
-    if desired_format is not None:
-        table_ext_list = [desired_format] + table_ext_list
-    for ext in table_ext_list:
-        save_name_ext = save_name + ext
-        fname = os.path.join(folder_save, save_name_ext)
-        write_success = False
-        if os.path.isfile(fname):
-            raise QgsProcessingException('File '+fname
-            + ' already exists. Please choose another folder.')
-        try:
-            with pd.ExcelWriter(fname) as writer:
-                for sheet_name, df in data_dict.items():
-                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-        except BaseException:
-            feedback.setProgressText('could not write %s file , trying different file type' % ext)
-        else:
-            write_success = True
-            break
-    if not write_success:
-        raise QgsProcessingException(
-            'Could not write tables in .xlsx, .xls, or .ods'
-            ' format. Please install the package \"openpyxl\" '
-            '(or alternatively the package "odf"). Instructions '
-            'can be found on the in the documentation or on '
-            'GitHub (https://github.com/Jannik-Schilling/generate_swmm_inp)'
-        )
 def create_empty_feature(vector_layer):
     """
     creates an empty QgsFeature for an existing QgsVectorLayer
