@@ -204,6 +204,36 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 'The data set needs to be saved in a directory '
                 + '(temporary folders won´t work). Please select a directoy'
             )
+        else:
+            # check if files are already in folder
+            for section_name in def_layer_names_dict.keys():
+                layer_name = def_layer_names_dict[section_name]
+                if result_prefix != '':
+                    layer_name = (
+                        str(import_parameters_dict['result_prefix'])
+                        +'_'
+                        + layer_name
+                    )
+                geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
+                geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
+                fname = os.path.join(
+                    folder_save, 
+                    layer_name+ '.' +geodata_driver_extension
+                )
+                if os.path.isfile(fname):
+                    raise QgsProcessingException('File '+fname
+                        + ' already exists. Please choose another folder.')
+            for section_name in def_tables_dict.keys():
+                save_name = def_tables_dict[section_name]['filename']
+                if result_prefix != '':
+                    save_name = str(result_prefix)+'_'+save_name
+                ext = '.xlsx' # default setting
+                save_name_ext = save_name + ext
+                fname = os.path.join(folder_save, save_name_ext)
+                if os.path.isfile(fname):
+                    raise QgsProcessingException('File '+fname
+                        + ' already exists. Please choose another folder.')
+
 
         # reading input text file
         feedback.setProgressText(self.tr('reading inp ...'))
