@@ -550,7 +550,8 @@ class CreateSubModel(QgsProcessingAlgorithm):
                     section_name='OUTFALLS',
                     crs_result=crs_result,
                     folder_save=folder_save,
-                    feedback=feedback
+                    feedback=feedback,
+                    context=context
                 )
                 save_layer_to_file(
                     created_layer,

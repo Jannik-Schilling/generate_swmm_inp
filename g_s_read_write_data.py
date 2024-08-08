@@ -105,8 +105,7 @@ def load_layer_to_df(
                 + vlayer.name()
                 + ': ' + ', '.join(missing_cols)
             )
-            
-            
+
     # check for missing and duplcat names and null or missing geometries
     check_list = [[f['Name'], f.id(), f.hasGeometry()] for f in vlayer.getFeatures()]
     seen = set()
@@ -230,17 +229,17 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
 # import
 # write functions and helpers
 
-
-def create_feature_from_row(df, geom_type):
+def create_feature_from_attrlist(attrlist, geom_type, f_geometry=NULL):
     """
     creates a QgsFeature from data in df
-    :param pd.DataFrame df
+    :param list attrlist
     :param str geom_type
+    :param QgsGeometry geometry
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
         # handle missing geometry: replace with default
-        if df['geometry'] is NULL:
+        if f_geometry is NULL:
             if geom_type == 'Polygon':
                 f.setGeometry(def_ploygon_geom)
             if geom_type == 'LineString':
@@ -248,11 +247,23 @@ def create_feature_from_row(df, geom_type):
             if geom_type == 'Point':
                 f.setGeometry(def_point_geom)
         else:
-            f.setGeometry(df['geometry'])
-        f.setAttributes(df.tolist()[:-1])
-    else:
-        f.setAttributes(df.tolist())
+            f.setGeometry(f_geometry)
+    f.setAttributes(attrlist)
     return f
+
+def create_feature_from_row(df, geom_type):
+    """
+    creates a QgsFeature from data in df
+    :param pd.DataFrame df
+    :param str geom_type
+    """
+    if 'geometry' in df.keys():
+        f_geometry = df['geometry']
+        attrlist = df.drop('geometry').tolist()
+        return create_feature_from_attrlist(attrlist, geom_type, f_geometry)
+    else:
+        attrlist = df.tolist()
+        return create_feature_from_attrlist(attrlist, geom_type)
 
 def transform_crs_function(
     vector_layer,
@@ -289,6 +300,7 @@ def create_layer_from_df(
     section_name,
     crs_result,
     feedback,
+    context,
     custom_fields=None,
     create_empty=False,
     transform_crs_string='NA',
@@ -307,16 +319,14 @@ def create_layer_from_df(
     data_df = data_dict['data']
     layer_name = data_dict['layer_name']
 
-    # set geometry type and provider
+    # create layer with geometry type 
     if section_name in def_sections_geoms_dict.keys():
         feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
         geom_type = def_sections_geoms_dict[section_name]
+        geom_type = geom_type+'?crs='+crs_result
     else:
-        geom_type = 'NoGeometry' # for simple tables
-    geom_type_and_crs = geom_type+'?crs='+crs_result
-    pr = 'a'
-    vector_layer = QgsVectorLayer(geom_type_and_crs, layer_name, 'memory')
-    pr = vector_layer.dataProvider()
+        geom_type = 'NoGeometry'  # for simple tables
+    vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
 
 
     # set fields
@@ -334,10 +344,11 @@ def create_layer_from_df(
         layer_fields = def_tables_dict[section_name]['tables'][layer_name]
     if custom_fields is not None:
         layer_fields.update(custom_fields)
+    vector_layer.startEditing()
     for col, field_type_string in layer_fields.items():
         field_type = field_types_dict[field_type_string]
         # QgsField is deprecated since QGIS 3.38 -> QMetaType
-        pr.addAttributes([QgsField(col, field_type)])
+        vector_layer.addAttribute(QgsField(col, field_type))
     vector_layer.updateFields()
 
     # get data_df columns in the correct order
@@ -361,19 +372,31 @@ def create_layer_from_df(
     if len(data_df) != 0:
         # add features if data_df is not empty (which can be the case for tables)
         feature_list = data_df.apply(lambda x: create_feature_from_row(x, geom_type), axis=1)
-        pr.addFeatures(feature_list)
+        vector_layer.addFeatures(feature_list)
         vector_layer.updateExtents()
+    vector_layer.commitChanges()
+
     # transformation of CRS
     if transform_crs_string != 'NA' and geom_type != 'NoGeometry':
-        transform_crs_function(
-            vector_layer,
-            crs_result,
-            transform_crs_string
+        reprojected = processing.run(
+            "native:reprojectlayer",
+            {
+                'INPUT': vector_layer,
+                'TARGET_CRS': QgsCoordinateReferenceSystem(transform_crs_string),
+                'CONVERT_CURVED_GEOMETRIES': False,
+                'OUTPUT': 'TEMPORARY_OUTPUT'
+            },
+            feedback = feedback,
+            context = context
         )
-        
-      #processing.run("GenSwmmInp:GenerateDefaultFolder", {'SWMM_FOLDER':'/home/jannik/Dokumente/projects_qgis/dev','SWMM_VERSION':0,'TRANSFORM_CRS':QgsCoordinateReferenceSystem('EPSG:25833')})
-    return vector_layer
-    
+        vector_layer2 = reprojected['OUTPUT']
+        vector_layer2.updateExtents()
+        vector_layer2.setName(layer_name)
+        return vector_layer2
+    else:
+        return vector_layer
+
+
 def save_layer_to_file(
     vector_layer,
     layer_name,

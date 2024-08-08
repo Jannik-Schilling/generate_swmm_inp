@@ -233,9 +233,8 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 if os.path.isfile(fname):
                     raise QgsProcessingException('File '+fname
                         + ' already exists. Please choose another folder.')
-            
-            
-            
+
+
         # reading input text file
         feedback.setProgressText(self.tr('reading inp ...'))
         feedback.setProgress(3)
