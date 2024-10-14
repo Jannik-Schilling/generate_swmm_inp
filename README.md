@@ -100,4 +100,5 @@ R:
 
 
 ## Funding
-First versions of this plugin have been developed within the project PROSPER-RO, funded by BMBF, grant number 033L212
+First versions (0.1 to 0.31) of this plugin have been developed within the project PROSPER-RO, funded by BMBF, grant number 033L212.
+New features and bugfixes (since version 0.32) have been added within the project OSWeGe, funded by BMUV, grant number 67DAS263
