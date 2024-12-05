@@ -120,7 +120,11 @@ def sect_list_import_handler(
                     df_join = adjust_xsection_df(df_join)
                 if section_name == 'INFILTRATION':
                     df_join = df_join.apply(lambda x: create_infiltr_df(x), axis=1)
-                df_join = df_join.applymap(replace_nan_null)
+                try:
+                    df_join = df_join.map(replace_nan_null)
+                except BaseException:
+                    # for pandas prior to 2.1.0:
+                    df_join = df_join.applymap(replace_nan_null)
                 data_dict['data'] = df_join.set_index('Name')
             dict_all_vals[section_name]['status'] = ImportDataStatus.PROCESSED
         feedback.setProgress(100)
@@ -218,7 +222,11 @@ def sect_list_import_handler(
                 df_processed = df_processed.join(ft_geoms, on='Name')
                 feedback.setProgress(97)
                 # write
-                df_processed = df_processed.applymap(replace_nan_null)
+                try:
+                    df_processed = df_processed.map(replace_nan_null)
+                except BaseException:
+                    # for pandas prior to 2.1.0:
+                    df_processed = df_processed.applymap(replace_nan_null)
                 dict_all_vals[section_name]['data'] = df_processed
                 feedback.setProgress(99)
                 dict_all_vals[section_name]['status'] = ImportDataStatus.GEOM_READY

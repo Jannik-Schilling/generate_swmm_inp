@@ -6,7 +6,7 @@
 name=Generate SWMM inp
 qgisMinimumVersion=3.30
 description= Generate SWMM input files from layers, import input files from SWMM to QGIS and import SWMM report files to QGIS
-version=0.37
+version=0.38
 author=Jannik Schilling
 email=jannik.schilling@posteo.de
 
@@ -25,8 +25,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.37
-	- fix style files with XsectShape
+changelog= 0.38
+	- fix QgsGeometry issue
 	- Since version 0.34: replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers because of issues with ESRI-Shapefiles. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.
 
 

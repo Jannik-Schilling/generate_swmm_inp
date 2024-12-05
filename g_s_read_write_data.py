@@ -44,7 +44,11 @@ from qgis.core import (
     QgsVectorFileWriter,
     QgsVectorLayer
 )
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import (
+    QVariant,
+    QMetaType
+)
+
 from .g_s_defaults import (
     def_ogr_driver_names,
     def_ogr_driver_dict,
@@ -75,7 +79,11 @@ def del_none_bool(df):
     :return: pd.DataFrame
     """
     df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
-    df = df.applymap(replace_null_nan)
+    try:
+        df = df.map(replace_nan_null)
+    except BaseException:
+        # for pandas prior to 2.1.0:
+        df = df.applymap(replace_null_nan)
     df[df.columns[:-1]] = df[df.columns[:-1]].replace('True', 'YES').replace('False', 'NO')
     return df
 
@@ -213,7 +221,11 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
         cols = [f.name() for f in vlayer.fields()]
         datagen = ([f[col] for col in cols] for f in vlayer.getFeatures())
         data_df = pd.DataFrame.from_records(data=datagen, columns=cols)
-        data_df = data_df.applymap(replace_null_nan)
+        try:
+            data_df = data_df.map(replace_null_nan)
+        except BaseException:
+            # for pandas prior to 2.1.0:
+            data_df = data_df.applymap(replace_null_nan)
         if all([x.startswith('Field') for x in data_df.columns]):
             rename_cols = {i:j for i, j in zip(cols, data_df.loc[0,:].tolist())}
             data_df = data_df.drop(index=0)
@@ -234,7 +246,7 @@ def create_feature_from_attrlist(attrlist, geom_type, f_geometry=NULL):
     creates a QgsFeature from data in df
     :param list attrlist
     :param str geom_type
-    :param QgsGeometry geometry
+    :param QgsGeometry f_geometry
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
@@ -327,10 +339,11 @@ def create_layer_from_df(
     else:
         geom_type = 'NoGeometry'  # for simple tables
     vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
-
+    print(vector_layer.dataProvider().capabilitiesString())
 
     # set fields
-    field_types_dict = {
+    # before QGIS Version 3.38
+    field_types_dict_old = {
         'Double': QVariant.Double,
         'String': QVariant.String,
         'Int': QVariant.Int,
@@ -338,6 +351,16 @@ def create_layer_from_df(
         'Date': QVariant.Date,
         'Time': QVariant.Time
     }
+    # starting with QGIS Version 3.38
+    field_types_dict = {
+        'Double': QMetaType.Type.Double,
+        'String': QMetaType.Type.QString,
+        'Int': QMetaType.Type.Int,
+        'Bool': QMetaType.Type.Bool,
+        'Date': QMetaType.Type.QDate,
+        'Time': QMetaType.Type.QTime
+    }
+    
     if geom_type != 'NoGeometry':
         layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
     else:
@@ -346,9 +369,13 @@ def create_layer_from_df(
         layer_fields.update(custom_fields)
     vector_layer.startEditing()
     for col, field_type_string in layer_fields.items():
-        field_type = field_types_dict[field_type_string]
-        # QgsField is deprecated since QGIS 3.38 -> QMetaType
-        vector_layer.addAttribute(QgsField(col, field_type))
+        try:
+            # QgsField with QVariant is deprecated since QGIS 3.38 -> QMetaType
+            field_type = field_types_dict[field_type_string]
+            vector_layer.addAttribute(QgsField(col, field_type))
+        except:
+            field_type = field_types_dict_old[field_type_string]
+            vector_layer.addAttribute(QgsField(col, field_type))
     vector_layer.updateFields()
 
     # get data_df columns in the correct order
@@ -367,7 +394,11 @@ def create_layer_from_df(
                 )
         else:
             # replace nan with NULL in tables
-            data_df = data_df.applymap(replace_nan_null)
+            try:
+                data_df = data_df.map(replace_nan_null)
+            except BaseException:
+                # for pandas prior to 2.1.0:
+                data_df = data_df.applymap(replace_nan_null)
         data_df = data_df[data_df_column_order]
     if len(data_df) != 0:
         # add features if data_df is not empty (which can be the case for tables)
