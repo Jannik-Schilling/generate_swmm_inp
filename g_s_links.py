@@ -368,7 +368,7 @@ def adjust_xsection_df(all_xsections):  # no feedback!
     :param pd.DataFrame all_xsections
     :return: pd.DataFrame
     """
-    all_xsections['Shp_Trnsct'] = np.nan
+    all_xsections['Shp_Trnsct'] = pd.NA
     all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1']
     all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1'] = np.nan
     all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Geom1']

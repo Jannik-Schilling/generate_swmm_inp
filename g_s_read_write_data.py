@@ -339,7 +339,6 @@ def create_layer_from_df(
     else:
         geom_type = 'NoGeometry'  # for simple tables
     vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
-    print(vector_layer.dataProvider().capabilitiesString())
 
     # set fields
     # before QGIS Version 3.38
