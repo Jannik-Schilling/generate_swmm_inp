@@ -411,7 +411,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         # function for annotations / descriptions
         def get_annotations_from_raw_df(df_raw):
             if annotation_field_name in df_raw.columns:
-                annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}
+                annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}  
                 annot_dict = {k: v for k, v in annot_dict.items() if pd.notna(v)}
                 annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
             else:

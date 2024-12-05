@@ -80,7 +80,7 @@ def del_none_bool(df):
     """
     df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
     try:
-        df = df.map(replace_nan_null)
+        df = df.map(replace_null_nan)
     except BaseException:
         # for pandas prior to 2.1.0:
         df = df.applymap(replace_null_nan)

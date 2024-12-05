@@ -76,6 +76,7 @@ def get_conduits_from_shapefile(conduits_raw):
                   qgis_conduits_cols,
                   conduits_raw.keys())
     conduits_df = conduits_raw[conduits_cols].copy()
+    conduits_df = conduits_df.apply(lambda x: x.astype("string"), axis = 0)
     conduits_df['Name'] = [str(x) for x in conduits_df['Name']]
     # Asteriscs indicate that InOffset or OutOffset is the same as node elevation:
     conduits_df['InOffset'] = conduits_df['InOffset'].fillna('*')
@@ -83,6 +84,7 @@ def get_conduits_from_shapefile(conduits_raw):
     conduits_df['InitFlow'] = conduits_df['InitFlow'].fillna('0')
     conduits_df['MaxFlow'] = conduits_df['MaxFlow'].fillna('0')
     xsections_df = conduits_raw[xsections_cols].copy()
+    xsections_df = xsections_df.apply(lambda x: x.astype("string"), axis = 0)
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
     if any(xsections_df['XsectShape'] == 'IRREGULAR') or any(xsections_df['XsectShape'] == 'CUSTOM') or any(xsections_df['XsectShape'] == 'STREET'):
         if 'Shp_Trnsct' not in conduits_raw.columns:
@@ -93,6 +95,11 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['XsectShape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['XsectShape'] == 'CUSTOM', 'Shp_Trnsct']
 
     def fill_empty_xsects(xs_row, col):
+        """
+        fills cress section columns if empty
+        :param pd.series xs_row
+        :param str col
+        """
         if col == 'Barrels':
             if xs_row['XsectShape'] in ['IRREGULAR', 'STREET']:
                 return ''
@@ -100,7 +107,7 @@ def get_conduits_from_shapefile(conduits_raw):
                 if pd.isna(xs_row[col]):
                     return '1'
                 else:
-                    return int(xs_row[col])
+                    return str(round(float(xs_row[col])))
         else:
             if xs_row['XsectShape'] in ['IRREGULAR', 'STREET']:
                 return ''
@@ -114,6 +121,7 @@ def get_conduits_from_shapefile(conduits_raw):
     xsections_df['Geom4'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom4'), axis=1)
     xsections_df['Barrels'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Barrels'), axis=1)
     losses_df = conduits_raw[losses_cols].copy()
+    losses_df = losses_df.apply(lambda x: x.astype("string"), axis = 0)
     losses_df['FlapGate'] = losses_df['FlapGate'].fillna('NO')
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
