@@ -252,11 +252,11 @@ def create_feature_from_attrlist(attrlist, geom_type, f_geometry=NULL):
     if geom_type != 'NoGeometry':
         # handle missing geometry: replace with default
         if f_geometry is NULL:
-            if geom_type == 'Polygon':
+            if geom_type.startswith('Polygon'):
                 f.setGeometry(def_ploygon_geom)
-            if geom_type == 'LineString':
+            if geom_type.startswith('LineString'):
                 f.setGeometry(def_line_geom)
-            if geom_type == 'Point':
+            if geom_type.startswith('Point'):
                 f.setGeometry(def_point_geom)
         else:
             f.setGeometry(f_geometry)
@@ -268,14 +268,23 @@ def create_feature_from_row(df, geom_type):
     creates a QgsFeature from data in df
     :param pd.DataFrame df
     :param str geom_type
+    :return: QgsFeature
     """
     if 'geometry' in df.keys():
         f_geometry = df['geometry']
+        geom_type_short = geom_type.split('?')[0]
+        if geom_type_short in ['PointZ', 'LineStringZ']:
+            if geom_type_short == 'PointZ':
+                z_coord = df['Elevation']
+                f_geometry_string_z = f_geometry.asWkt()[:-1]+' '+str(z_coord)+')'
+                print(f_geometry_string_z)
+                f_geometry = QgsGeometry.fromWkt(f_geometry_string_z)
         attrlist = df.drop('geometry').tolist()
-        return create_feature_from_attrlist(attrlist, geom_type, f_geometry)
+        f_created = create_feature_from_attrlist(attrlist, geom_type, f_geometry)
     else:
         attrlist = df.tolist()
-        return create_feature_from_attrlist(attrlist, geom_type)
+        f_created = create_feature_from_attrlist(attrlist, geom_type)
+    return f_created
 
 def transform_crs_function(
     vector_layer,
@@ -316,6 +325,7 @@ def create_layer_from_df(
     custom_fields=None,
     create_empty=False,
     transform_crs_string='NA',
+    add_z_bool=False,
     **kwargs
 ):
     """
@@ -335,6 +345,15 @@ def create_layer_from_df(
     if section_name in def_sections_geoms_dict.keys():
         feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
         geom_type = def_sections_geoms_dict[section_name]
+        if add_z_bool:
+            if section_name in [
+                'JUNCTIONS',
+                'OUTFALLS',
+                'DIVIDERS',
+                'STORAGE',
+                'CONDUITS'
+            ]:
+                geom_type = geom_type+'Z'
         geom_type = geom_type+'?crs='+crs_result
     else:
         geom_type = 'NoGeometry'  # for simple tables
