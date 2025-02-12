@@ -48,6 +48,7 @@ from .g_s_defaults import (
     def_ogr_driver_names,
     def_sections_dict,
     def_sections_geoms_dict,
+    def_sections_geoms_list,
     def_stylefile_dict,
     def_tables_dict,
     ImportDataStatus,
@@ -674,7 +675,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         #------------------------------
         # prepare
         feedback.setProgress(0)
-        for section_name in def_sections_geoms_dict.keys():
+        for section_name in def_sections_geoms_list:  # the list is used to keep the order
             if feedback.isCanceled():
                 break
             if section_name in dict_all_vals.keys():

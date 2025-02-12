@@ -49,6 +49,7 @@ from .g_s_defaults import (
     st_files_path
 )
 from .g_s_nodes import (
+    add_z_to_points,
     create_points_df,
     get_storages_from_inp,
     get_outfalls_from_inp,
@@ -61,6 +62,7 @@ from .g_s_subcatchments import (
     create_infiltr_df
 )
 from .g_s_links import (
+    add_z_to_lines,
     create_lines_for_section,
     adjust_xsection_df,
     adjust_outlets_list
@@ -198,7 +200,7 @@ def sect_list_import_handler(
                         sect_list_import_handler(sect_join, dict_all_vals, 'data_join', feedback, import_parameters_dict)
                         df_for_join = dict_all_vals[sect_join]['data']
                         df_processed = df_processed.join(df_for_join, on='Name')
-                feedback.setProgress(90)
+                feedback.setProgress(80)
 
                 # get geometries
                 if def_sections_geoms_dict[section_name] == 'Point':
@@ -217,16 +219,39 @@ def sect_list_import_handler(
                     sect_list_import_handler('POLYGONS', dict_all_vals, 'geom_join', feedback)
                     feedback.setProgressText('Creating polygon geometries from vertices...')
                     ft_geoms = create_polygons_df(df_processed, dict_all_vals, feedback)
-                feedback.setProgress(95)
-                # join geometries
+                # ...and join geometries
                 df_processed = df_processed.join(ft_geoms, on='Name')
-                feedback.setProgress(97)
-                # write
+                feedback.setProgress(90)
+                
+                # replace nan and '*'
                 try:
                     df_processed = df_processed.map(replace_nan_null)
                 except BaseException:
                     # for pandas prior to 2.1.0:
                     df_processed = df_processed.applymap(replace_nan_null)
+                feedback.setProgress(94)
+
+                # add z values if requiered
+                if import_parameters_dict['add_z_bool']:
+                    if section_name in [
+                        'JUNCTIONS',
+                        'OUTFALLS',
+                        'DIVIDERS',
+                        'STORAGE',
+                        'CONDUITS'
+                    ]:
+                        if def_sections_geoms_dict[section_name] == 'Point':
+                            geometries_with_z = df_processed.apply(add_z_to_points, axis=1)
+                        if def_sections_geoms_dict[section_name] == 'LineString':
+                            geometries_with_z = df_processed.apply(
+                                add_z_to_lines,
+                                args=(import_parameters_dict, dict_all_vals),
+                                axis=1
+                            )
+                        df_processed['geometry'] = geometries_with_z
+                feedback.setProgress(97)
+                
+                
                 dict_all_vals[section_name]['data'] = df_processed
                 feedback.setProgress(99)
                 dict_all_vals[section_name]['status'] = ImportDataStatus.GEOM_READY

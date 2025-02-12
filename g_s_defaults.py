@@ -844,6 +844,20 @@ def_sections_geoms_dict = {
     'WEIRS': 'LineString',
     'OUTLETS': 'LineString'
 }
+def_sections_geoms_list = [  # the same as a list to keep the order (needed for python < 3.6)
+    'RAINGAGES',
+    'SUBCATCHMENTS',
+    'JUNCTIONS',
+    'OUTFALLS',
+    'DIVIDERS',
+    'STORAGE',
+    'CONDUITS',
+    'PUMPS',
+    'ORIFICES',
+    'WEIRS',
+    'OUTLETS'
+]
+
 
 # style_file
 def_stylefile_dict = {

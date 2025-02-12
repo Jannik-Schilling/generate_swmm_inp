@@ -272,13 +272,6 @@ def create_feature_from_row(df, geom_type):
     """
     if 'geometry' in df.keys():
         f_geometry = df['geometry']
-        geom_type_short = geom_type.split('?')[0]
-        if geom_type_short in ['PointZ', 'LineStringZ']:
-            if geom_type_short == 'PointZ':
-                z_coord = df['Elevation']
-                f_geometry_string_z = f_geometry.asWkt()[:-1]+' '+str(z_coord)+')'
-                print(f_geometry_string_z)
-                f_geometry = QgsGeometry.fromWkt(f_geometry_string_z)
         attrlist = df.drop('geometry').tolist()
         f_created = create_feature_from_attrlist(attrlist, geom_type, f_geometry)
     else:

@@ -39,6 +39,7 @@ from .g_s_various_functions import (
     check_columns
 )
 
+
 # Definitions
 # Inlets
 inl_types_def = {
@@ -421,7 +422,7 @@ def get_line_from_points(
     if (
         (from_node not in all_geoms.index)
         or (to_node not in all_geoms.index)
-    ):
+    ):  # skip if not connected
         line_geom = NULL
     else:
         verts = all_vertices[all_vertices.index == line_name]
@@ -459,3 +460,58 @@ def create_lines_for_section(df_processed, dict_all_vals, feedback):
         columns=['Name', 'geometry']
     ).set_index('Name')
     return lines_created
+
+
+# z coordinates
+def add_z_to_lines(sr, import_parameters_dict, dict_all_vals):
+    """
+    Adds a z coordindate to the line geometry in a pandas series
+    :param PandasSeries sr
+    """
+    f_geometry_with_z = sr['geometry']
+    f_geometry = sr['geometry']
+    in_offset = sr['InOffset']
+    out_offset = sr['OutOffset']
+    vtc = [v for v in f_geometry.vertices()]
+    # get the elevation
+    from_node = sr['FromNode']
+    #for section in ['JUNCTIONS','OUTFALLS','DIVIDERS','STORAGE']:
+    #    if from_node in dict_all_vals[section]['data']['Name']:
+    #        dict_all_vals[section]['data'].loc[]
+    #        z_coord_first= vtc[0].z()
+    # to_node = sr['ToNode']
+    #for section in ['JUNCTIONS','OUTFALLS','DIVIDERS','STORAGE']:
+    #    if to_node in dict_all_vals[section]['data']['Name']:
+    #        z_coord_last = vtc[-1].z()
+    if import_parameters_dict['link_offsets'] == 'elevation':
+        # absolute elevations -> replace with in_offset if available
+        if in_offset != NULL:
+            z_coord_first = in_offset
+        if out_offset != NULL:
+            z_coord_last = out_offset
+    else:
+        # depth / relative heights -> add offset to z_coord
+        if in_offset != NULL:
+            z_coord_first = z_coord_first + in_offset
+        if out_offset != NULL:
+            z_coord_last = z_coord_first + out_offset
+    return f_geometry_with_z
+
+def add_interpolated_z_coordinates_to_line(f_geometry, z_coord_first, z_coord_last):
+    """
+    Interpolates z coordinates along a linestring and adds it to the geometry
+    :param QgsGeometry f_geometry: Geometry of type LineString
+    :param float z_coord_first
+    :param float z_coord_last
+    """
+    z_diff = z_coord_last-z_coord_first
+    len_line = f_geometry.length()
+    slope = z_diff/len_line
+    vtx_list = []
+    for i, vert in enumerate(f_geometry.vertices()):
+        dist = f_geometry.distanceToVertex(i)
+        z_interpol = z_coord_first + dist*slope
+        vert.addZValue(z_interpol)
+        vtx_list.append(vert)
+    f_geometry_with_z = QgsGeometry.fromPolyline([vtx_list])
+    return f_geometry_with_z

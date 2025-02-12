@@ -412,3 +412,16 @@ def create_points_df(data, feedback):
     else:
         df_out = pd.DataFrame(columns = ['Name', 'geometry']).set_index('Name')
     return df_out
+
+
+def add_z_to_points(sr):
+    """
+    adds the elevation to a point geometry
+    :param PandasSeries sr: one line of the DataFrame already with geometry
+    :return: QgsGeometry
+    """
+    f_geometry = sr['geometry']
+    z_coord = sr['Elevation']
+    f_geometry_string_z = f_geometry.asWkt()[:-1]+' '+str(z_coord)+')'
+    f_geometry_z = QgsGeometry.fromWkt(f_geometry_string_z)
+    return f_geometry_z
