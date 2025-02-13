@@ -462,48 +462,44 @@ def create_lines_for_section(df_processed, dict_all_vals, feedback):
     return lines_created
 
 
+
 # z coordinates
+def get_elevation_from_node(node_name, dict_all_vals):
+    for section_i in ['JUNCTIONS', 'OUTFALLS', 'DIVIDERS', 'STORAGE']:
+        if section_i in dict_all_vals.keys():
+            if node_name in dict_all_vals[section_i]['data']['Name'].values:
+                matching_df = dict_all_vals[section_i]['data']
+                z_coord = matching_df.loc[matching_df['Name']==node_name, 'Elevation'].tolist()[0]
+                z_coord = float(z_coord)
+                break
+    return z_coord
+
 def add_z_to_lines(sr, import_parameters_dict, dict_all_vals):
     """
     Adds a z coordindate to the line geometry in a pandas series
     :param PandasSeries sr
     """
-    f_geometry_with_z = sr['geometry']
     f_geometry = sr['geometry']
     in_offset = sr['InOffset']
     out_offset = sr['OutOffset']
     vtc = [v for v in f_geometry.vertices()]
     # get the elevation
     from_node = sr['FromNode']
-    #for section in ['JUNCTIONS','OUTFALLS','DIVIDERS','STORAGE']:
-    #    if from_node in dict_all_vals[section]['data']['Name']:
-    #        dict_all_vals[section]['data'].loc[]
-    #        z_coord_first= vtc[0].z()
-    # to_node = sr['ToNode']
-    #for section in ['JUNCTIONS','OUTFALLS','DIVIDERS','STORAGE']:
-    #    if to_node in dict_all_vals[section]['data']['Name']:
-    #        z_coord_last = vtc[-1].z()
+    z_coord_first = get_elevation_from_node(from_node, dict_all_vals)
+    to_node = sr['ToNode']
+    z_coord_last = get_elevation_from_node(to_node, dict_all_vals)
     if import_parameters_dict['link_offsets'] == 'elevation':
         # absolute elevations -> replace with in_offset if available
         if in_offset != NULL:
-            z_coord_first = in_offset
+            z_coord_first = float(in_offset)
         if out_offset != NULL:
-            z_coord_last = out_offset
+            z_coord_last = float(out_offset)
     else:
         # depth / relative heights -> add offset to z_coord
         if in_offset != NULL:
-            z_coord_first = z_coord_first + in_offset
+            z_coord_first = z_coord_first + float(in_offset)
         if out_offset != NULL:
-            z_coord_last = z_coord_first + out_offset
-    return f_geometry_with_z
-
-def add_interpolated_z_coordinates_to_line(f_geometry, z_coord_first, z_coord_last):
-    """
-    Interpolates z coordinates along a linestring and adds it to the geometry
-    :param QgsGeometry f_geometry: Geometry of type LineString
-    :param float z_coord_first
-    :param float z_coord_last
-    """
+            z_coord_last = z_coord_last + float(out_offset)
     z_diff = z_coord_last-z_coord_first
     len_line = f_geometry.length()
     slope = z_diff/len_line
@@ -513,5 +509,5 @@ def add_interpolated_z_coordinates_to_line(f_geometry, z_coord_first, z_coord_la
         z_interpol = z_coord_first + dist*slope
         vert.addZValue(z_interpol)
         vtx_list.append(vert)
-    f_geometry_with_z = QgsGeometry.fromPolyline([vtx_list])
+    f_geometry_with_z = QgsGeometry.fromPolyline(vtx_list)
     return f_geometry_with_z

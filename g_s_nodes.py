@@ -35,8 +35,7 @@ from .g_s_defaults import (
     def_tables_dict
 )
 from .g_s_various_functions import (
-    check_columns,
-    get_coords_from_geometry
+    check_columns
 )
 
 # Definitions for Storages
@@ -113,7 +112,6 @@ def get_storages_from_geodata(storages_raw):
         storage_df.keys()
     )
     storage_df['Name'] = [str(x) for x in storage_df['Name']]
-    storage_df['X_Coord'], storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
 
     def st_type_adjustment(st_row):
         st_type_i = st_row['Type']
