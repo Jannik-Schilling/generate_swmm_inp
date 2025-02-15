@@ -60,9 +60,8 @@ def use_z_if_available(
     if geom_type == 'lines':
         if use_z_bool:
             # if not na
-            #replace_lst = [res[l_name]['Z_Coord'].tolist()[0] for l_name in df_multi['Name']]
-            df['InOffset'] = [res[l_name]['Z_Coord'].tolist()[0] for l_name in df_multi['Name']]
-            df['OutOffset'] = [res[l_name]['Z_Coord'].tolist()[-1] for l_name in df_multi['Name']]
+            df['InOffset'] = [coords[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
+            df['OutOffset'] = [coords[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
         coords = {
             l_name: df_coord[
                 ['X_Coord', 'Y_Coord']
@@ -195,7 +194,7 @@ def extract_xy_from_area(geom_row):
     :return: pd.DataFrame
     """
     xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
-    xy_df = pd.DataFrame(xy_list, columns=['x', 'y'])
+    xy_df = pd.DataFrame(xy_list, columns=['X_Coord', 'Y_Coord'])
     return xy_df
 
 # functions for data in tables

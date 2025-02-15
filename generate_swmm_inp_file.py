@@ -352,6 +352,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
         file_streets = self.parameterAsString(parameters, self.FILE_STREETS, context)
 
+
         # options table
         if file_options != '':
             raw_data_dict['options_df'] = read_data_from_table_direct(
@@ -448,6 +449,42 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             )
             options_df, main_infiltration_method = get_options_from_table(raw_data_dict['options_df'].copy())
             inp_dict['OPTIONS'] = {'data': options_df}
+            
+            
+        # main handler
+        def layers_export_handler(section):
+            # data/section in raw_data_dict.keys?
+            # check columns
+            ## what to check
+            if tables:
+                cols_to_check = list(def_tables_dict[section]['tables'][subtable].keys())
+                f_name = str(section)+' file'  # replace with filename
+            else:
+                cols_to_check = list(def_qgis_fields_dict[section].keys())
+            check_columns(
+                f_name,
+                cols_to_check,
+                raw_data_dict['options_df'].keys()
+            )
+            # data preparation
+            processed_df = None
+            if geometry:
+                # extract geometry
+                sections_coords = get_coords_from_geometry(raw_df)
+                use_z_if_available()
+                adjust_geometry()
+            # annotations
+            annotations_df = get_annotations_from_raw_df(
+                raw_data_dict['conduits_raw'].copy()
+            )
+            if annotations_df is not None:
+                annotations = True
+            else: 
+                annotations = False
+            # write to inp dict
+            inp_dict[section] = {'data': processed_df}
+            if annotations:
+                inp_dict[section]['annotations'] = annotations_df
 
         # subcatchments
         if 'subcatchments_raw' in raw_data_dict.keys():
@@ -496,7 +533,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 conduits_verts,
                 use_z_bool,
                 feedback,
-                'Lines',
+                'lines',
                 layer_name='conduits_layer'
             )
             conduits_verts = {k: del_first_last_vt(v) for k, v in conduits_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
@@ -525,6 +562,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 pumps_verts,
                 False,
                 feedback,
+                geom_type = 'lines'
             )
             pumps_verts = {k: del_first_last_vt(v) for k, v in pumps_verts.items() if len(v) > 2}
             pumps_inp_cols = def_sections_dict['PUMPS']
@@ -548,6 +586,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 weirs_verts,
                 False,
                 feedback,
+                geom_type = 'lines'
             )
             weirs_verts = {k: del_first_last_vt(v) for k, v in weirs_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
             inp_dict['VERTICES']['data'].update(weirs_verts)
@@ -578,6 +617,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 outlets_verts,
                 False,
                 feedback,
+                geom_type = 'lines'
             )
             outlets_verts = {k: del_first_last_vt(v) for k, v in outlets_verts.items() if len(v) > 2}
             inp_dict['VERTICES']['data'].update(outlets_verts)
@@ -611,6 +651,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 orifices_verts,
                 False,
                 feedback,
+                geom_type = 'lines'
             )
             orifices_verts = {k: del_first_last_vt(v) for k, v in orifices_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
             inp_dict['VERTICES']['data'].update(orifices_verts)
@@ -647,8 +688,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             junctions_annot = get_annotations_from_raw_df(
                 raw_data_dict['junctions_raw'].copy()
             )
-            junctions_df['X_Coord'], junctions_df['Y_Coord'] = get_coords_from_geometry(junctions_df)
-            junctions_coords = junctions_df[['Name', 'X_Coord', 'Y_Coord']]
+            junctions_coords = get_coords_from_geometry(junctions_df)
             junctions_inp_cols = def_sections_dict['JUNCTIONS']
             junctions_df, junctions_coords = use_z_if_available(
                 junctions_df,
@@ -678,8 +718,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             )
             from .g_s_nodes import get_outfalls_from_shapefile
             outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
-            outfalls_df['X_Coord'], outfalls_df['Y_Coord'] = get_coords_from_geometry(outfalls_df)
-            outfalls_coords = outfalls_df[['Name', 'X_Coord', 'Y_Coord']]
+            outfalls_coords = get_coords_from_geometry(outfalls_df)
             outfalls_annot = get_annotations_from_raw_df(
                 raw_data_dict['outfalls_raw'].copy()
             )
