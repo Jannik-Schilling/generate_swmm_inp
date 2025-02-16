@@ -54,6 +54,116 @@ def data_preparation(data_name, data_entry, export_params):
             )
         export_params['main_infiltration_method'] = main_infiltration_method
         return {'OPTIONS': {'data': options_df}}
+     elif data_name == 'SUBCATCHMENTS':
+        from .g_s_subcatchments import get_subcatchments_from_layer
+        subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
+            data_entry['data']['SUBCATCHMENTS'].copy(),
+            export_params['main_infiltration_method']
+        )
+        return {
+            'SUBCATCHMENTS': {'data': subcatchments_df},
+            'SUBAREAS': {'data': subareas_df},
+            'INFILTRATION': {'data': infiltration_df}
+        }
+        
+    elif data_name == 'CONDUITS':
+        from .g_s_links import get_conduits_from_shapefile
+        conduits_df, xsections_df, losses_df = get_conduits_from_shapefile(
+            data_entry['data']['CONDUITS'].copy()
+        )
+        return {
+            'CONDUITS': {'data': conduits_df},
+            'XSECTIONS': {'data': xsections_df},
+            'LOSSES': {'data': losses_df}
+        }
+        
+    elif data_name == 'PUMPS':
+        from .g_s_links import get_pumps_from_shapefile
+        pumps_df = get_pumps_from_shapefile(data_entry['data']['PUMPS'].copy())
+        return {'PUMPS': {'data': pumps_df}}
+        
+    elif data_name == 'WEIRS':
+        from .g_s_links import get_weirs_from_shapefile
+        weirs_df, xsections_df = get_weirs_from_shapefile(data_entry['data']['WEIRS'].copy())
+        return {
+            'WEIRS': {'data': weirs_df},
+            'XSECTIONS': {'data': xsections_df}
+        }
+        
+    elif data_name == 'OUTLETS':
+        from .g_s_links import get_outlets_from_shapefile
+        outlets_df = get_outlets_from_shapefile(data_entry['data']['OUTLETS'].copy())
+        return {'OUTLETS': {'data': outlets_df}}
+        
+    elif data_name == 'ORIFICES':
+        from .g_s_links import get_orifices_from_shapefile
+        orifices_df, xsections_df = get_orifices_from_shapefile(data_entry['data']['ORIFICES'].copy())
+        return {
+            'ORIFICES': {'data': orifices_df},
+            'XSECTIONS': {'data': xsections_df}
+        }
+        
+    elif data_name == 'JUNCTIONS':
+        from .g_s_nodes import get_junctions_from_shapefile
+        junctions_df = get_junctions_from_shapefile(data_entry['data']['JUNCTIONS'].copy())
+        return {'JUNCTIONS': {'data': junctions_df}}
+        
+    elif data_name == 'OUTFALLS':
+        from .g_s_nodes import get_outfalls_from_shapefile
+        outfalls_df = get_outfalls_from_shapefile(data_entry['data']['OUTFALLS'].copy())
+        return {'OUTFALLS': {'data': outfalls_df}}
+        
+    elif data_name == 'STORAGES':
+        from .g_s_nodes import get_storages_from_shapefile
+        storages_df = get_storages_from_shapefile(data_entry['data']['STORAGES'].copy())
+        return {'STORAGES': {'data': storages_df}}
+        
+    elif data_name == 'DIVIDERS':
+        from .g_s_nodes import get_dividers_from_shapefile
+        dividers_df = get_dividers_from_shapefile(data_entry['data']['DIVIDERS'].copy())
+        return {'DIVIDERS': {'data': dividers_df}}
+
+    elif data_name == 'CURVES':
+        from .g_s_export_helpers import get_curves_from_table
+        curves_dict = get_curves_from_table(
+            data_entry['data']['CURVES'],
+            name_col='Name'
+        )
+        return {'CURVES': {'data': curves_dict}}
+        
+    elif data_name == 'PATTERNS':
+        from .g_s_export_helpers import get_patterns_from_table
+        patterns_dict = get_patterns_from_table(
+            data_entry['data']['PATTERNS'],
+            name_col='Name'
+        )
+        return {'PATTERNS': {'data': patterns_dict}}
+        
+    elif data_name == 'TIMESERIES':
+        from .g_s_export_helpers import get_timeseries_from_table
+        timeseries_dict = get_timeseries_from_table(
+            data_entry['data']['TIMESERIES'],
+            name_col='Name',
+            feedback=export_params['feedback']
+        )
+        return {'TIMESERIES': {'data': timeseries_dict}}
+    
+    elif data_name == 'INFLOWS':
+        from .g_s_nodes import get_inflows_from_table
+        inflows_dict = get_inflows_from_table(
+            data_entry['data']['INFLOWS'],
+            all_nodes,
+            feedback=export_params['feedback']
+        )
+        return {'INFLOWS': {'data': inflows_dict}}
+    
+    elif data_name == 'QUALITY':
+        from .g_s_quality import get_quality_params_from_table
+        quality_df = get_quality_params_from_table(data_entry['data']['QUALITY'].copy())
+        return {'QUALITY': {'data': quality_df}}
+        
+    else:
+        raise QgsProcessingException(f'Unknown data name: {data_name}')
 
 # geometry functions
 def check_nan(replace_lst):
