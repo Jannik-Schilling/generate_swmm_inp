@@ -46,7 +46,7 @@ from qgis.core import (
     QgsVectorFileWriter
 )
 from .g_s_read_write_data import (
-    read_layers_direct,
+    read_data_direct,
     create_layer_from_df,
     save_layer_to_file
 )

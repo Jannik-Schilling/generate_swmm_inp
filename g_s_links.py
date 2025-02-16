@@ -35,7 +35,7 @@ from .g_s_defaults import (
     def_qgis_fields_dict,
     def_sections_dict
 )
-from .g_s_various_functions import (
+from .g_s_export_helpers import (
     check_columns
 )
 

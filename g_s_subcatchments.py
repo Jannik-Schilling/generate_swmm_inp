@@ -32,7 +32,6 @@ from qgis.core import (
     NULL,
     QgsGeometry
 )
-from .g_s_various_functions import check_columns
 from .g_s_defaults import (
     def_infiltration_types,
     def_qgis_fields_dict,

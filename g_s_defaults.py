@@ -29,6 +29,7 @@ import os
 from qgis.core import QgsGeometry
 from datetime import datetime, time
 
+#  definition for ofoptns parameters
 def_options_dtypes_dict = {
     'START_DATE': {
         'dtype': [datetime],

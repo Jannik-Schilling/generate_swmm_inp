@@ -43,22 +43,23 @@ from qgis.core import (
     QgsProcessingParameterFileDestination,
     QgsProcessingParameterVectorLayer
 )
-from .g_s_various_functions import (
+from .g_s_export_helpers import (
     check_columns,
     check_deprecated,
+    data_preparation,
     get_coords_from_geometry,
     use_z_if_available
 )
 from .g_s_defaults import (
     annotation_field_name,
     def_qgis_fields_dict,
+    def_sections_geoms_list,
     def_tables_dict,
     curve_cols_dict,
     def_sections_dict
 )
 from .g_s_read_write_data import (
-    read_data_from_table_direct,
-    read_layers_direct
+    read_data_direct
 )
 
 
@@ -281,14 +282,23 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
         project_dir = os.path.dirname(inp_file_path)
+        # advanced parameter for z_values
+        use_z_bool = self.parameterAsBoolean(parameters, self.USE_Z_VALS, context)  # del
+        
+        export_params = {
+            'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),
+            'main_infiltration_method': None,
+        }
 
         # initializing the input dictionary
         """
-        SECTION: {
-            'data': pd.df,
-            'annotations': {
-                'object_name1': 'annotation_string'
-                'object_name2': 'annotation_string'
+        inp_dict = {
+            SECTION: {
+                'data': pd.df,
+                'annotations': {
+                    'object_name1': 'annotation_string'
+                    'object_name2': 'annotation_string'
+                }
             }
         }
         """
@@ -301,130 +311,69 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['COORDINATES'] = {'data': pd.DataFrame()}
         inp_dict['VERTICES'] = {'data': dict()}
 
-        # reading geodata
-        feedback.setProgressText(self.tr('Reading geodata:'))
-        feedback.setProgress(1)
-        file_raingages = self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)
-        file_outfalls = self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)
-        file_storages = self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)
-        file_subcatchments = self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)
-        file_conduits = self.parameterAsVectorLayer(parameters, self.FILE_CONDUITS, context)
-        file_junctions = self.parameterAsVectorLayer(parameters, self.FILE_JUNCTIONS, context)
-        file_pumps = self.parameterAsVectorLayer(parameters, self.FILE_PUMPS, context)
-        file_weirs = self.parameterAsVectorLayer(parameters, self.FILE_WEIRS, context)
-        file_orifices = self.parameterAsVectorLayer(parameters, self.FILE_ORIFICES, context)
-        file_outlets = self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)
-        file_dividers = self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)
-        use_z_bool = self.parameterAsBoolean(parameters, self.USE_Z_VALS, context)
-        raw_layers_dict = {
-            'raingages_raw': file_raingages,
-            'outfalls_raw': file_outfalls,
-            'storages_raw': file_storages,
-            'subcatchments_raw': file_subcatchments,
-            'conduits_raw': file_conduits,
-            'junctions_raw': file_junctions,
-            'pumps_raw': file_pumps,
-            'weirs_raw': file_weirs,
-            'orifices_raw': file_orifices,
-            'outlets_raw': file_outlets,
-            'dividers_raw': file_dividers
+        # putting together all dita in a dict
+        export_data = {
+            # layers
+            'RAINGAGE': {'file': self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)},
+            'OUTFALLS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)},
+            'STORAGE': {'file': self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)},
+            'SUBCATCHMENTS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)},
+            'CONDUITS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_CONDUITS, context)},
+            'JUNCTIONS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_JUNCTIONS, context)},
+            'PUMPS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_PUMPS, context)},
+            'WEIRS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_WEIRS, context)},
+            'ORIFICES': {'file': self.parameterAsVectorLayer(parameters, self.FILE_ORIFICES, context)},
+            'OUTLETS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_OUTLETS, context)},
+            'DIVIDERS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_DIVIDERS, context)},
+            # tables
+            'OPTIONS': {'file': self.parameterAsString(parameters, self.FILE_OPTIONS, context)},
+            'INFLOWS': {'file': self.parameterAsString(parameters, self.FILE_INFLOWS, context)},
+            'PATTERNS': {'file': self.parameterAsString(parameters, self.FILE_PATTERNS, context)},
+            'CURVES': {'file': self.parameterAsString(parameters, self.FILE_CURVES, context)},
+            'QUALITY': {'file': self.parameterAsString(parameters, self.FILE_QUALITY, context)},
+            'TIMESERIES': {'file': self.parameterAsString(parameters, self.FILE_TIMESERIES, context)},
+            'TRANSECTS': {'file': self.parameterAsString(parameters, self.FILE_TRANSECTS, context)},
+            'STREETS': {'file': self.parameterAsString(parameters, self.FILE_STREETS, context)},
         }
+        export_data = {k: v for k, v in export_data.items() if v['file'] is not None}
+        export_data = {k: v for k, v in export_data.items() if v['file'] != ''}
+        
+        # adding data type information
+        for k in export_data.keys():
+            if k in def_sections_geoms_list:
+                export_data[k]['d_type'] = 'layer'
+            elif k in def_tables_dict.keys():
+                export_data[k]['d_type'] = 'table'
+            else:
+                #unknown data type
+                raise QgsProcessingException(
+                    'Unknown file type for file ' 
+                    + k
+                )
+        feedback.setProgressText(self.tr('done \n'))
+
+
+        # check crs for layer
+        feedback.setProgressText('Checking CRS of layers...')
         raw_layers_crs_list = [
-            v.crs().authid() for v in raw_layers_dict.values() if v is not None
+            v['file'].crs().authid() for v in export_data.values() if v['d_type'] == 'layer'
         ]
         unique_crs = np.unique(raw_layers_crs_list)
         if len(unique_crs) > 1:
             feedback.pushWarning(
                 'Warning: different CRS in the selected layers.'
-                + 'This may lead to unexpected locations in SWMM')
-        raw_data_dict = read_layers_direct(raw_layers_dict, feedback = feedback)
-        feedback.setProgressText(self.tr('done \n'))
-        feedback.setProgress(12)
-
-        # reading data in tables (curves, patterns, inflows ...)
-        feedback.setProgressText('Reading tables...')
-        file_curves = self.parameterAsString(parameters, self.FILE_CURVES, context)
-        file_patterns = self.parameterAsString(parameters, self.FILE_PATTERNS, context)
-        file_options = self.parameterAsString(parameters, self.FILE_OPTIONS, context)
-        file_timeseries = self.parameterAsString(parameters, self.FILE_TIMESERIES, context)
-        file_inflows = self.parameterAsString(parameters, self.FILE_INFLOWS, context)
-        file_quality = self.parameterAsString(parameters, self.FILE_QUALITY, context)
-        file_transects = self.parameterAsString(parameters, self.FILE_TRANSECTS, context)
-        file_streets = self.parameterAsString(parameters, self.FILE_STREETS, context)
-
-
-        # options table
-        if file_options != '':
-            raw_data_dict['options_df'] = read_data_from_table_direct(
-                file_options,
-                sheet='OPTIONS',
-                feedback=feedback
+                + 'This may lead to unexpected locations in SWMM'
             )
-        # curves table
-        if file_curves != '':
-            raw_data_dict['curves'] = {}
-            for curve_type in curve_cols_dict.keys():
-                curve_df = read_data_from_table_direct(
-                    file_curves,
-                    sheet=curve_type,
-                    feedback=feedback
-                )
-                if len(curve_df) > 0:
-                    raw_data_dict['curves'][curve_type] = curve_df
-        # patterns table
-        if file_patterns != '':
-            raw_data_dict['patterns'] = {}
-            for pattern_type in ['HOURLY', 'DAILY', 'MONTHLY', 'WEEKEND']:
-                raw_data_dict['patterns'][pattern_type] = read_data_from_table_direct(
-                    file_patterns,
-                    sheet=pattern_type,
-                    feedback=feedback
-                )
-        # inflows table
-        if file_inflows != '':
-            raw_data_dict['inflows'] = {}
-            for inflow_type in ['Direct', 'Dry_Weather', 'Hydrographs', 'RDII']:
-                raw_data_dict['inflows'][inflow_type] = read_data_from_table_direct(
-                    file_inflows,
-                    sheet=inflow_type,
-                    feedback=feedback
-                )
-        # timeseries table
-        if file_timeseries != '':
-            raw_data_dict['timeseries'] = read_data_from_table_direct(
-                file_timeseries,
-                sheet='TIMESERIES',
-                feedback=feedback
-            )
-        # quality table
-        if file_quality != '':
-            raw_data_dict['quality'] = {}
-            for quality_param in ['POLLUTANTS', 'LANDUSES', 'COVERAGES', 'LOADINGS']:
-                raw_data_dict['quality'][quality_param] = read_data_from_table_direct(
-                    file_quality,
-                    sheet=quality_param,
-                    feedback=feedback
-                )
-        # transects table
-        if file_transects != '':
-            raw_data_dict['transects'] = {}
-            for transects_param in ['Data', 'XSections']:
-                raw_data_dict['transects'][transects_param] = read_data_from_table_direct(
-                    file_transects,
-                    sheet=transects_param,
-                    feedback=feedback
-                )
-        # streets table
-        if file_streets != '':
-            raw_data_dict['streets'] = {}
-            for streets_param in ['STREETS', 'INLETS', 'INLET_USAGE']:
-                raw_data_dict['streets'][streets_param] = read_data_from_table_direct(
-                    file_streets,
-                    sheet=streets_param,
-                    feedback=feedback
-                )
         feedback.setProgressText(self.tr('done \n'))
-        feedback.setProgress(20)
+
+
+        # store pandas dataframes for each layer     
+        feedback.setProgressText('Reading layers and tables...')   
+        read_data_direct(export_data, feedback = feedback)
+        feedback.setProgressText(self.tr('done \n'))
+        print(export_data)
+
+
         feedback.setProgressText(self.tr('preparing data for input file:'))
         
         # function for annotations / descriptions
@@ -437,57 +386,78 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 annot_dict = {}
             return annot_dict
 
-        # options
-        main_infiltration_method = None
-        if 'options_df' in raw_data_dict.keys():
-            feedback.setProgressText(self.tr('[OPTIONS] section'))
-            from .g_s_options import get_options_from_table
-            check_columns(
-                'OPTIONS file',
-                list(def_tables_dict['OPTIONS']['tables']['OPTIONS'].keys()),
-                raw_data_dict['options_df'].keys()
-            )
-            options_df, main_infiltration_method = get_options_from_table(raw_data_dict['options_df'].copy())
-            inp_dict['OPTIONS'] = {'data': options_df}
-            
             
         # main handler
-        def layers_export_handler(section):
-            # data/section in raw_data_dict.keys?
+        def data_export_handler(
+            data_name,
+            export_data,
+            inp_dict,
+            export_params
+        ):
             # check columns
-            ## what to check
-            if tables:
-                cols_to_check = list(def_tables_dict[section]['tables'][subtable].keys())
-                f_name = str(section)+' file'  # replace with filename
+            data_entry = export_data[data_name]
+            data_type = data_entry['d_type']
+            f_name = data_entry['file']
+            if data_type == 'table':
+                for sheet_name in data_entry['data'].keys():
+                    cols_to_check = list(def_tables_dict[data_name]['tables'][sheet_name].keys())
+                    check_columns(
+                        f_name,
+                        cols_to_check,
+                        data_entry['data'][sheet_name].keys()
+                    )
             else:
                 cols_to_check = list(def_qgis_fields_dict[section].keys())
-            check_columns(
-                f_name,
-                cols_to_check,
-                raw_data_dict['options_df'].keys()
-            )
+                check_columns(
+                    f_name,
+                    cols_to_check,
+                    data_entry['data'].keys()
+                )
+
             # data preparation
-            processed_df = None
-            if geometry:
-                # extract geometry
+            processed_data_dict = data_preparation(
+                data_name,
+                data_entry,
+                export_params
+            )
+            
+            # geometry
+            if data_type == 'layer':
                 sections_coords = get_coords_from_geometry(raw_df)
                 use_z_if_available()
                 adjust_geometry()
+            
             # annotations
-            annotations_df = get_annotations_from_raw_df(
-                raw_data_dict['conduits_raw'].copy()
-            )
-            if annotations_df is not None:
-                annotations = True
-            else: 
-                annotations = False
+            if data_name != 'OPTIONS':
+                #annotations_df = get_annotations_from_raw_df(
+                #    raw_data_dict['conduits_raw'].copy()
+                #)
+                annotations_df = None
+                if annotations_df is not None:
+                    # das ggf. für jede subgruppe
+                    inp_dict[data_name]['annotations'] = annotations_df
+
+                
             # write to inp dict
-            inp_dict[section] = {'data': processed_df}
-            if annotations:
-                inp_dict[section]['annotations'] = annotations_df
+            inp_dict.update(processed_data_dict)
+
+                
+
+
+        data_export_handler(
+            'OPTIONS',
+            export_data,
+            inp_dict,
+            export_params
+        )
+
+        print(export_params)
+
+
+
 
         # subcatchments
-        if 'subcatchments_raw' in raw_data_dict.keys():
+        if 'subcatchments_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
             from .g_s_subcatchments import get_subcatchments_from_layer
             # check if all columns exist
@@ -500,7 +470,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             )
             subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
                 raw_data_dict['subcatchments_raw'].copy(),
-                main_infiltration_method
+                export_params['main_infiltration_method']
             )
             inp_dict['POLYGONS'] = {'data':
                 get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
@@ -516,7 +486,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['INFILTRATION'] = {'data': infiltration_df}
 
         # conduits
-        if 'conduits_raw' in raw_data_dict.keys():
+        if 'conduits_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[CONDUITS] section'))
             raw_data_dict['conduits_raw'] = check_deprecated(
                 swmm_data_file='Conduits Layer',
@@ -549,7 +519,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['LOSSES'] = {'data': losses_df}
 
         # pumps
-        if 'pumps_raw' in raw_data_dict.keys():
+        if 'pumps_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[PUMPS] section'))
             from .g_s_links import get_pumps_from_shapefile, del_first_last_vt
             pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'].copy())
@@ -573,7 +543,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             }
 
         # weirs
-        if 'weirs_raw' in raw_data_dict.keys():
+        if 'weirs_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[WEIRS] section'))
             from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
             weirs_df, xsections_df = get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
@@ -600,7 +570,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             }
 
         # outlets
-        if 'outlets_raw' in raw_data_dict.keys():
+        if 'outlets_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[OUTLETS] section'))
             from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
             outlets_annot = get_annotations_from_raw_df(
@@ -623,7 +593,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['VERTICES']['data'].update(outlets_verts)
 
         # optional: transects for conduits or weirs
-        if 'conduits_raw' in raw_data_dict.keys() or 'weirs_raw' in raw_data_dict.keys():
+        if 'conduits_raw' in export_data.keys() or 'weirs_raw' in export_data.keys():
             if 'transects' in raw_data_dict.keys():
                 feedback.setProgressText(self.tr('[TRANSECTS] section'))
                 from .g_s_links import get_transects_from_table
@@ -631,7 +601,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 inp_dict['TRANSECTS'] = {'data': transects_string_list}
 
         # orifices
-        if 'orifices_raw' in raw_data_dict.keys():
+        if 'orifices_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[ORIFICES] section'))
             raw_data_dict['orifices_raw'] = check_deprecated(
                 swmm_data_file='Orifices Layer',
@@ -669,7 +639,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         # nodes (junctions, outfalls, orifices)
         all_nodes = list()
-        if 'junctions_raw' in raw_data_dict.keys():
+        if 'junctions_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[JUNCTIONS] section'))
             # check columns
             junctions_cols = list(def_qgis_fields_dict['JUNCTIONS'].keys())
@@ -707,7 +677,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 ignore_index = True
             )
             all_nodes = all_nodes+junctions_df['Name'].tolist()
-        if 'outfalls_raw' in raw_data_dict.keys():
+        if 'outfalls_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[OUTFALLS] section'))
             outfalls_cols = list(def_qgis_fields_dict['OUTFALLS'].keys())
             outfalls_layer_name = 'Outfalls Layer'
@@ -740,7 +710,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             )
             all_nodes = all_nodes+outfalls_df['Name'].tolist()
 
-        if 'storages_raw' in raw_data_dict.keys():
+        if 'storages_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[STORAGES] section'))
             # check columns is performed within get_storages_from_geodata for different storage types
             from .g_s_nodes import get_storages_from_geodata
@@ -774,7 +744,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 'annotations': storage_annot
             }
             all_nodes = all_nodes+storage_df['Name'].tolist()
-        if 'dividers_raw' in raw_data_dict.keys():
+        if 'dividers_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[DIVIDERS] section'))
             dividers_df = raw_data_dict['dividers_raw'].copy()
             dividers_coords = get_coords_from_geometry(dividers_df)
@@ -814,7 +784,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         # inflows
         if len(all_nodes) > 0:
-            if 'inflows' in raw_data_dict.keys():
+            if 'inflows' in export_data.keys():
                 feedback.setProgressText(self.tr('[INFLOWS] section'))
                 from .g_s_nodes import get_inflows_from_table
                 dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
@@ -854,7 +824,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(55)
 
         # Streets and inlets
-        if 'streets' in raw_data_dict.keys():
+        if 'streets' in export_data.keys():
             feedback.setProgressText(self.tr('[STREETS] and [INLETS] section'))
             from .g_s_links import get_street_from_tables
             streets_df, inlets_df, inlet_usage_df = get_street_from_tables(
@@ -868,9 +838,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 inp_dict['INLET_USAGE'] = {'data': inlet_usage_df}
 
         # Curves
-        if 'curves' in raw_data_dict.keys():
+        if 'curves' in export_data.keys():
             feedback.setProgressText(self.tr('[CURVES] section'))
-            from .g_s_various_functions import get_curves_from_table
+            from .g_s_export_helpers import get_curves_from_table
             inp_dict['CURVES'] = {
                 'data': get_curves_from_table(
                     raw_data_dict['curves'],
@@ -880,9 +850,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(60)
 
         # patterns
-        if 'patterns' in raw_data_dict.keys():
+        if 'patterns' in export_data.keys():
             feedback.setProgressText(self.tr('[PATTERNS] section'))
-            from .g_s_various_functions import get_patterns_from_table
+            from .g_s_export_helpers import get_patterns_from_table
             inp_dict['PATTERNS'] = {
                 'data': get_patterns_from_table(
                     raw_data_dict['patterns'],
@@ -892,9 +862,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgress(65)
 
         # time series
-        if 'timeseries' in raw_data_dict.keys():
+        if 'timeseries' in export_data.keys():
             feedback.setProgressText(self.tr('[TIMESERIES] section'))
-            from .g_s_various_functions import get_timeseries_from_table
+            from .g_s_export_helpers import get_timeseries_from_table
             inp_dict['TIMESERIES'] = {
                 'data': get_timeseries_from_table(
                     raw_data_dict['timeseries'],
@@ -906,7 +876,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         # rain gages
         from .g_s_subcatchments import get_raingage_from_qgis_row
-        if 'raingages_raw' in raw_data_dict.keys():
+        if 'raingages_raw' in export_data.keys():
             feedback.setProgressText(self.tr('[RAINGAGES] section'))
             rg_cols = list(def_qgis_fields_dict['RAINGAGES'].keys())
             rg_features_df = raw_data_dict['raingages_raw']
@@ -933,7 +903,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict['SYMBOLS'] = {'data': rg_symbols_df}
 
         # quality
-        if 'quality' in raw_data_dict.keys():
+        if 'quality' in export_data.keys():
             feedback.setProgressText(self.tr('[POLLUTANTS] and [LANDUSES] section'))
             from .g_s_quality import get_quality_params_from_table
             if 'SUBCATCHMENTS' in inp_dict.keys():

@@ -114,7 +114,7 @@ def load_layer_to_df(
                 + ': ' + ', '.join(missing_cols)
             )
 
-    # check for missing and duplcat names and null or missing geometries
+    # check for missing and duplicat names and null or missing geometries
     check_list = [[f['Name'], f.id(), f.hasGeometry()] for f in vlayer.getFeatures()]
     seen = set()
     duplicat_names_list = []
@@ -168,25 +168,45 @@ def load_layer_to_df(
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
     return df
 
-# layers with geometry
-def read_layers_direct(
-    raw_layers_dict,
+
+def read_data_direct(
+    export_data,
     select_cols=[],
     with_id=False,
     feedback = QgsProcessingFeedback
 ):
     """
-    reads layers from swmm model
-    :param dict raw_layers_dict
+    reads layers from swmm model (main read function)
+    :param dict export_data
     :param list select_cols
     :param bool with_id
     :param QgsProcessingFeedback feedback
-    :return: dict
     """
-    data_dict = {n: load_layer_to_df(d, select_cols, with_id, feedback) for n, d in raw_layers_dict.items() if d is not None}
-    data_dict_out = {n: d for n, d in data_dict.items() if len(d) > 0}
-    data_dict_out = {n: del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
-    return data_dict_out
+    for k in list(export_data.keys()):
+        if export_data[k]['d_type'] == 'layer':  # layers with geometry
+            data_df = load_layer_to_df(
+                export_data[k]['file'],
+                select_cols,
+                with_id,
+                feedback
+            )
+            if len(data_df) > 0:
+                data_df = del_none_bool(data_df)
+                export_data[k]['data'] = data_df
+            else:
+                del export_data[k]
+        else:  # table
+            table_file = export_data[k]['file']
+            sheets_list = list(def_tables_dict[k]['tables'].keys())
+            export_data[k]['data'] = {}
+            for sheet_name in sheets_list:
+                export_data[k]['data'][sheet_name] = read_data_from_table_direct(
+                    table_file,
+                    sheet=sheet_name,
+                    feedback=feedback
+                )
+            
+
 
 
 # tables
