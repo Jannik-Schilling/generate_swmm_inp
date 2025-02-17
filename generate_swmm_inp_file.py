@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2024-08-07'
+__date__ = '2024-02-17'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 
@@ -39,25 +39,28 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterDefinition,
+    QgsProcessingException,
     QgsProcessingParameterFile,
     QgsProcessingParameterFileDestination,
     QgsProcessingParameterVectorLayer
+)
+# imports from own scripts
+from .g_s_defaults import (
+    def_qgis_fields_dict,
+    def_sections_geoms_dict,
+    def_tables_dict,
+    curve_cols_dict,
+    def_sections_dict
 )
 from .g_s_export_helpers import (
     check_columns,
     check_deprecated,
     data_preparation,
+    get_annotations_from_raw_df,
     get_coords_from_geometry,
     use_z_if_available
 )
-from .g_s_defaults import (
-    annotation_field_name,
-    def_qgis_fields_dict,
-    def_sections_geoms_list,
-    def_tables_dict,
-    curve_cols_dict,
-    def_sections_dict
-)
+from .g_s_links import del_first_last_vt
 from .g_s_read_write_data import (
     read_data_direct
 )
@@ -286,8 +289,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         use_z_bool = self.parameterAsBoolean(parameters, self.USE_Z_VALS, context)  # del
         
         export_params = {
-            'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),
+            'all_nodes': list(),
+            'link_offsets': 'elevation',
             'main_infiltration_method': None,
+            'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),
         }
 
         # initializing the input dictionary
@@ -311,10 +316,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_dict['COORDINATES'] = {'data': pd.DataFrame()}
         inp_dict['VERTICES'] = {'data': dict()}
 
+
         # putting together all dita in a dict
         export_data = {
             # layers
-            'RAINGAGE': {'file': self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)},
+            'RAINGAGES': {'file': self.parameterAsVectorLayer(parameters, self.FILE_RAINGAGES, context)},
             'OUTFALLS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_OUTFALLS, context)},
             'STORAGE': {'file': self.parameterAsVectorLayer(parameters, self.FILE_STORAGES, context)},
             'SUBCATCHMENTS': {'file': self.parameterAsVectorLayer(parameters, self.FILE_SUBCATCHMENTS, context)},
@@ -340,7 +346,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         
         # adding data type information
         for k in export_data.keys():
-            if k in def_sections_geoms_list:
+            if k in def_sections_geoms_dict.keys():
                 export_data[k]['d_type'] = 'layer'
             elif k in def_tables_dict.keys():
                 export_data[k]['d_type'] = 'table'
@@ -371,22 +377,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         feedback.setProgressText('Reading layers and tables...')   
         read_data_direct(export_data, feedback = feedback)
         feedback.setProgressText(self.tr('done \n'))
-        print(export_data)
+
 
 
         feedback.setProgressText(self.tr('preparing data for input file:'))
-        
-        # function for annotations / descriptions
-        def get_annotations_from_raw_df(df_raw):
-            if annotation_field_name in df_raw.columns:
-                annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}  
-                annot_dict = {k: v for k, v in annot_dict.items() if pd.notna(v)}
-                annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
-            else:
-                annot_dict = {}
-            return annot_dict
-
-            
         # main handler
         def data_export_handler(
             data_name,
@@ -394,26 +388,28 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             inp_dict,
             export_params
         ):
+            feedback.setProgressText(self.tr(data_name+'...'))
+            data_entry = export_data[data_name]['data']
+            data_type = export_data[data_name]['d_type']
+            f_name = export_data[data_name]['file']
             # check columns
-            data_entry = export_data[data_name]
-            data_type = data_entry['d_type']
-            f_name = data_entry['file']
             if data_type == 'table':
-                for sheet_name in data_entry['data'].keys():
+                for sheet_name in data_entry.keys():
                     cols_to_check = list(def_tables_dict[data_name]['tables'][sheet_name].keys())
                     check_columns(
                         f_name,
                         cols_to_check,
-                        data_entry['data'][sheet_name].keys()
+                        data_entry[sheet_name].keys()
                     )
             else:
-                cols_to_check = list(def_qgis_fields_dict[section].keys())
-                check_columns(
-                    f_name,
-                    cols_to_check,
-                    data_entry['data'].keys()
-                )
-
+                if data_name != 'STORAGE':  # check columns is performed within get_storages_from_geodata for different storage types
+                    cols_to_check = list(def_qgis_fields_dict[data_name].keys())
+                    check_columns(
+                        f_name,
+                        cols_to_check,
+                        data_entry.keys()
+                    )
+                
             # data preparation
             processed_data_dict = data_preparation(
                 data_name,
@@ -423,367 +419,141 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             
             # geometry
             if data_type == 'layer':
-                sections_coords = get_coords_from_geometry(raw_df)
-                use_z_if_available()
-                adjust_geometry()
-            
+                sections_coords = get_coords_from_geometry(data_entry)
+                if data_name in ['RAINGAGES', 'SUBCATCHMENTS']:
+                    if data_name == 'RAINGAGES':
+                        # rename coordinates
+                        sections_coords['SYMBOLS'] = sections_coords.pop('COORDINATES')
+                        if 'Z_Coord' in sections_coords['SYMBOLS']['data'].keys():
+                            sections_coords['SYMBOLS']['data'].drop("Z_Coord", axis=1, inplace=True)
+                    inp_dict.update(sections_coords)  # write to inp dict
+                        
+                else:
+                    # use z coordinate if desired
+                    processed_data_dict[data_name]['data'], sections_coords =  use_z_if_available(
+                        processed_data_dict[data_name]['data'],
+                        sections_coords,
+                        export_params['use_z_bool'],
+                        feedback,
+                        export_params['link_offsets'],
+                        layer_name = f_name
+                    )
+                
+                # write to inp dict
+                if def_sections_geoms_dict[data_name] == 'LineString':
+                    vertices_before = sections_coords['VERTICES']['data']
+                    vertices_adjusted = {k: del_first_last_vt(v) for k, v in vertices_before.items() if len(v) > 2}
+                    inp_dict['VERTICES']['data'].update(vertices_adjusted)
+                elif (
+                    def_sections_geoms_dict[data_name] == 'Point' and
+                    data_name != 'RAINGAGES'
+                ):
+                    # add nodes names to all_nodes list
+                    new_nodes = processed_data_dict[data_name]['data']['Name'].tolist()
+                    export_params['all_nodes'] = export_params['all_nodes']+new_nodes
+                    # update coordinates
+                    inp_dict['COORDINATES']['data'] = pd.concat(
+                        [
+                            inp_dict['COORDINATES']['data'],
+                            sections_coords['COORDINATES']['data']
+                        ],
+                        ignore_index = True
+                    )
+                    inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].reset_index(drop=True)
+                else:
+                    pass  # subcatchments and raingages are already written
+                     
             # annotations
-            if data_name != 'OPTIONS':
-                #annotations_df = get_annotations_from_raw_df(
-                #    raw_data_dict['conduits_raw'].copy()
-                #)
+            if data_name == 'OPTIONS':
                 annotations_df = None
-                if annotations_df is not None:
-                    # das ggf. für jede subgruppe
-                    inp_dict[data_name]['annotations'] = annotations_df
-
+            else:
+                annotations_df = get_annotations_from_raw_df(data_entry.copy())
                 
             # write to inp dict
+            if 'XSECTIONS' in processed_data_dict:
+                xsections_data = processed_data_dict.pop('XSECTIONS')
+                inp_dict['XSECTIONS']['data'] = pd.concat(
+                    [
+                        inp_dict['XSECTIONS']['data'],
+                        xsections_data['data']
+                    ],
+                    ignore_index = True
+                )
+                inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
             inp_dict.update(processed_data_dict)
+            if annotations_df is not None:
+                # das ggf. für jede subgruppe
+                inp_dict[data_name]['annotations'] = annotations_df
 
-                
+
+        
+        
+        # check deprecated data
+        for data_name in [
+            'CONDUITS',
+            'ORIFICES',
+        ]:
+            export_data[data_name]['data'] = check_deprecated(
+                swmm_data_file=export_data[data_name]['file'],
+                swmm_section=data_name,
+                df=export_data[data_name]['data'],
+                cols_deprecated={'Shape': 'XsectShape'},
+                feedback=feedback
+            )
 
 
-        data_export_handler(
+        # run export handler
+        for data_name in [
             'OPTIONS',
-            export_data,
-            inp_dict,
-            export_params
-        )
+            'SUBCATCHMENTS',
+            'CONDUITS',
+            'PUMPS',
+            'WEIRS',
+            'OUTLETS',
+            'ORIFICES',
+            'JUNCTIONS',
+            'OUTFALLS',
+            'STORAGE',
+            'DIVIDERS',
+            'RAINGAGES',
+        ]:
+            if data_name in export_data.keys():
+                data_export_handler(
+                    data_name,
+                    export_data,
+                    inp_dict,
+                    export_params
+                )
+        
 
-        print(export_params)
+        print('ou')
+        print(inp_dict['OUTFALLS'])
+        feedback.setProgressText(self.tr('done \n'))
 
 
 
 
-        # subcatchments
-        if 'subcatchments_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[SUBCATCHMENTS] section'))
-            from .g_s_subcatchments import get_subcatchments_from_layer
-            # check if all columns exist
-            all_sub_cols = list(def_qgis_fields_dict['SUBCATCHMENTS'].keys())
-            subc_layer_name = 'Subcatchments Layer'
-            check_columns(
-                subc_layer_name,
-                all_sub_cols,
-                raw_data_dict['subcatchments_raw'].keys()
-            )
-            subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
-                raw_data_dict['subcatchments_raw'].copy(),
-                export_params['main_infiltration_method']
-            )
-            inp_dict['POLYGONS'] = {'data':
-                get_coords_from_geometry(raw_data_dict['subcatchments_raw'])
-            }
-            subcatchments_annot = get_annotations_from_raw_df(
-                raw_data_dict['subcatchments_raw'].copy()
-            )
-            inp_dict['SUBCATCHMENTS'] = {
-                'data': subcatchments_df,
-                'annotations': subcatchments_annot
-            }
-            inp_dict['SUBAREAS'] = {'data': subareas_df}
-            inp_dict['INFILTRATION'] = {'data': infiltration_df}
 
-        # conduits
-        if 'conduits_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[CONDUITS] section'))
-            raw_data_dict['conduits_raw'] = check_deprecated(
-                swmm_data_file='Conduits Layer',
-                swmm_section='CONDUITS',
-                df=raw_data_dict['conduits_raw'],
-                cols_deprecated={'Shape': 'XsectShape'},
-                feedback=feedback
-            )
-            from .g_s_links import get_conduits_from_shapefile, del_first_last_vt
-            conduits_df, xsections_df, losses_df = get_conduits_from_shapefile(raw_data_dict['conduits_raw'].copy())
-            conduits_verts = get_coords_from_geometry(raw_data_dict['conduits_raw'].copy())
-            conduits_df, conduits_verts = use_z_if_available(
-                conduits_df,
-                conduits_verts,
-                use_z_bool,
-                feedback,
-                'lines',
-                layer_name='conduits_layer'
-            )
-            conduits_verts = {k: del_first_last_vt(v) for k, v in conduits_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
-            inp_dict['VERTICES']['data'].update(conduits_verts)
-            conduits_annot = get_annotations_from_raw_df(
-                raw_data_dict['conduits_raw'].copy()
-            )
-            inp_dict['CONDUITS'] = {
-                'data': conduits_df,
-                'annotations': conduits_annot
-            }
-            inp_dict['XSECTIONS'] = {'data': xsections_df}
-            inp_dict['LOSSES'] = {'data': losses_df}
+            
 
-        # pumps
-        if 'pumps_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[PUMPS] section'))
-            from .g_s_links import get_pumps_from_shapefile, del_first_last_vt
-            pumps_df = get_pumps_from_shapefile(raw_data_dict['pumps_raw'].copy())
-            pumps_annot = get_annotations_from_raw_df(
-                raw_data_dict['pumps_raw'].copy()
-            )
-            pumps_verts = get_coords_from_geometry(raw_data_dict['pumps_raw'].copy())
-            pumps_df, pumps_verts = use_z_if_available(
-                pumps_df,
-                pumps_verts,
-                False,
-                feedback,
-                geom_type = 'lines'
-            )
-            pumps_verts = {k: del_first_last_vt(v) for k, v in pumps_verts.items() if len(v) > 2}
-            pumps_inp_cols = def_sections_dict['PUMPS']
-            inp_dict['VERTICES']['data'].update(pumps_verts)
-            inp_dict['PUMPS'] = {
-                'data': pumps_df[pumps_inp_cols],
-                'annotations': pumps_annot
-            }
 
-        # weirs
-        if 'weirs_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[WEIRS] section'))
-            from .g_s_links import get_weirs_from_shapefile, del_first_last_vt
-            weirs_df, xsections_df = get_weirs_from_shapefile(raw_data_dict['weirs_raw'])
-            weirs_annot = get_annotations_from_raw_df(
-                raw_data_dict['weirs_raw'].copy()
-            )
-            weirs_verts = get_coords_from_geometry(raw_data_dict['weirs_raw'].copy())
-            weirs_df, weirs_verts = use_z_if_available(
-                weirs_df,
-                weirs_verts,
-                False,
-                feedback,
-                geom_type = 'lines'
-            )
-            weirs_verts = {k: del_first_last_vt(v) for k, v in weirs_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
-            inp_dict['VERTICES']['data'].update(weirs_verts)
-            inp_dict['XSECTIONS']['data'] = pd.concat(
-                [inp_dict['XSECTIONS']['data'], xsections_df],
-                ignore_index = True
-            )
-            inp_dict['WEIRS'] = {
-                'data': weirs_df,
-                'annotations': weirs_annot
-            }
 
-        # outlets
-        if 'outlets_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[OUTLETS] section'))
-            from .g_s_links import get_outlets_from_shapefile, del_first_last_vt
-            outlets_annot = get_annotations_from_raw_df(
-                raw_data_dict['outlets_raw'].copy()
-            )            
-            outlets_df = get_outlets_from_shapefile(raw_data_dict['outlets_raw'])
-            inp_dict['OUTLETS'] = {
-                'data': outlets_df,
-                'annotations': outlets_annot
-            }
-            outlets_verts = get_coords_from_geometry(raw_data_dict['outlets_raw'].copy())
-            outlets_df, outlets_verts = use_z_if_available(
-                outlets_df,
-                outlets_verts,
-                False,
-                feedback,
-                geom_type = 'lines'
-            )
-            outlets_verts = {k: del_first_last_vt(v) for k, v in outlets_verts.items() if len(v) > 2}
-            inp_dict['VERTICES']['data'].update(outlets_verts)
 
-        # optional: transects for conduits or weirs
-        if 'conduits_raw' in export_data.keys() or 'weirs_raw' in export_data.keys():
-            if 'transects' in raw_data_dict.keys():
-                feedback.setProgressText(self.tr('[TRANSECTS] section'))
-                from .g_s_links import get_transects_from_table
-                transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
-                inp_dict['TRANSECTS'] = {'data': transects_string_list}
+  
 
-        # orifices
-        if 'orifices_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[ORIFICES] section'))
-            raw_data_dict['orifices_raw'] = check_deprecated(
-                swmm_data_file='Orifices Layer',
-                swmm_section='ORIFICES',
-                df=raw_data_dict['orifices_raw'],
-                cols_deprecated={'Shape': 'XsectShape'},
-                feedback=feedback
-            )
-            from .g_s_links import get_orifices_from_shapefile, del_first_last_vt
-            orifices_df, xsections_df = get_orifices_from_shapefile(raw_data_dict['orifices_raw'])
-            orifices_annot = get_annotations_from_raw_df(
-                raw_data_dict['orifices_raw'].copy()
-            )
-            orifices_verts = get_coords_from_geometry(raw_data_dict['orifices_raw'].copy())
-            orifices_df, orifices_verts = use_z_if_available(
-                orifices_df,
-                orifices_verts,
-                False,
-                feedback,
-                geom_type = 'lines'
-            )
-            orifices_verts = {k: del_first_last_vt(v) for k, v in orifices_verts.items() if len(v) > 2}  # first and last vertices are in nodes coordinates anyway
-            inp_dict['VERTICES']['data'].update(orifices_verts)
-            inp_dict['XSECTIONS']['data'] = pd.concat(
-                [inp_dict['XSECTIONS']['data'], xsections_df],
-                ignore_index = True
-            )
-            inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
-            inp_dict['ORIFICES'] = {
-                'data': orifices_df,
-                'annotations': orifices_annot
-            }
+        #  Tabelle! optional: transects for conduits or weirs
+        #if 'conduits_raw' in export_data.keys() or 'weirs_raw' in export_data.keys():
+        #    if 'transects' in raw_data_dict.keys():
+        #        feedback.setProgressText(self.tr('[TRANSECTS] section'))
+        #        from .g_s_links import get_transects_from_table
+        #        transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
+        #        inp_dict['TRANSECTS'] = {'data': transects_string_list}
 
-        feedback.setProgress(40)
 
-        # nodes (junctions, outfalls, orifices)
-        all_nodes = list()
-        if 'junctions_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[JUNCTIONS] section'))
-            # check columns
-            junctions_cols = list(def_qgis_fields_dict['JUNCTIONS'].keys())
-            junctions_layer_name = 'Junctions Layer'
-            check_columns(
-                junctions_layer_name,
-                junctions_cols,
-                raw_data_dict['junctions_raw'].keys()
-            )
-            junctions_df = raw_data_dict['junctions_raw'].copy()
-            junctions_df['Name'] = [str(x) for x in junctions_df['Name']]
-            junctions_df['MaxDepth'] = junctions_df['MaxDepth'].fillna(0)
-            junctions_df['InitDepth'] = junctions_df['InitDepth'].fillna(0)
-            junctions_df['SurDepth'] = junctions_df['SurDepth'].fillna(0)
-            junctions_df['Aponded'] = junctions_df['Aponded'].fillna(0)
-            junctions_annot = get_annotations_from_raw_df(
-                raw_data_dict['junctions_raw'].copy()
-            )
-            junctions_coords = get_coords_from_geometry(junctions_df)
-            junctions_inp_cols = def_sections_dict['JUNCTIONS']
-            junctions_df, junctions_coords = use_z_if_available(
-                junctions_df,
-                junctions_coords,
-                use_z_bool,
-                feedback,
-                geom_type='Points',
-                layer_name='junctions_layer'
-            )
-            inp_dict['JUNCTIONS'] = {
-                'data': junctions_df[junctions_inp_cols],
-                'annotations': junctions_annot
-            }
-            inp_dict['COORDINATES']['data'] = pd.concat(
-                [inp_dict['COORDINATES']['data'], junctions_coords],
-                ignore_index = True
-            )
-            all_nodes = all_nodes+junctions_df['Name'].tolist()
-        if 'outfalls_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[OUTFALLS] section'))
-            outfalls_cols = list(def_qgis_fields_dict['OUTFALLS'].keys())
-            outfalls_layer_name = 'Outfalls Layer'
-            check_columns(
-                outfalls_layer_name,
-                outfalls_cols,
-                raw_data_dict['outfalls_raw'].keys()
-            )
-            from .g_s_nodes import get_outfalls_from_shapefile
-            outfalls_df = get_outfalls_from_shapefile(raw_data_dict['outfalls_raw'].copy())
-            outfalls_coords = get_coords_from_geometry(outfalls_df)
-            outfalls_annot = get_annotations_from_raw_df(
-                raw_data_dict['outfalls_raw'].copy()
-            )
-            outfalls_df, outfalls_coords = use_z_if_available(
-                outfalls_df,
-                outfalls_coords,
-                use_z_bool,
-                feedback,
-                geom_type='Points',
-                layer_name='outfalls_layer'
-            )
-            inp_dict['OUTFALLS'] = {
-                'data': outfalls_df,
-                'annotations': outfalls_annot
-            }
-            inp_dict['COORDINATES']['data'] = pd.concat(
-                [inp_dict['COORDINATES']['data'], outfalls_coords],
-                ignore_index = True
-            )
-            all_nodes = all_nodes+outfalls_df['Name'].tolist()
-
-        if 'storages_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[STORAGES] section'))
-            # check columns is performed within get_storages_from_geodata for different storage types
-            from .g_s_nodes import get_storages_from_geodata
-            storage_df = get_storages_from_geodata(
-                raw_data_dict['storages_raw'].copy()
-            )
-            storage_annot = get_annotations_from_raw_df(
-                raw_data_dict['storages_raw'].copy()
-            )
-            storage_coords = get_coords_from_geometry(raw_data_dict['storages_raw'].copy())
-            storage_df, storage_coords = use_z_if_available(
-                storage_df,
-                storage_coords,
-                use_z_bool,
-                feedback,
-                geom_type='Points',
-                layer_name='storages_layer'
-            )
-            storage_inp_cols = [
-                'Name', 'Elevation', 'MaxDepth','InitDepth','Type',
-                'Shape1','Shape2','Shape3','SurDepth','Fevap','Psi',
-                'Ksat','IMD'
-            ]
-            storage_df = storage_df[storage_inp_cols]
-            inp_dict['COORDINATES']['data'] = pd.concat(
-                [inp_dict['COORDINATES']['data'], storage_coords],
-                ignore_index = True
-            )
-            inp_dict['STORAGE'] = {
-                'data': storage_df,
-                'annotations': storage_annot
-            }
-            all_nodes = all_nodes+storage_df['Name'].tolist()
-        if 'dividers_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[DIVIDERS] section'))
-            dividers_df = raw_data_dict['dividers_raw'].copy()
-            dividers_coords = get_coords_from_geometry(dividers_df)
-            # check columns
-            dividers_cols = list(def_qgis_fields_dict['DIVIDERS'].keys())
-            dividers_layer_name = 'Dividers Layer'
-            check_columns(dividers_layer_name,
-                          dividers_cols,
-                          dividers_df.keys())
-            dividers_df['Name'] = [str(x) for x in dividers_df['Name']]
-            dividers_df['CutoffFlow'] = dividers_df['CutoffFlow'].fillna('')
-            dividers_df['Curve'] = dividers_df['Curve'].fillna('')
-            dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
-            dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
-            dividers_df['WeirCoeff'] = dividers_df['WeirCoeff'].fillna('')
-            dividers_annot = get_annotations_from_raw_df(
-                raw_data_dict['dividers_raw'].copy()
-            )
-            dividers_df, dividers_coords = use_z_if_available(
-                dividers_df,
-                dividers_coords,
-                use_z_bool,
-                feedback,
-                geom_type='Points',
-                layer_name='dividers_layer'
-            )
-            inp_dict['DIVIDERS'] = {
-                'data': dividers_df,
-                'annotations': dividers_annot
-            }
-            inp_dict['COORDINATES']['data'] = pd.concat(
-                [inp_dict['COORDINATES']['data'], dividers_coords],
-                ignore_index = True
-            )
-            all_nodes = all_nodes+dividers_df['Name'].tolist()
-        feedback.setProgress(50)
+ 
 
         # inflows
-        if len(all_nodes) > 0:
+        if len(export_params['all_nodes']) > 0:
             if 'inflows' in export_data.keys():
                 feedback.setProgressText(self.tr('[INFLOWS] section'))
                 from .g_s_nodes import get_inflows_from_table
@@ -874,33 +644,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             }
         feedback.setProgress(70)
 
-        # rain gages
-        from .g_s_subcatchments import get_raingage_from_qgis_row
-        if 'raingages_raw' in export_data.keys():
-            feedback.setProgressText(self.tr('[RAINGAGES] section'))
-            rg_cols = list(def_qgis_fields_dict['RAINGAGES'].keys())
-            rg_features_df = raw_data_dict['raingages_raw']
-            check_columns(
-                file_raingages,
-                rg_cols,
-                rg_features_df.columns
-            )
-            raingages_annot = get_annotations_from_raw_df(
-                rg_features_df
-            )
-            rg_features_df = rg_features_df.apply(
-                lambda x: get_raingage_from_qgis_row(x),
-                axis=1
-            )
-            rg_symbols_df = get_coords_from_geometry(rg_features_df)
-            rg_symbols_df.drop("Z_Coord", axis=1, inplace=True)
-            rg_inp_cols = def_sections_dict['RAINGAGES']
-            rg_features_df = rg_features_df[rg_inp_cols]  # drop unnecessary
-            inp_dict['RAINGAGES'] = {
-                'data': rg_features_df,
-                'annotations': raingages_annot
-            }
-            inp_dict['SYMBOLS'] = {'data': rg_symbols_df}
+
 
         # quality
         if 'quality' in export_data.keys():
@@ -919,7 +663,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                         raw_data_dict['quality']
                     )
                 }
-        feedback.setProgressText(self.tr('done \n'))
+
         feedback.setProgress(80)
 
         # writing inp file

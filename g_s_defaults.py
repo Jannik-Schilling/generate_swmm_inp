@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2024-03-03'
+__date__ = '2025-02-17'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 import os

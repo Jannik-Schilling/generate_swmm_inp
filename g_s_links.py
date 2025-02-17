@@ -67,15 +67,9 @@ def get_conduits_from_shapefile(conduits_raw):
     removes columns which are not needed, replaces empty values with '' or '*'
     :param pd.DataFrame conduits_raw
     """
-    # check if all columns exist
-    qgis_conduits_cols = list(def_qgis_fields_dict['CONDUITS'].keys())
     conduits_cols = def_sections_dict['CONDUITS']
     xsections_cols = def_sections_dict['XSECTIONS']
     losses_cols = def_sections_dict['LOSSES']
-    cond_layer_name = 'Conduits Layer'
-    check_columns(cond_layer_name,
-                  qgis_conduits_cols,
-                  conduits_raw.keys())
     conduits_df = conduits_raw[conduits_cols].copy()
     conduits_df = conduits_df.apply(lambda x: x.astype("string"), axis = 0)
     conduits_df['Name'] = [str(x) for x in conduits_df['Name']]
@@ -170,14 +164,7 @@ def del_first_last_vt(link):
 # pumps
 def get_pumps_from_shapefile(pumps_raw):
     """prepares pumps data for writing an input file"""
-    # check if all columns exist
     pumps_cols = list(def_qgis_fields_dict['PUMPS'].keys())
-    pumps_layer_name = 'Pumps Layer'
-    check_columns(
-        pumps_layer_name,
-        pumps_cols,
-        pumps_raw.keys()
-    )
     pumps_df = pumps_raw[pumps_cols].copy()
     pumps_df['Name'] = [str(x) for x in pumps_df['Name']]
     pumps_df['PumpCurve'] = pumps_df['PumpCurve'].fillna('*')
@@ -200,14 +187,7 @@ weirs_shape_dict = {
 
 def get_weirs_from_shapefile(weirs_raw):
     """prepares weirs data for writing an input file"""
-    weirs_qgis_cols = list(def_qgis_fields_dict['WEIRS'].keys())
     weirs_inp_cols = def_sections_dict['WEIRS']
-    weirs_layer_name = 'Weirs Layer'
-    check_columns(
-        weirs_layer_name,
-        weirs_qgis_cols,
-        weirs_raw.columns
-    )
     weirs_df = weirs_raw.copy()
     weirs_df['Name'] = [str(x) for x in weirs_df['Name']]
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
@@ -248,14 +228,6 @@ def get_orifices_from_shapefile(orifices_raw):
     prepares orifices data for writing an input file
     param: pd.DataFrame orifices_raw
     """
-    # check if columns exist
-    all_orifices_cols = list(def_qgis_fields_dict['ORIFICES'].keys())
-    orifices_layer_name = 'Orifices Layer'
-    check_columns(
-        orifices_layer_name,
-        all_orifices_cols,
-        orifices_raw.columns
-    )
     orifices_inp_cols = def_sections_dict['ORIFICES']
     orifices_df = orifices_raw.copy()
     orifices_df['Name'] = [str(x) for x in orifices_df['Name']]
@@ -282,20 +254,15 @@ def get_orifices_from_shapefile(orifices_raw):
 
 
 # outlets
+def get_outl_curve(outl_row):
+    """selects curve data according to rating curve type"""
+    if outl_row['RateCurve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
+        return outl_row['Qcoeff']
+    else:
+        return outl_row['CurveName']
+
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
-    def get_outl_curve(outl_row):
-        """selects curve data according to rating curve type"""
-        if outl_row['RateCurve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
-            return outl_row['Qcoeff']
-        else:
-            return outl_row['CurveName']
-    # check columns
-    outlets_cols = list(def_qgis_fields_dict['OUTLETS'].keys())
-    outlets_layer_name = 'Outlets Layer'
-    check_columns(outlets_layer_name,
-                  outlets_cols,
-                  outlets_raw.keys())
     outlets_raw['Name'] = [str(x) for x in outlets_raw['Name']]
     outlets_raw['Qcoeff'] = outlets_raw['Qcoeff'].fillna(1)
     outlets_raw['CurveName'] = outlets_raw['CurveName'].fillna('*')

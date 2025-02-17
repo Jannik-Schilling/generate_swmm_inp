@@ -43,7 +43,9 @@ from .g_s_defaults import (
 # Subcatchments
 def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     """
-    reads subcatchment shapefile
+    reads subcatchment layer
+    :param pd.DataFrame subcatchments_df
+    :param str main_infiltration_method
     """
 
     def rename_for_infiltation(subc_row, main_infiltration_method):

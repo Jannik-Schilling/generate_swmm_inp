@@ -32,11 +32,28 @@ from qgis.core import (
     QgsProcessingException
 )
 from .g_s_defaults import (
+    annotation_field_name,
     def_tables_dict,
+    def_sections_dict,
     annotation_field_name
 )
 
 
+
+
+def get_annotations_from_raw_df(df_raw):
+    """
+    extracts annotations / descriptions from the dataframe
+    :param pd.DataFrame df_raw
+    :return: dict
+    """
+    if annotation_field_name in df_raw.columns:
+        annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}  
+        annot_dict = {k: v for k, v in annot_dict.items() if pd.notna(v)}
+        annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
+    else:
+        annot_dict = {}
+    return annot_dict
 
 
 
@@ -50,14 +67,15 @@ def data_preparation(data_name, data_entry, export_params):
     if data_name == 'OPTIONS':
         from .g_s_options import get_options_from_table
         options_df, main_infiltration_method = get_options_from_table(
-                data_entry['data']['OPTIONS'].copy()
+                data_entry['OPTIONS'].copy()
             )
         export_params['main_infiltration_method'] = main_infiltration_method
         return {'OPTIONS': {'data': options_df}}
-     elif data_name == 'SUBCATCHMENTS':
+    
+    elif data_name == 'SUBCATCHMENTS':
         from .g_s_subcatchments import get_subcatchments_from_layer
         subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
-            data_entry['data']['SUBCATCHMENTS'].copy(),
+            data_entry.copy(),
             export_params['main_infiltration_method']
         )
         return {
@@ -69,7 +87,7 @@ def data_preparation(data_name, data_entry, export_params):
     elif data_name == 'CONDUITS':
         from .g_s_links import get_conduits_from_shapefile
         conduits_df, xsections_df, losses_df = get_conduits_from_shapefile(
-            data_entry['data']['CONDUITS'].copy()
+            data_entry.copy()
         )
         return {
             'CONDUITS': {'data': conduits_df},
@@ -79,12 +97,12 @@ def data_preparation(data_name, data_entry, export_params):
         
     elif data_name == 'PUMPS':
         from .g_s_links import get_pumps_from_shapefile
-        pumps_df = get_pumps_from_shapefile(data_entry['data']['PUMPS'].copy())
+        pumps_df = get_pumps_from_shapefile(data_entry.copy())
         return {'PUMPS': {'data': pumps_df}}
         
     elif data_name == 'WEIRS':
         from .g_s_links import get_weirs_from_shapefile
-        weirs_df, xsections_df = get_weirs_from_shapefile(data_entry['data']['WEIRS'].copy())
+        weirs_df, xsections_df = get_weirs_from_shapefile(data_entry.copy())
         return {
             'WEIRS': {'data': weirs_df},
             'XSECTIONS': {'data': xsections_df}
@@ -92,41 +110,42 @@ def data_preparation(data_name, data_entry, export_params):
         
     elif data_name == 'OUTLETS':
         from .g_s_links import get_outlets_from_shapefile
-        outlets_df = get_outlets_from_shapefile(data_entry['data']['OUTLETS'].copy())
+        outlets_df = get_outlets_from_shapefile(data_entry.copy())
         return {'OUTLETS': {'data': outlets_df}}
         
     elif data_name == 'ORIFICES':
         from .g_s_links import get_orifices_from_shapefile
-        orifices_df, xsections_df = get_orifices_from_shapefile(data_entry['data']['ORIFICES'].copy())
+        orifices_df, xsections_df = get_orifices_from_shapefile(data_entry.copy())
         return {
             'ORIFICES': {'data': orifices_df},
             'XSECTIONS': {'data': xsections_df}
         }
         
     elif data_name == 'JUNCTIONS':
-        from .g_s_nodes import get_junctions_from_shapefile
-        junctions_df = get_junctions_from_shapefile(data_entry['data']['JUNCTIONS'].copy())
+        from .g_s_nodes import get_junctions_from_layer
+        junctions_df = get_junctions_from_layer(data_entry.copy())
         return {'JUNCTIONS': {'data': junctions_df}}
         
     elif data_name == 'OUTFALLS':
         from .g_s_nodes import get_outfalls_from_shapefile
-        outfalls_df = get_outfalls_from_shapefile(data_entry['data']['OUTFALLS'].copy())
+        outfalls_df = get_outfalls_from_shapefile(data_entry.copy())
         return {'OUTFALLS': {'data': outfalls_df}}
         
-    elif data_name == 'STORAGES':
-        from .g_s_nodes import get_storages_from_shapefile
-        storages_df = get_storages_from_shapefile(data_entry['data']['STORAGES'].copy())
-        return {'STORAGES': {'data': storages_df}}
+    elif data_name == 'STORAGE':
+        from .g_s_nodes import get_storages_from_layer
+        storages_df = get_storages_from_layer(data_entry.copy())
+        return {'STORAGE': {'data': storages_df}}
         
     elif data_name == 'DIVIDERS':
-        from .g_s_nodes import get_dividers_from_shapefile
-        dividers_df = get_dividers_from_shapefile(data_entry['data']['DIVIDERS'].copy())
+        from .g_s_nodes import get_dividers_from_layer
+        dividers_df = get_dividers_from_layer(data_entry.copy())
         return {'DIVIDERS': {'data': dividers_df}}
-
+    
+    #######
     elif data_name == 'CURVES':
         from .g_s_export_helpers import get_curves_from_table
         curves_dict = get_curves_from_table(
-            data_entry['data']['CURVES'],
+            data_entry['CURVES'],
             name_col='Name'
         )
         return {'CURVES': {'data': curves_dict}}
@@ -134,7 +153,7 @@ def data_preparation(data_name, data_entry, export_params):
     elif data_name == 'PATTERNS':
         from .g_s_export_helpers import get_patterns_from_table
         patterns_dict = get_patterns_from_table(
-            data_entry['data']['PATTERNS'],
+            data_entry['PATTERNS'],
             name_col='Name'
         )
         return {'PATTERNS': {'data': patterns_dict}}
@@ -142,7 +161,7 @@ def data_preparation(data_name, data_entry, export_params):
     elif data_name == 'TIMESERIES':
         from .g_s_export_helpers import get_timeseries_from_table
         timeseries_dict = get_timeseries_from_table(
-            data_entry['data']['TIMESERIES'],
+            data_entry['TIMESERIES'],
             name_col='Name',
             feedback=export_params['feedback']
         )
@@ -151,7 +170,7 @@ def data_preparation(data_name, data_entry, export_params):
     elif data_name == 'INFLOWS':
         from .g_s_nodes import get_inflows_from_table
         inflows_dict = get_inflows_from_table(
-            data_entry['data']['INFLOWS'],
+            data_entry['INFLOWS'],
             all_nodes,
             feedback=export_params['feedback']
         )
@@ -159,8 +178,19 @@ def data_preparation(data_name, data_entry, export_params):
     
     elif data_name == 'QUALITY':
         from .g_s_quality import get_quality_params_from_table
-        quality_df = get_quality_params_from_table(data_entry['data']['QUALITY'].copy())
+        quality_df = get_quality_params_from_table(data_entry['QUALITY'].copy())
         return {'QUALITY': {'data': quality_df}}
+        
+    elif data_name == 'RAINGAGES':
+        from .g_s_subcatchments import get_raingage_from_qgis_row
+        rg_features_df = data_entry.copy()
+        rg_features_df = rg_features_df.apply(
+                lambda x: get_raingage_from_qgis_row(x),
+                axis=1
+            )
+        rg_inp_cols = def_sections_dict['RAINGAGES']
+        rg_features_df = rg_features_df[rg_inp_cols]  # drop unnecessary
+        return {'RAINGAGES': {'data': rg_features_df}}
         
     else:
         raise QgsProcessingException(f'Unknown data name: {data_name}')
@@ -175,32 +205,39 @@ def use_z_if_available(
     coords,
     use_z_bool,
     feedback,
-    geom_type='Points',
+    link_offsets='elevation',
     layer_name=None
 ):
     """
-    replaces Elevation or InOffset/OutOffset by Z_Coords+
+    replaces Elevation or InOffset/OutOffset by Z_Coords and removes Z_Coords from coords dict
     :param pd.DataFrame df
-    :param pd.DataFrame / dict coords
+    :param dict coords
     :param bool use_z_bool
     :param QgsProcessingFeedback feedback
+    :param str link_offsets
+    :param str layer_name
     """
-    if geom_type == 'lines':
+    if list(coords.keys())[0] == 'VERTICES':  # lines
+        coords_dict = coords['VERTICES']['data']
         if use_z_bool:
             # if not na
-            df['InOffset'] = [coords[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
-            df['OutOffset'] = [coords[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
-        coords = {
-            l_name: df_coord[
+            df['InOffset'] = [coords_dict[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
+            df['OutOffset'] = [coords_dict[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
+        coords_dict_without_z = {
+            l_name: df_i[
                 ['X_Coord', 'Y_Coord']
-            ] for l_name, df_coord in coords.items()
+            ] for l_name, df_i in coords_dict.items()
         }  # remove z
-    else:
+        coords['VERTICES']['data'] = coords_dict_without_z
+    else:  # points -> pd.DataFrame
+        coords_df = coords['COORDINATES']['data']
         if use_z_bool:
             # if not na
-            df['Elevation'] = coords['Z_Coord']
-        coords.drop("Z_Coord", axis=1, inplace=True)
+            df['Elevation'] = coords_df['Z_Coord']
+        coords_df_without_z = coords_df.drop("Z_Coord", axis=1, inplace=False)
+        coords['COORDINATES']['data'] = coords_df_without_z
     return df, coords
+
 
 def get_coords_from_geometry(df):
     """
@@ -258,7 +295,7 @@ def get_coords_from_geometry(df):
                 ['Name', 'X_Coord', 'Y_Coord', 'Z_Coord']
             )
         )
-        return extr_coords_df
+        return {'COORDINATES': {'data': extr_coords_df}}
 
     # case lines
     elif all(
@@ -266,7 +303,13 @@ def get_coords_from_geometry(df):
             g_type.wkbType()
         ) in line_t_names for g_type in df.geometry
     ):
-        return {na: extract_xy_from_line(line_geom) for line_geom, na in zip(df.geometry, df.Name)}
+        extracted_vertices = {
+            na: extract_xy_from_line(line_geom) for line_geom, na in zip(
+                df.geometry,
+                df.Name
+            )
+        }
+        return {'VERTICES': {'data': extracted_vertices}}
 
     # case polygons
     elif all(
@@ -274,7 +317,13 @@ def get_coords_from_geometry(df):
             g_type.wkbType()
         ) in polygon_t_names for g_type in df.geometry
     ):
-        return {na: extract_xy_from_area(polyg_geom) for polyg_geom, na in zip(df.geometry, df.Name)}
+        extracted_vertices = {
+            na: extract_xy_from_area(polyg_geom) for polyg_geom, na in zip(
+                df.geometry,
+                df.Name
+            )
+        }
+        return {'POLYGONS': {'data': extracted_vertices}}
     else:
         raise QgsProcessingException(
             'Geometry type of one or more features could not be handled'

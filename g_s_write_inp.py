@@ -348,7 +348,6 @@ def write_inp(
         for vert_key in vertices_dict.keys():
             vert_df = vertices_dict[vert_key].copy()
             vert_df['vertice'] = vert_key
-            print(vert_df)
             vert_df = vert_df[['vertice', 'X_Coord', 'Y_Coord']]
             file1.write(vert_df.to_string(header=False, index=False))
             file1.write('\n')

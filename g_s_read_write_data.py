@@ -216,7 +216,7 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
     :param str file
     :param str/int sheet
     """
-    feedback.setProgressText('    Table: '+sheet)
+    feedback.setProgressText('    table: '+sheet)
     table_layers = QgsVectorLayer(tab_file, 'NoGeometry', 'ogr')
     table_provider = table_layers.dataProvider()
     sublayers = table_provider.subLayers()
