@@ -140,7 +140,45 @@ def data_preparation(data_name, data_entry, export_params):
         from .g_s_nodes import get_dividers_from_layer
         dividers_df = get_dividers_from_layer(data_entry.copy())
         return {'DIVIDERS': {'data': dividers_df}}
-    
+    #######
+    elif data_name == 'INFLOWS':
+        from .g_s_nodes import get_inflows_from_table
+        dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
+            data_entry['INFLOWS'],
+            all_nodes,
+            feedback=export_params['feedback']
+        )
+        res_dict = {
+            'INFLOWS': {'data': inflows_dict},
+            'DWF': {'data': dwf_dict},
+            'HYDROGRAPHS': {'data': hydrogr_df},
+        }
+        if len(rdii_df) > 0:
+            if len(hydrogr_df) == 0:
+                feedback.pushWarning(
+                    'Warning: No hydrographs were provided for RDII'
+                    + '. Please check if the correct file was selected '
+                    + 'and the \"Hydrographs\" table is set up correctly. '
+                    + 'The RDII section will not be written into the input file '
+                    + 'to avoid errors in SWMM.'
+                )
+            else:
+                needed_U_H = list(rdii_df['UnitHydrograph'])
+                misshing_U_H = [h for h in needed_U_H if h not in list(hydrogr_df['Name'])]
+                if len (misshing_U_H) > 0:
+                    feedback.pushWarning(
+                        'Warning: Missing hydrographs for RDII: '
+                        + ', '.join([str(x) for x in misshing_U_H])
+                        + '. \nPlease check if the correct file was selected '
+                        + 'and the \"Hydrographs\" table is set up correctly. '
+                        + 'The RDII section will not be written into the input file '
+                        + 'to avoid errors in SWMM.'
+                    )
+                else:
+                    res_dict['RDII'] = {'data': rdii_df}
+        res_dict = {k: v for k, v in res_dict.items() if len(v['data'])>0}
+        return res_dict
+
     #######
     elif data_name == 'CURVES':
         from .g_s_export_helpers import get_curves_from_table
@@ -167,14 +205,7 @@ def data_preparation(data_name, data_entry, export_params):
         )
         return {'TIMESERIES': {'data': timeseries_dict}}
     
-    elif data_name == 'INFLOWS':
-        from .g_s_nodes import get_inflows_from_table
-        inflows_dict = get_inflows_from_table(
-            data_entry['INFLOWS'],
-            all_nodes,
-            feedback=export_params['feedback']
-        )
-        return {'INFLOWS': {'data': inflows_dict}}
+
     
     elif data_name == 'QUALITY':
         from .g_s_quality import get_quality_params_from_table

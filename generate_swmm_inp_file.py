@@ -462,7 +462,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].reset_index(drop=True)
                 else:
                     pass  # subcatchments and raingages are already written
-                     
+
             # annotations
             if data_name == 'OPTIONS':
                 annotations_df = None
@@ -486,8 +486,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 inp_dict[data_name]['annotations'] = annotations_df
 
 
-        
-        
+
         # check deprecated data
         for data_name in [
             'CONDUITS',
@@ -517,6 +516,9 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             'DIVIDERS',
             'RAINGAGES',
         ]:
+            if data_name == 'INFLOWS':
+                if len(export_params['all_nodes']) == 0:
+                    continue
             if data_name in export_data.keys():
                 data_export_handler(
                     data_name,
@@ -534,12 +536,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
 
 
-            
-
-
-
-
-  
 
         #  Tabelle! optional: transects for conduits or weirs
         #if 'conduits_raw' in export_data.keys() or 'weirs_raw' in export_data.keys():
@@ -552,46 +548,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
  
 
-        # inflows
-        if len(export_params['all_nodes']) > 0:
-            if 'inflows' in export_data.keys():
-                feedback.setProgressText(self.tr('[INFLOWS] section'))
-                from .g_s_nodes import get_inflows_from_table
-                dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
-                    raw_data_dict['inflows'],
-                    all_nodes,
-                    feedback
-                )
-                if len(inflow_dict) > 0:
-                    inp_dict['INFLOWS'] = {'data': inflow_dict}
-                if len(dwf_dict) > 0:
-                    inp_dict['DWF'] = {'data': dwf_dict}
-                if len(hydrogr_df) > 0:
-                    inp_dict['HYDROGRAPHS'] = {'data': hydrogr_df}
-                if len(rdii_df) > 0:
-                    if len (hydrogr_df) == 0:
-                        feedback.pushWarning(
-                            'Warning: No hydrographs were provided for RDII'
-                            + '. Please check if the correct file was selected '
-                            + 'and the \"Hydrographs\" table is set up correctly. '
-                            + 'The RDII section will not be written into the input file '
-                            + 'to avoid errors in SWMM.'
-                        )
-                    else:
-                        needed_U_H = list(rdii_df['UnitHydrograph'])
-                        misshing_U_H = [h for h in needed_U_H if h not in list(hydrogr_df['Name'])]
-                        if len (misshing_U_H) > 0:
-                            feedback.pushWarning(
-                                'Warning: Missing hydrographs for RDII: '
-                                + ', '.join([str(x) for x in misshing_U_H])
-                                + '. \nPlease check if the correct file was selected '
-                                + 'and the \"Hydrographs\" table is set up correctly. '
-                                + 'The RDII section will not be written into the input file '
-                                + 'to avoid errors in SWMM.'
-                            )
-                        else:
-                            inp_dict['RDII'] = {'data': rdii_df}
-        feedback.setProgress(55)
+
 
         # Streets and inlets
         if 'streets' in export_data.keys():

@@ -313,7 +313,6 @@ def get_inflows_from_table(inflows_raw, all_nodes, feedback):
                 else:  # rdii
                     rdii_df = inflow_df
                     rdii_df = rdii_df[['Node', 'UnitHydrograph', 'SewerArea']]
-                                   
     return dwf_dict, inflow_dict, hydrogr_df, rdii_df
 
 
