@@ -41,12 +41,17 @@ from .g_s_defaults import (
 
 # Export
 # Subcatchments
-def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
+def get_subcatchments_from_layer(
+        subcatchments_df,
+        export_params
+    ):
     """
     reads subcatchment layer
     :param pd.DataFrame subcatchments_df
-    :param str main_infiltration_method
+    :param dict export_params
+    :return: tuple (four pd.DataFrames)
     """
+    main_infiltration_method = export_params['main_infiltration_method']
 
     def rename_for_infiltation(subc_row, main_infiltration_method):
         """
@@ -101,6 +106,7 @@ def get_subcatchments_from_layer(subcatchments_df, main_infiltration_method):
     infiltration_df = subcatchments_df[def_sections_dict['INFILTRATION']]
     subareas_df = subcatchments_df[def_sections_dict['SUBAREAS']]
     subcatchments_df = subcatchments_df[def_sections_dict['SUBCATCHMENTS']]
+    export_params[all_subcatchments] = list(subcatchments_df['Name'])
     return subcatchments_df, subareas_df, infiltration_df
 
 # import

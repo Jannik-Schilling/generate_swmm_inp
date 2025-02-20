@@ -76,7 +76,7 @@ def data_preparation(data_name, data_entry, export_params):
         from .g_s_subcatchments import get_subcatchments_from_layer
         subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
             data_entry.copy(),
-            export_params['main_infiltration_method']
+            export_params
         )
         return {
             'SUBCATCHMENTS': {'data': subcatchments_df},
@@ -135,12 +135,12 @@ def data_preparation(data_name, data_entry, export_params):
         from .g_s_nodes import get_storages_from_layer
         storages_df = get_storages_from_layer(data_entry.copy())
         return {'STORAGE': {'data': storages_df}}
-        
+
     elif data_name == 'DIVIDERS':
         from .g_s_nodes import get_dividers_from_layer
         dividers_df = get_dividers_from_layer(data_entry.copy())
         return {'DIVIDERS': {'data': dividers_df}}
-    #######
+
     elif data_name == 'INFLOWS':
         from .g_s_nodes import get_inflows_from_table
         dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
@@ -176,10 +176,19 @@ def data_preparation(data_name, data_entry, export_params):
                     )
                 else:
                     res_dict['RDII'] = {'data': rdii_df}
-        res_dict = {k: v for k, v in res_dict.items() if len(v['data'])>0}
         return res_dict
 
-    #######
+    elif data_name == 'STREETS':
+        from .g_s_links import get_street_from_tables
+        streets_df, inlets_df, inlet_usage_df = get_street_from_tables(
+            raw_data_dict['streets']
+        )
+        return {
+            'STREETS': {'data': streets_df},
+            'INLETS': {'data': inlets_df},
+            'INLET_USAGE': {'data': inlet_usage_df}
+        }
+    
     elif data_name == 'CURVES':
         from .g_s_export_helpers import get_curves_from_table
         curves_dict = get_curves_from_table(
@@ -204,14 +213,35 @@ def data_preparation(data_name, data_entry, export_params):
             feedback=export_params['feedback']
         )
         return {'TIMESERIES': {'data': timeseries_dict}}
-    
 
-    
+
+
     elif data_name == 'QUALITY':
         from .g_s_quality import get_quality_params_from_table
-        quality_df = get_quality_params_from_table(data_entry['QUALITY'].copy())
-        return {'QUALITY': {'data': quality_df}}
-        
+        (
+            pollutants_df,
+            landuses_df,
+            buildup_df,
+            washoff_df,
+            coverages_df,
+            loadings_df
+        ) = get_quality_params_from_table(
+            data_entry['QUALITY'].copy(),
+            export_params['all_subcatchments']
+        )
+        return  {
+            'POLLUTANTS':  {'data':pollutants_df},
+            'LANDUSES':  {'data':landuses_df},
+            'BUILDUP':  {'data':buildup_df},
+            'WASHOFF':  {'data':washoff_df},
+            'COVERAGES':  {'data':coverages_df},
+            'LOADINGS':  {'data':loadings_df}
+        }
+    elif data_name == 'TRANSECTS':
+        from .g_s_links import get_transects_from_table
+        transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
+        return {'TRANSECTS': {'data': transects_string_list}}
+
     elif data_name == 'RAINGAGES':
         from .g_s_subcatchments import get_raingage_from_qgis_row
         rg_features_df = data_entry.copy()

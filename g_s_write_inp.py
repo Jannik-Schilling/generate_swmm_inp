@@ -214,19 +214,15 @@ def write_inp(
             file1.write('\n')
         file1.write('\n')
 
+
     # quality
-    if 'QUALITY' in inp_dict.keys():
-        feedback.setProgressText('writing [Quality Parameters]...')
-        quality_dict = inp_dict['QUALITY']['data']
-        for q_k in quality_dict.keys():
-            q_df = quality_dict[q_k]
-            file1.write('['+str(q_k)+']\n')
-            if q_df.empty:
-                pass
-            else:
-                file1.write(q_df.to_string(header=False, index=False))
-                file1.write('\n')
-            file1.write('\n')
+    df_to_inp_section('POLLUTANTS')
+    df_to_inp_section('LANDUSES')
+    df_to_inp_section('BUILDUP')
+    df_to_inp_section('WASHOFF')
+    df_to_inp_section('COVERAGES')
+    df_to_inp_section('LOADINGS')
+
 
     def compose_dict_text(dict_i, section, inflow_keys_dict):
         """writes text lines from inflows dictionaries"""

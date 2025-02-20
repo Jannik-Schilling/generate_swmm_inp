@@ -290,6 +290,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         
         export_params = {
             'all_nodes': list(),
+            'all_subcatchments': list(),
             'link_offsets': 'elevation',
             'main_infiltration_method': None,
             'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),
@@ -416,7 +417,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 data_entry,
                 export_params
             )
-            
+
             # geometry
             if data_type == 'layer':
                 sections_coords = get_coords_from_geometry(data_entry)
@@ -439,7 +440,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                         layer_name = f_name
                     )
                 
-                # write to inp dict
+                # write geometry info to inp dict
                 if def_sections_geoms_dict[data_name] == 'LineString':
                     vertices_before = sections_coords['VERTICES']['data']
                     vertices_adjusted = {k: del_first_last_vt(v) for k, v in vertices_before.items() if len(v) > 2}
@@ -492,32 +493,44 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             'CONDUITS',
             'ORIFICES',
         ]:
-            export_data[data_name]['data'] = check_deprecated(
-                swmm_data_file=export_data[data_name]['file'],
-                swmm_section=data_name,
-                df=export_data[data_name]['data'],
-                cols_deprecated={'Shape': 'XsectShape'},
-                feedback=feedback
-            )
+            if data_name in export_data:
+                export_data[data_name]['data'] = check_deprecated(
+                    swmm_data_file=export_data[data_name]['file'],
+                    swmm_section=data_name,
+                    df=export_data[data_name]['data'],
+                    cols_deprecated={'Shape': 'XsectShape'},
+                    feedback=feedback
+                )
 
 
         # run export handler
         for data_name in [
             'OPTIONS',
             'SUBCATCHMENTS',
-            'CONDUITS',
-            'PUMPS',
-            'WEIRS',
-            'OUTLETS',
-            'ORIFICES',
             'JUNCTIONS',
             'OUTFALLS',
             'STORAGE',
             'DIVIDERS',
             'RAINGAGES',
+            'CONDUITS',
+            'PUMPS',
+            'WEIRS',
+            'OUTLETS',
+            'ORIFICES',
+            'OPTIONS',
+            'INFLOWS',
+            'PATTERNS',
+            'CURVES',
+            'QUALITY',
+            'TIMESERIES',
+            'TRANSECTS',
+            'STREETS'
         ]:
             if data_name == 'INFLOWS':
                 if len(export_params['all_nodes']) == 0:
+                    continue
+            if data_name == 'TRANSECTS':
+                if not (('CONDUITS' in inp_dict) or ('WEIRS' in inp_dict)):
                     continue
             if data_name in export_data.keys():
                 data_export_handler(
@@ -526,102 +539,11 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     inp_dict,
                     export_params
                 )
-        
+        # delete sections with empty data
+        inp_dict = {k: v for k, v in inp_dict.items() if len(v['data'])>0}
 
-        print('ou')
-        print(inp_dict['OUTFALLS'])
         feedback.setProgressText(self.tr('done \n'))
 
-
-
-
-
-
-        #  Tabelle! optional: transects for conduits or weirs
-        #if 'conduits_raw' in export_data.keys() or 'weirs_raw' in export_data.keys():
-        #    if 'transects' in raw_data_dict.keys():
-        #        feedback.setProgressText(self.tr('[TRANSECTS] section'))
-        #        from .g_s_links import get_transects_from_table
-        #        transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
-        #        inp_dict['TRANSECTS'] = {'data': transects_string_list}
-
-
- 
-
-
-
-        # Streets and inlets
-        if 'streets' in export_data.keys():
-            feedback.setProgressText(self.tr('[STREETS] and [INLETS] section'))
-            from .g_s_links import get_street_from_tables
-            streets_df, inlets_df, inlet_usage_df = get_street_from_tables(
-                raw_data_dict['streets']
-            )
-            if len(streets_df) > 0:
-                inp_dict['STREETS'] = {'data': streets_df}
-            if len(inlets_df) > 0:
-                inp_dict['INLETS'] = {'data': inlets_df}
-            if len(inlet_usage_df) > 0:
-                inp_dict['INLET_USAGE'] = {'data': inlet_usage_df}
-
-        # Curves
-        if 'curves' in export_data.keys():
-            feedback.setProgressText(self.tr('[CURVES] section'))
-            from .g_s_export_helpers import get_curves_from_table
-            inp_dict['CURVES'] = {
-                'data': get_curves_from_table(
-                    raw_data_dict['curves'],
-                    name_col='Name'
-                )
-            }
-        feedback.setProgress(60)
-
-        # patterns
-        if 'patterns' in export_data.keys():
-            feedback.setProgressText(self.tr('[PATTERNS] section'))
-            from .g_s_export_helpers import get_patterns_from_table
-            inp_dict['PATTERNS'] = {
-                'data': get_patterns_from_table(
-                    raw_data_dict['patterns'],
-                    name_col='Name'
-                )
-            }
-        feedback.setProgress(65)
-
-        # time series
-        if 'timeseries' in export_data.keys():
-            feedback.setProgressText(self.tr('[TIMESERIES] section'))
-            from .g_s_export_helpers import get_timeseries_from_table
-            inp_dict['TIMESERIES'] = {
-                'data': get_timeseries_from_table(
-                    raw_data_dict['timeseries'],
-                    name_col='Name',
-                    feedback=feedback
-                )
-            }
-        feedback.setProgress(70)
-
-
-
-        # quality
-        if 'quality' in export_data.keys():
-            feedback.setProgressText(self.tr('[POLLUTANTS] and [LANDUSES] section'))
-            from .g_s_quality import get_quality_params_from_table
-            if 'SUBCATCHMENTS' in inp_dict.keys():
-                inp_dict['QUALITY'] = {
-                    'data': get_quality_params_from_table(
-                        raw_data_dict['quality'],
-                        inp_dict['SUBCATCHMENTS']['data'].copy()
-                    )
-                }
-            else:
-                inp_dict['QUALITY'] = {
-                    'data': get_quality_params_from_table(
-                        raw_data_dict['quality']
-                    )
-                }
-
-        feedback.setProgress(80)
 
         # writing inp file
         feedback.setProgressText(self.tr('Creating inp file:'))
