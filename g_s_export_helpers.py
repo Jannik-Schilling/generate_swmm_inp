@@ -181,7 +181,7 @@ def data_preparation(data_name, data_entry, export_params):
     elif data_name == 'STREETS':
         from .g_s_links import get_street_from_tables
         streets_df, inlets_df, inlet_usage_df = get_street_from_tables(
-            raw_data_dict['streets']
+            data_entry.copy()
         )
         return {
             'STREETS': {'data': streets_df},
@@ -190,23 +190,19 @@ def data_preparation(data_name, data_entry, export_params):
         }
     
     elif data_name == 'CURVES':
-        from .g_s_export_helpers import get_curves_from_table
         curves_dict = get_curves_from_table(
-            data_entry['CURVES'],
+            data_entry.copy(),
             name_col='Name'
         )
         return {'CURVES': {'data': curves_dict}}
         
     elif data_name == 'PATTERNS':
-        from .g_s_export_helpers import get_patterns_from_table
         patterns_dict = get_patterns_from_table(
-            data_entry['PATTERNS'],
-            name_col='Name'
+            data_entry.copy()
         )
         return {'PATTERNS': {'data': patterns_dict}}
         
     elif data_name == 'TIMESERIES':
-        from .g_s_export_helpers import get_timeseries_from_table
         timeseries_dict = get_timeseries_from_table(
             data_entry['TIMESERIES'],
             name_col='Name',
@@ -226,7 +222,7 @@ def data_preparation(data_name, data_entry, export_params):
             coverages_df,
             loadings_df
         ) = get_quality_params_from_table(
-            data_entry['QUALITY'].copy(),
+            data_entry.copy(),
             export_params['all_subcatchments']
         )
         return  {
@@ -239,7 +235,7 @@ def data_preparation(data_name, data_entry, export_params):
         }
     elif data_name == 'TRANSECTS':
         from .g_s_links import get_transects_from_table
-        transects_string_list = get_transects_from_table(raw_data_dict['transects'].copy())
+        transects_string_list = get_transects_from_table(data_entry.copy())
         return {'TRANSECTS': {'data': transects_string_list}}
 
     elif data_name == 'RAINGAGES':
@@ -466,7 +462,7 @@ def get_curves_from_table(curves_raw, name_col):
     return (curve_dict)
 
 
-def get_patterns_from_table(patterns_raw, name_col):
+def get_patterns_from_table(patterns_raw, name_col='Name'):
     """
     generates a pattern dict for the input file from tables (patterns_raw)
     :param pd.DataFrame patterns_raw
@@ -641,11 +637,15 @@ def check_columns(
     :param list cols_expected
     :param list cols_in_df
     """
+    try:
+        swmm_data_file_name = swmm_data_file.name()
+    except Exception:
+        swmm_data_file_name = str(swmm_data_file)
     missing_cols = [x for x in cols_expected if x not in cols_in_df]
     if len(missing_cols) == 0:
         pass
     else:
-        err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
+        err_message = 'Missing columns in '+swmm_data_file_name+': '+', '.join(missing_cols)
         err_message = err_message+'. Please add columns or check if the correct file/layer was selected. '
         err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)

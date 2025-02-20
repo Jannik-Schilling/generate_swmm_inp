@@ -291,6 +291,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         export_params = {
             'all_nodes': list(),
             'all_subcatchments': list(),
+            'feedback': feedback,
             'link_offsets': 'elevation',
             'main_infiltration_method': None,
             'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),
@@ -417,6 +418,8 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 data_entry,
                 export_params
             )
+            if data_name == 'STORAGE':
+                print(processed_data_dict)
 
             # geometry
             if data_type == 'layer':
@@ -465,11 +468,20 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     pass  # subcatchments and raingages are already written
 
             # annotations
-            if data_name == 'OPTIONS':
+            if data_name in [
+                'OPTIONS',
+                'PATTERNS',
+                'CURVES',
+                'QUALITY',
+                'TIMESERIES',
+                'STREETS',
+                'INFLOWS',
+                'TRANSECTS'
+            ]:  # ToDo: Tables annotations
                 annotations_df = None
             else:
                 annotations_df = get_annotations_from_raw_df(data_entry.copy())
-                
+
             # write to inp dict
             if 'XSECTIONS' in processed_data_dict:
                 xsections_data = processed_data_dict.pop('XSECTIONS')

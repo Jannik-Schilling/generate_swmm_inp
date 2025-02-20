@@ -141,9 +141,9 @@ def get_quality_params_from_table(
                 'Landuse',
                 'Percent'
             ]]
-            # reduce to those, which are actualle needed for the subcatchments
+            # reduce to those, which are actually needed for the subcatchments
             coverages_df = coverages_df[
-                coverages_df['Subcatchment'].isin(alle_subcatchments)
+                coverages_df['Subcatchment'].isin(all_subcatchments)
             ]
         if q_p == 'LOADINGS':
             loadings_df = q_df_raw

@@ -106,7 +106,7 @@ def get_subcatchments_from_layer(
     infiltration_df = subcatchments_df[def_sections_dict['INFILTRATION']]
     subareas_df = subcatchments_df[def_sections_dict['SUBAREAS']]
     subcatchments_df = subcatchments_df[def_sections_dict['SUBCATCHMENTS']]
-    export_params[all_subcatchments] = list(subcatchments_df['Name'])
+    export_params['all_subcatchments'] = list(subcatchments_df['Name'])
     return subcatchments_df, subareas_df, infiltration_df
 
 # import
