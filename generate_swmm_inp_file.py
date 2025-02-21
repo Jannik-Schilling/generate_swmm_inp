@@ -411,15 +411,13 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                         cols_to_check,
                         data_entry.keys()
                     )
-                
+
             # data preparation
             processed_data_dict = data_preparation(
                 data_name,
                 data_entry,
                 export_params
             )
-            if data_name == 'STORAGE':
-                print(processed_data_dict)
 
             # geometry
             if data_type == 'layer':
