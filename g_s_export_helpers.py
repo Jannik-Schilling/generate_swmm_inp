@@ -265,7 +265,7 @@ def data_preparation(data_name, data_entry, export_params):
         raise QgsProcessingException(f'Unknown data name: {data_name}')
 
 # geometry functions
-def get_z_coords(coords_dict, vertex_index):
+def get_z_coords(coords_dict, vertex_index, all_names):
     """
     Extract the Z_coord from coord_list according to the 
     
@@ -273,12 +273,14 @@ def get_z_coords(coords_dict, vertex_index):
     :type coords_dict: dict
     :param vertex_index: Index of the vertex (0 for the first one or -1 for the last one).
     :type vertex_index: int  
+    :param all_names: list-like with all occuring names of the objects.
+    :type all_names: list/pd.Series
     :return: z-Coordinate.
     :rtype: float
     """
-    return [coords_dict[name]['Z_Coord'].tolist()[vertex_index] for name in df['Name']]
+    return [coords_dict[name]['Z_Coord'].tolist()[vertex_index] for name in all_names]
 
-def check_missing_z(z_vals, coord_type):
+def check_missing_z(z_vals, coord_type, all_names):
     """
     Check if there is a missing (=nan) value in the z-coordinates.
     
@@ -286,8 +288,10 @@ def check_missing_z(z_vals, coord_type):
     :type z_vals: pd.Series
     :param coord_type: description of the coordinate type
     :type coord_type: string
+    :param all_names: list-like with all occuring names of the objects
+    :type all_names: list/pd.Series
     """
-    missing_z = [str(name) for z, name in zip(z_vals, df['Name']) if pd.isna(z)]
+    missing_z = [str(name) for z, name in zip(z_vals, all_names) if pd.isna(z)]
     if missing_z:
         raise QgsProcessingException(
             f'Missing z-Coordinates for the following {coord_type} in layer {layer_name}: {", ".join(missing_z)}'
@@ -326,8 +330,8 @@ def use_z_if_available(
     if list(coords.keys())[0] == 'VERTICES':  # lines
         coords_dict = coords['VERTICES']['data']
         if use_z_bool:
-            vertices_z_in = get_z_coords(coords_dict, 0)
-            vertices_z_out = get_z_coords(coords_dict, -1)
+            vertices_z_in = get_z_coords(coords_dict, 0, df['Name'])
+            vertices_z_out = get_z_coords(coords_dict, -1, df['Name'])
 
             if link_offsets == 'ELEVATION':
                 df['InOffset'] = vertices_z_in
@@ -340,14 +344,26 @@ def use_z_if_available(
             else:
                 raise QgsProcessingException(f'Unknown link offsets type: {link_offsets}')
 
-            check_missing_z(df['InOffset'], 'links (first vertices or connected nodes)')
-            check_missing_z(df['OutOffset'], 'links (last vertices or connected nodes)')
+            check_missing_z(
+                df['InOffset'],
+                'links (first vertices or connected nodes)',
+                df['Name']
+            )
+            check_missing_z(
+                df['OutOffset'],
+                'links (last vertices or connected nodes)',
+                df['Name']
+            )
 
     else:  # points
         coords_df = coords['COORDINATES']['data']
         if use_z_bool:
             elevation_with_z = list(coords_df['Z_Coord'])
-            check_missing_z(elevation_with_z, 'nodes')
+            check_missing_z(
+                elevation_with_z,
+                'nodes',
+                df['Name']
+            )
             df['Elevation'] = elevation_with_z
 
     return df
