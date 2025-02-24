@@ -41,9 +41,12 @@ from .g_s_defaults import (
 
 def get_annotations_from_raw_df(df_raw):
     """
-    extracts annotations / descriptions from the dataframe
-    :param pd.DataFrame df_raw
-    :return: dict
+    Extract annotations / descriptions from the dataframe.
+
+    :param df_raw: Raw dataframe containing the annotations.
+    :type df_raw: pd.DataFrame
+    :return: Dictionary of annotations.
+    :rtype: dict
     """
     if annotation_field_name in df_raw.columns:
         annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}  
@@ -56,10 +59,17 @@ def get_annotations_from_raw_df(df_raw):
 
 def data_preparation(data_name, data_entry, export_params):
     """
-    prepares data for each data entry in the export_data dictionary
-    :param str data_name
-    :param dict data_entry
-    :param dict export_params
+    Prepare data for each data entry in the export_data dictionary.
+
+    :param data_name: Name of the layer type or table type.
+    :type data_name: str
+    :param data_entry: Data entry dictionary.
+    :type data_entry: dict
+    :param export_params: Export parameters dictionary.
+    :type export_params: dict
+    :return: Dictionary of prepared data.
+    :rtype: dict
+    :raises QgsProcessingException: If data_name is not an is not one of OPTIONS, SUBCATCHMENTS, CONDUITS, PUMPS, WEIRS, OUTLETS, ORIFICES, JUNCTIONS, OUTFALLS, STORAGE, DIVIDERS or INFLOWS.
     """
     if data_name == 'OPTIONS':
         from .g_s_options import get_options_from_table
@@ -255,9 +265,34 @@ def data_preparation(data_name, data_entry, export_params):
         raise QgsProcessingException(f'Unknown data name: {data_name}')
 
 # geometry functions
-def check_nan(replace_lst):
-    pass
+def get_z_coords(coords_dict, vertex_index):
+    """
+    Extract the Z_coord from coord_list according to the 
+    
+    :param coords_dict: Dictionary with coordinates of vertices.
+    :type coords_dict: dict
+    :param vertex_index: Index of the vertex (0 for the first one or -1 for the last one).
+    :type vertex_index: int  
+    :return: z-Coordinate.
+    :rtype: float
+    """
+    return [coords_dict[name]['Z_Coord'].tolist()[vertex_index] for name in df['Name']]
 
+def check_missing_z(z_vals, coord_type):
+    """
+    Check if there is a missing (=nan) value in the z-coordinates.
+    
+    :param z_vals: list / series of z-coordinates
+    :type z_vals: pd.Series
+    :param coord_type: description of the coordinate type
+    :type coord_type: string
+    """
+    missing_z = [str(name) for z, name in zip(z_vals, df['Name']) if pd.isna(z)]
+    if missing_z:
+        raise QgsProcessingException(
+            f'Missing z-Coordinates for the following {coord_type} in layer {layer_name}: {", ".join(missing_z)}'
+            '\nPlease check all required nodes and links or run the tool without z-coordinates'
+        )
 
 def use_z_if_available(
     df,
@@ -269,106 +304,63 @@ def use_z_if_available(
     coords_nodes=None,
 ):
     """
-    replaces Elevation or InOffset/OutOffset by Z_Coords; Z_Coords are not removed for reuse in 
-    :param pd.DataFrame df
-    :param dict coords
-    :param bool use_z_bool
-    :param QgsProcessingFeedback feedback
-    :param str link_offsets: 'ELEVATION' or 'DEPTH
-    :param str layer_name
-    :param pd.DataFrame coords_nodes: for first and last vertex in case of relative link offsets
+    Replaces Elevation or InOffset/OutOffset by Z_Coords if available.
+
+    :param df: Dataframe containing the data.
+    :type df: pd.DataFrame
+    :param coords: Dictionary containing coordinates.
+    :type coords: dict
+    :param use_z_bool: Boolean indicating whether to use Z coordinates.
+    :type use_z_bool: bool
+    :param feedback: Feedback for processing.
+    :type feedback: QgsProcessingFeedback
+    :param link_offsets: Type of link offsets ('ELEVATION' or 'DEPTH').
+    :type link_offsets: str
+    :param layer_name: Name of the layer.
+    :type layer_name: str
+    :param coords_nodes: Dataframe containing coordinates of nodes.
+    :type coords_nodes: pd.DataFrame
+    :return: Updated dataframe.
+    :rtype: pd.DataFrame
     """
     if list(coords.keys())[0] == 'VERTICES':  # lines
         coords_dict = coords['VERTICES']['data']
         if use_z_bool:
-            vertices_z_in = [coords_dict[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
-            vertices_z_out =  [coords_dict[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
+            vertices_z_in = get_z_coords(coords_dict, 0)
+            vertices_z_out = get_z_coords(coords_dict, -1)
+
             if link_offsets == 'ELEVATION':
-                InOffset_with_z = vertices_z_in
-                OutOffset_with_z = vertices_z_out
+                df['InOffset'] = vertices_z_in
+                df['OutOffset'] = vertices_z_out
             elif link_offsets == 'DEPTH':
-                nodes_z_in = [
-                    coords_nodes.loc(
-                        coords_nodes['Name']==n_name,
-                        'Z_Coord'
-                    ).tolist()[0] for n_name in df['FromNode']
-                ]
-                nodes_z_out = [
-                    coords_nodes.loc(
-                        coords_nodes['Name']==n_name,
-                        'Z_Coord'
-                    ).tolist()[0] for n_name in df['ToNode']
-                ]
-                InOffset_with_z = vertices_z_in-nodes_z_in
-                OutOffset_with_z= vertices_z_out.nodes_z_out
+                nodes_z_in = get_z_coords(coords_nodes.to_dict(), 0)
+                nodes_z_out = get_z_coords(coords_nodes.to_dict(), -1)
+                df['InOffset'] = [v_in - n_in for v_in, n_in in zip(vertices_z_in, nodes_z_in)]
+                df['OutOffset'] = [v_out - n_out for v_out, n_out in zip(vertices_z_out, nodes_z_out)]
             else:
-                raise QgsProcessingException('Unknown link offests type: '+ str(link_offsets))
-            # check if any z-coordniate was missing; if so: raise Exception 
-            if any([pd.isna(z_val) for z_val in InOffset_with_z]):
-                missing_z_in = [
-                    str(l_name) for z_val, l_name in zip(
-                        InOffset_with_z,
-                        df['Name']
-                    ) if pd.isna(z_val)
-                ]
-                raise QgsProcessingException(
-                    'Missing z-Coordinates for the following links '
-                    +'(first vertices or connected nodes) in layer '
-                    +str(layer_name)
-                    +': '
-                    + missing_z_in.join(', ')
-                    +'\n Please check all required nodes and links or '
-                    +'run the tool without z-coordinates'
-                )
-            else:
-                df['InOffset']  = InOffset_with_z
-            if any([pd.isna(z_val) for z_val in OutOffset_with_z]):
-                missing_z_out = [
-                    str(l_name) for z_val, l_name in zip(
-                        OutOffset_with_z,
-                        df['Name']
-                    ) if pd.isna(z_val)
-                ]
-                raise QgsProcessingException(
-                    'Missing z-Coordinates for the following links '
-                    +'(last vertices or connected nodes) in layer '
-                    +str(layer_name)
-                    +': '
-                    + missing_z_out.join(', ')
-                    +'\n Please check all required nodes and links '
-                    +'or run the tool without z-coordinates'
-                )
-            else:
-                df['OutOffset']  = OutOffset_with_z
-            
-    else:  # points -> pd.DataFrame
+                raise QgsProcessingException(f'Unknown link offsets type: {link_offsets}')
+
+            check_missing_z(df['InOffset'], 'links (first vertices or connected nodes)')
+            check_missing_z(df['OutOffset'], 'links (last vertices or connected nodes)')
+
+    else:  # points
         coords_df = coords['COORDINATES']['data']
         if use_z_bool:
             elevation_with_z = list(coords_df['Z_Coord'])
-            # if not na
-            if any([pd.isna(z_val) for z_val in elevation_with_z]):
-                missing_z_elevation = [
-                    str(l_name) for z_val, l_name in zip(
-                        elevation_with_z,
-                        df['Name']
-                    ) if pd.isna(z_val)
-                ]
-                raise QgsProcessingException(
-                    'Missing z-Coordinates for the following nodes in layer '
-                    + str(layer_name)
-                    + ': '
-                    + missing_z_out.join(', ')
-                    +'\n Please check all required nodes or run the tool without z-coordinates'
-                )
-            else:
-                df['Elevation'] = elevation_with_z
+            check_missing_z(elevation_with_z, 'nodes')
+            df['Elevation'] = elevation_with_z
+
     return df
 
 
 def get_coords_from_geometry(df):
     """
-    extracts coords from any gpd.geodataframe
-    :param pd.DataFrame df
+    Extract coordinates from any geodataframe.
+
+    :param df: Dataframe containing geometry data.
+    :type df: pd.DataFrame
+    :return: Dictionary of extracted coordinates.
+    :rtype: dict
     """
     geom_point_types = {
         'Point': 'simple',
@@ -457,10 +449,14 @@ def get_coords_from_geometry(df):
 
 def extract_xyz_from_simple_point(p_name, point_simple):
     """
-    extracts x and y coordinates from a LineString
-    :param str p_name
-    :param QgsGeometry point_simple
-    :return: tuple
+    Extract X, Y, and Z coordinates from a simple point.
+
+    :param p_name: Name of the point.
+    :type p_name: str
+    :param point_simple: Simple point geometry.
+    :type point_simple: QgsGeometry
+    :return: Tuple containing point name, X coordinate, Y coordinate, and Z coordinate.
+    :rtype: tuple
     """
     qgs_point = [p for p in point_simple.parts()][0]
     x_coord = str(qgs_point.x())
@@ -471,8 +467,12 @@ def extract_xyz_from_simple_point(p_name, point_simple):
 
 def extract_xy_from_line(line_geom):
     """
-    extraxts xy from LineString or MultiLineString
-    :return: pd.DataFrame
+    Extract X and Y coordinates from a LineString or MultiLineString.
+
+    :param line_geom: Line geometry.
+    :type line_geom: QgsGeometry
+    :return: Dataframe of extracted coordinates.
+    :rtype: pd.DataFrame
     """
     vertices_list = [p for p in line_geom.vertices()]
     extr_coords = [
@@ -503,9 +503,12 @@ def extract_xy_from_area(geom_row):
 # functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
     """
-    generates curve data for the input file from tables (curve_raw)
-    :param pd.DataFrame curve_raw
-    :param str name_col
+    Extract X and Y coordinates from polygon geometries.
+
+    :param geom_row: Polygon geometry.
+    :type geom_row: QgsGeometry
+    :return: Dataframe of extracted coordinates.
+    :rtype: pd.DataFrame
     """
     curve_types = list(def_tables_dict['CURVES']['tables'].keys())
     curve_dict = dict()
@@ -533,9 +536,11 @@ def get_curves_from_table(curves_raw, name_col):
 
 def get_patterns_from_table(patterns_raw, name_col='Name'):
     """
-    generates a pattern dict for the input file from tables (patterns_raw)
-    :param pd.DataFrame patterns_raw
-    :param str name_col
+    Generate a pattern dict for the input file from tables (patterns_raw)
+    :param patterns_raw
+    :type patterns_raw pd.DataFrame
+    :param  name_col
+    :type name_col str
     """
     pattern_types = def_tables_dict['PATTERNS']['tables'].keys()
     pattern_dict = {}
@@ -569,12 +574,18 @@ def adjust_datetime(
     feedback
 ):
     """
-    converts time values (tries different formats) into another time string
-    :param list or series dt_list: column in which the date or time is written
-    :param str dt_type: "Date" or "Time"
-    :param str str_output_format
-    :param str ts_name
-    :param QgsProcessingFeedback feedback
+    Convert time values (tries different formats) into another time string.
+    
+    :param list or series dt_list: Column in which the date or time is written.
+    :type dt_list list/pd.series
+    :param dt_type: "Date" or "Time".
+    :type dt_type: str
+    :param str_output_format
+    :type str_output_format: str
+    :param ts_name
+    :type ts_name: str
+    :param feedback
+    :type feedback: QgsProcessingFeedback
     """
     dt_formats_dict = {
         'Date': ['yyyy-MM-dd', 'dd/MM/yyyy', 'dd.MM.yyyy'],
