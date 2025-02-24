@@ -22,7 +22,7 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2023-05-09'
+__date__ = '2024-08-07'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 import os
@@ -64,12 +64,13 @@ def write_inp(
         """
         writes a input file section from pd.Dataframe to file1
         :param str section_name
-        :param list only_cols
+        :param list only_cols: optional list of column names which should be printed exclusively
         """
         if section_name in inp_dict.keys():
             feedback.setProgressText('writing ['+section_name+']...')
             print_df = inp_dict[section_name]['data']
             if 'annotations' in inp_dict[section_name].keys():
+                # join annotations to df
                 annotations_dict = inp_dict[section_name]['annotations']
                 if len(annotations_dict) > 0:
                     annotations_df = pd.DataFrame.from_dict(
@@ -111,7 +112,6 @@ def write_inp(
 
     # outfalls
     if 'OUTFALLS' in inp_dict.keys():
-        print(inp_dict['OUTFALLS'])
         feedback.setProgressText('writing [OUTFALLS]...')
         outfalls_df = inp_dict['OUTFALLS']['data']
         file1.write('[OUTFALLS]\n')
@@ -214,19 +214,15 @@ def write_inp(
             file1.write('\n')
         file1.write('\n')
 
+
     # quality
-    if 'QUALITY' in inp_dict.keys():
-        feedback.setProgressText('writing [Quality Parameters]...')
-        quality_dict = inp_dict['QUALITY']['data']
-        for q_k in quality_dict.keys():
-            q_df = quality_dict[q_k]
-            file1.write('['+str(q_k)+']\n')
-            if q_df.empty:
-                pass
-            else:
-                file1.write(q_df.to_string(header=False, index=False))
-                file1.write('\n')
-            file1.write('\n')
+    df_to_inp_section('POLLUTANTS')
+    df_to_inp_section('LANDUSES')
+    df_to_inp_section('BUILDUP')
+    df_to_inp_section('WASHOFF')
+    df_to_inp_section('COVERAGES')
+    df_to_inp_section('LOADINGS')
+
 
     def compose_dict_text(dict_i, section, inflow_keys_dict):
         """writes text lines from inflows dictionaries"""
@@ -348,7 +344,7 @@ def write_inp(
         for vert_key in vertices_dict.keys():
             vert_df = vertices_dict[vert_key].copy()
             vert_df['vertice'] = vert_key
-            vert_df = vert_df[['vertice', 'x', 'y']]
+            vert_df = vert_df[['vertice', 'X_Coord', 'Y_Coord']]
             file1.write(vert_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')
@@ -361,7 +357,7 @@ def write_inp(
         for pol_key in polygons_dict.keys():
             pol_df = polygons_dict[pol_key].copy()
             pol_df['subcatch']=pol_key
-            pol_df = pol_df[['subcatch', 'x', 'y']]
+            pol_df = pol_df[['subcatch', 'X_Coord', 'Y_Coord']]
             file1.write(pol_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')

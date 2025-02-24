@@ -32,11 +32,228 @@ from qgis.core import (
     QgsProcessingException
 )
 from .g_s_defaults import (
+    annotation_field_name,
     def_tables_dict,
+    def_sections_dict,
     annotation_field_name
 )
 
-# Export
+
+def get_annotations_from_raw_df(df_raw):
+    """
+    extracts annotations / descriptions from the dataframe
+    :param pd.DataFrame df_raw
+    :return: dict
+    """
+    if annotation_field_name in df_raw.columns:
+        annot_dict = {k: v for k, v in zip(df_raw['Name'], df_raw[annotation_field_name])}  
+        annot_dict = {k: v for k, v in annot_dict.items() if pd.notna(v)}
+        annot_dict = {k: v for k, v in annot_dict.items() if len(v) > 0}
+    else:
+        annot_dict = {}
+    return annot_dict
+
+
+def data_preparation(data_name, data_entry, export_params):
+    """
+    prepares data for each data entry in the export_data dictionary
+    :param str data_name
+    :param dict data_entry
+    :param dict export_params
+    """
+    if data_name == 'OPTIONS':
+        from .g_s_options import get_options_from_table
+        (
+            options_df,
+            main_infiltration_method,
+            link_offsets
+        ) = get_options_from_table(
+                data_entry['OPTIONS'].copy()
+            )
+        export_params['main_infiltration_method'] = main_infiltration_method
+        export_params['link_offsets'] = link_offsets
+        return {'OPTIONS': {'data': options_df}}
+    
+    elif data_name == 'SUBCATCHMENTS':
+        from .g_s_subcatchments import get_subcatchments_from_layer
+        subcatchments_df, subareas_df, infiltration_df = get_subcatchments_from_layer(
+            data_entry.copy(),
+            export_params
+        )
+        return {
+            'SUBCATCHMENTS': {'data': subcatchments_df},
+            'SUBAREAS': {'data': subareas_df},
+            'INFILTRATION': {'data': infiltration_df}
+        }
+        
+    elif data_name == 'CONDUITS':
+        from .g_s_links import get_conduits_from_shapefile
+        conduits_df, xsections_df, losses_df = get_conduits_from_shapefile(
+            data_entry.copy()
+        )
+        return {
+            'CONDUITS': {'data': conduits_df},
+            'XSECTIONS': {'data': xsections_df},
+            'LOSSES': {'data': losses_df}
+        }
+        
+    elif data_name == 'PUMPS':
+        from .g_s_links import get_pumps_from_shapefile
+        pumps_df = get_pumps_from_shapefile(data_entry.copy())
+        return {'PUMPS': {'data': pumps_df}}
+        
+    elif data_name == 'WEIRS':
+        from .g_s_links import get_weirs_from_shapefile
+        weirs_df, xsections_df = get_weirs_from_shapefile(data_entry.copy())
+        return {
+            'WEIRS': {'data': weirs_df},
+            'XSECTIONS': {'data': xsections_df}
+        }
+        
+    elif data_name == 'OUTLETS':
+        from .g_s_links import get_outlets_from_shapefile
+        outlets_df = get_outlets_from_shapefile(data_entry.copy())
+        return {'OUTLETS': {'data': outlets_df}}
+        
+    elif data_name == 'ORIFICES':
+        from .g_s_links import get_orifices_from_shapefile
+        orifices_df, xsections_df = get_orifices_from_shapefile(data_entry.copy())
+        return {
+            'ORIFICES': {'data': orifices_df},
+            'XSECTIONS': {'data': xsections_df}
+        }
+        
+    elif data_name == 'JUNCTIONS':
+        from .g_s_nodes import get_junctions_from_layer
+        junctions_df = get_junctions_from_layer(data_entry.copy())
+        return {'JUNCTIONS': {'data': junctions_df}}
+        
+    elif data_name == 'OUTFALLS':
+        from .g_s_nodes import get_outfalls_from_shapefile
+        outfalls_df = get_outfalls_from_shapefile(data_entry.copy())
+        return {'OUTFALLS': {'data': outfalls_df}}
+        
+    elif data_name == 'STORAGE':
+        from .g_s_nodes import get_storages_from_layer
+        storages_df = get_storages_from_layer(data_entry.copy())
+        return {'STORAGE': {'data': storages_df}}
+
+    elif data_name == 'DIVIDERS':
+        from .g_s_nodes import get_dividers_from_layer
+        dividers_df = get_dividers_from_layer(data_entry.copy())
+        return {'DIVIDERS': {'data': dividers_df}}
+
+    elif data_name == 'INFLOWS':
+        from .g_s_nodes import get_inflows_from_table
+        dwf_dict, inflows_dict, hydrogr_df, rdii_df = get_inflows_from_table(
+            data_entry.copy(),
+            export_params['all_nodes'],
+            feedback=export_params['feedback']
+        )
+        res_dict = {
+            'INFLOWS': {'data': inflows_dict},
+            'DWF': {'data': dwf_dict},
+            'HYDROGRAPHS': {'data': hydrogr_df},
+        }
+        if len(rdii_df) > 0:
+            if len(hydrogr_df) == 0:
+                feedback.pushWarning(
+                    'Warning: No hydrographs were provided for RDII'
+                    + '. Please check if the correct file was selected '
+                    + 'and the \"Hydrographs\" table is set up correctly. '
+                    + 'The RDII section will not be written into the input file '
+                    + 'to avoid errors in SWMM.'
+                )
+            else:
+                needed_U_H = list(rdii_df['UnitHydrograph'])
+                misshing_U_H = [h for h in needed_U_H if h not in list(hydrogr_df['Name'])]
+                if len (misshing_U_H) > 0:
+                    feedback.pushWarning(
+                        'Warning: Missing hydrographs for RDII: '
+                        + ', '.join([str(x) for x in misshing_U_H])
+                        + '. \nPlease check if the correct file was selected '
+                        + 'and the \"Hydrographs\" table is set up correctly. '
+                        + 'The RDII section will not be written into the input file '
+                        + 'to avoid errors in SWMM.'
+                    )
+                else:
+                    res_dict['RDII'] = {'data': rdii_df}
+        return res_dict
+
+    elif data_name == 'STREETS':
+        from .g_s_links import get_street_from_tables
+        streets_df, inlets_df, inlet_usage_df = get_street_from_tables(
+            data_entry.copy()
+        )
+        return {
+            'STREETS': {'data': streets_df},
+            'INLETS': {'data': inlets_df},
+            'INLET_USAGE': {'data': inlet_usage_df}
+        }
+    
+    elif data_name == 'CURVES':
+        curves_dict = get_curves_from_table(
+            data_entry.copy(),
+            name_col='Name'
+        )
+        return {'CURVES': {'data': curves_dict}}
+        
+    elif data_name == 'PATTERNS':
+        patterns_dict = get_patterns_from_table(
+            data_entry.copy()
+        )
+        return {'PATTERNS': {'data': patterns_dict}}
+        
+    elif data_name == 'TIMESERIES':
+        timeseries_dict = get_timeseries_from_table(
+            data_entry['TIMESERIES'],
+            name_col='Name',
+            feedback=export_params['feedback']
+        )
+        return {'TIMESERIES': {'data': timeseries_dict}}
+
+
+
+    elif data_name == 'QUALITY':
+        from .g_s_quality import get_quality_params_from_table
+        (
+            pollutants_df,
+            landuses_df,
+            buildup_df,
+            washoff_df,
+            coverages_df,
+            loadings_df
+        ) = get_quality_params_from_table(
+            data_entry.copy(),
+            export_params['all_subcatchments']
+        )
+        return  {
+            'POLLUTANTS':  {'data':pollutants_df},
+            'LANDUSES':  {'data':landuses_df},
+            'BUILDUP':  {'data':buildup_df},
+            'WASHOFF':  {'data':washoff_df},
+            'COVERAGES':  {'data':coverages_df},
+            'LOADINGS':  {'data':loadings_df}
+        }
+    elif data_name == 'TRANSECTS':
+        from .g_s_links import get_transects_from_table
+        transects_string_list = get_transects_from_table(data_entry.copy())
+        return {'TRANSECTS': {'data': transects_string_list}}
+
+    elif data_name == 'RAINGAGES':
+        from .g_s_subcatchments import get_raingage_from_qgis_row
+        rg_features_df = data_entry.copy()
+        rg_features_df = rg_features_df.apply(
+                lambda x: get_raingage_from_qgis_row(x),
+                axis=1
+            )
+        rg_inp_cols = def_sections_dict['RAINGAGES']
+        rg_features_df = rg_features_df[rg_inp_cols]  # drop unnecessary
+        return {'RAINGAGES': {'data': rg_features_df}}
+        
+    else:
+        raise QgsProcessingException(f'Unknown data name: {data_name}')
+
 # geometry functions
 def check_nan(replace_lst):
     pass
@@ -47,32 +264,106 @@ def use_z_if_available(
     coords,
     use_z_bool,
     feedback,
-    geom_type='Points',
-    layer_name=None
+    link_offsets='ELEVATION',
+    layer_name=None,
+    coords_nodes=None,
 ):
     """
-    replaces Elevation or InOffset/OutOffset by Z_Coords+
+    replaces Elevation or InOffset/OutOffset by Z_Coords; Z_Coords are not removed for reuse in 
     :param pd.DataFrame df
-    :param pd.DataFrame / dict coords
+    :param dict coords
     :param bool use_z_bool
     :param QgsProcessingFeedback feedback
+    :param str link_offsets: 'ELEVATION' or 'DEPTH
+    :param str layer_name
+    :param pd.DataFrame coords_nodes: for first and last vertex in case of relative link offsets
     """
-    if geom_type == 'lines':
+    if list(coords.keys())[0] == 'VERTICES':  # lines
+        coords_dict = coords['VERTICES']['data']
         if use_z_bool:
-            # if not na
-            df['InOffset'] = [coords[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
-            df['OutOffset'] = [coords[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
-        coords = {
-            l_name: df_coord[
-                ['X_Coord', 'Y_Coord']
-            ] for l_name, df_coord in coords.items()
-        }  # remove z
-    else:
+            vertices_z_in = [coords_dict[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
+            vertices_z_out =  [coords_dict[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
+            if link_offsets == 'ELEVATION':
+                InOffset_with_z = vertices_z_in
+                OutOffset_with_z = vertices_z_out
+            elif link_offsets == 'DEPTH':
+                nodes_z_in = [
+                    coords_nodes.loc(
+                        coords_nodes['Name']==n_name,
+                        'Z_Coord'
+                    ).tolist()[0] for n_name in df['FromNode']
+                ]
+                nodes_z_out = [
+                    coords_nodes.loc(
+                        coords_nodes['Name']==n_name,
+                        'Z_Coord'
+                    ).tolist()[0] for n_name in df['ToNode']
+                ]
+                InOffset_with_z = vertices_z_in-nodes_z_in
+                OutOffset_with_z= vertices_z_out.nodes_z_out
+            else:
+                raise QgsProcessingException('Unknown link offests type: '+ str(link_offsets))
+            # check if any z-coordniate was missing; if so: raise Exception 
+            if any([pd.isna(z_val) for z_val in InOffset_with_z]):
+                missing_z_in = [
+                    str(l_name) for z_val, l_name in zip(
+                        InOffset_with_z,
+                        df['Name']
+                    ) if pd.isna(z_val)
+                ]
+                raise QgsProcessingException(
+                    'Missing z-Coordinates for the following links '
+                    +'(first vertices or connected nodes) in layer '
+                    +str(layer_name)
+                    +': '
+                    + missing_z_in.join(', ')
+                    +'\n Please check all required nodes and links or '
+                    +'run the tool without z-coordinates'
+                )
+            else:
+                df['InOffset']  = InOffset_with_z
+            if any([pd.isna(z_val) for z_val in OutOffset_with_z]):
+                missing_z_out = [
+                    str(l_name) for z_val, l_name in zip(
+                        OutOffset_with_z,
+                        df['Name']
+                    ) if pd.isna(z_val)
+                ]
+                raise QgsProcessingException(
+                    'Missing z-Coordinates for the following links '
+                    +'(last vertices or connected nodes) in layer '
+                    +str(layer_name)
+                    +': '
+                    + missing_z_out.join(', ')
+                    +'\n Please check all required nodes and links '
+                    +'or run the tool without z-coordinates'
+                )
+            else:
+                df['OutOffset']  = OutOffset_with_z
+            
+    else:  # points -> pd.DataFrame
+        coords_df = coords['COORDINATES']['data']
         if use_z_bool:
+            elevation_with_z = list(coords_df['Z_Coord'])
             # if not na
-            df['Elevation'] = coords['Z_Coord']
-        coords.drop("Z_Coord", axis=1, inplace=True)
-    return df, coords
+            if any([pd.isna(z_val) for z_val in elevation_with_z]):
+                missing_z_elevation = [
+                    str(l_name) for z_val, l_name in zip(
+                        elevation_with_z,
+                        df['Name']
+                    ) if pd.isna(z_val)
+                ]
+                raise QgsProcessingException(
+                    'Missing z-Coordinates for the following nodes in layer '
+                    + str(layer_name)
+                    + ': '
+                    + missing_z_out.join(', ')
+                    +'\n Please check all required nodes or run the tool without z-coordinates'
+                )
+            else:
+                df['Elevation'] = elevation_with_z
+    return df
+
 
 def get_coords_from_geometry(df):
     """
@@ -130,7 +421,7 @@ def get_coords_from_geometry(df):
                 ['Name', 'X_Coord', 'Y_Coord', 'Z_Coord']
             )
         )
-        return extr_coords_df
+        return {'COORDINATES': {'data': extr_coords_df}}
 
     # case lines
     elif all(
@@ -138,7 +429,13 @@ def get_coords_from_geometry(df):
             g_type.wkbType()
         ) in line_t_names for g_type in df.geometry
     ):
-        return {na: extract_xy_from_line(line_geom) for line_geom, na in zip(df.geometry, df.Name)}
+        extracted_vertices = {
+            na: extract_xy_from_line(line_geom) for line_geom, na in zip(
+                df.geometry,
+                df.Name
+            )
+        }
+        return {'VERTICES': {'data': extracted_vertices}}
 
     # case polygons
     elif all(
@@ -146,7 +443,13 @@ def get_coords_from_geometry(df):
             g_type.wkbType()
         ) in polygon_t_names for g_type in df.geometry
     ):
-        return {na: extract_xy_from_area(polyg_geom) for polyg_geom, na in zip(df.geometry, df.Name)}
+        extracted_vertices = {
+            na: extract_xy_from_area(polyg_geom) for polyg_geom, na in zip(
+                df.geometry,
+                df.Name
+            )
+        }
+        return {'POLYGONS': {'data': extracted_vertices}}
     else:
         raise QgsProcessingException(
             'Geometry type of one or more features could not be handled'
@@ -228,7 +531,7 @@ def get_curves_from_table(curves_raw, name_col):
     return (curve_dict)
 
 
-def get_patterns_from_table(patterns_raw, name_col):
+def get_patterns_from_table(patterns_raw, name_col='Name'):
     """
     generates a pattern dict for the input file from tables (patterns_raw)
     :param pd.DataFrame patterns_raw
@@ -403,11 +706,15 @@ def check_columns(
     :param list cols_expected
     :param list cols_in_df
     """
+    try:
+        swmm_data_file_name = swmm_data_file.name()
+    except Exception:
+        swmm_data_file_name = str(swmm_data_file)
     missing_cols = [x for x in cols_expected if x not in cols_in_df]
     if len(missing_cols) == 0:
         pass
     else:
-        err_message = 'Missing columns in '+swmm_data_file+': '+', '.join(missing_cols)
+        err_message = 'Missing columns in '+swmm_data_file_name+': '+', '.join(missing_cols)
         err_message = err_message+'. Please add columns or check if the correct file/layer was selected. '
         err_message = err_message+'For further advice regarding columns, read the documentation file in the plugin folder.'
         raise QgsProcessingException(err_message)

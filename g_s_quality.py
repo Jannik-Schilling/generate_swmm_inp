@@ -29,7 +29,12 @@ import pandas as pd
 import numpy as np
 
 
-def fill_landuse_params(df, pollutant_names, landuses_names, b_w):
+def fill_landuse_params(
+        df,
+        pollutant_names,
+        landuses_names,
+        b_w
+    ):
     '''
     fills buildup or washoff data frames if missing
     '''
@@ -48,8 +53,15 @@ def fill_landuse_params(df, pollutant_names, landuses_names, b_w):
         return missing_df
 
 
-def get_quality_params_from_table(quality_raw_dict, subcatchments_df=None):
-    """generates a dictionary with quality data from an excel file"""
+def get_quality_params_from_table(
+        quality_raw_dict,
+        all_subcatchments
+    ):
+    """
+    generates a dictionary with quality data from an excel file
+    :param dict quality_raw_dict
+    :param list all_subcatchments
+    """
     quality_params = ['POLLUTANTS', 'LANDUSES', 'COVERAGES', 'LOADINGS']
     for q_p in quality_params:
         q_df_raw = quality_raw_dict[q_p]
@@ -129,10 +141,10 @@ def get_quality_params_from_table(quality_raw_dict, subcatchments_df=None):
                 'Landuse',
                 'Percent'
             ]]
-            if subcatchments_df is not None:
-                coverages_df = coverages_df[coverages_df['Subcatchment'].isin(subcatchments_df['Name'])]
-            else:
-                coverages_df = coverages_df[coverages_df['Subcatchment'].isin([])]  # if no subcatchments, delete all coverages data
+            # reduce to those, which are actually needed for the subcatchments
+            coverages_df = coverages_df[
+                coverages_df['Subcatchment'].isin(all_subcatchments)
+            ]
         if q_p == 'LOADINGS':
             loadings_df = q_df_raw
             loadings_df = loadings_df[[
@@ -140,11 +152,11 @@ def get_quality_params_from_table(quality_raw_dict, subcatchments_df=None):
                 'Pollutant',
                 'InitialBuildup'
             ]]
-    return {
-        'POLLUTANTS': pollutants_df,
-        'LANDUSES': landuses_df,
-        'BUILDUP': buildup_df,
-        'WASHOFF': washoff_df,
-        'COVERAGES': coverages_df,
-        'LOADINGS': loadings_df
-    }
+    return (
+        pollutants_df,
+        landuses_df,
+        buildup_df,
+        washoff_df,
+        coverages_df,
+        loadings_df
+    )

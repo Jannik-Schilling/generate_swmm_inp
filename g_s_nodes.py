@@ -32,11 +32,11 @@ from qgis.core import (
 )
 from .g_s_defaults import (
     def_qgis_fields_dict,
+    def_sections_dict,
     def_tables_dict
 )
-from .g_s_various_functions import (
-    check_columns,
-    get_coords_from_geometry
+from .g_s_export_helpers import (
+    check_columns
 )
 
 # Definitions for Storages
@@ -61,6 +61,34 @@ all_st_type_cols = [
 
 # Export
 #----------
+# Junctions
+def get_junctions_from_layer(junctions_raw):
+    junctions_df = junctions_raw.copy()
+    junctions_df['Name'] = [str(x) for x in junctions_df['Name']]
+    junctions_df['MaxDepth'] = junctions_df['MaxDepth'].fillna(0)
+    junctions_df['InitDepth'] = junctions_df['InitDepth'].fillna(0)
+    junctions_df['SurDepth'] = junctions_df['SurDepth'].fillna(0)
+    junctions_df['Aponded'] = junctions_df['Aponded'].fillna(0)
+    junctions_inp_cols = def_sections_dict['JUNCTIONS']
+    junctions_df = junctions_df[junctions_inp_cols]
+    return junctions_df
+    
+# dividers
+def get_dividers_from_layer(dividers_raw):
+    """
+    adjusts dividers data
+    :param pd.DataFrame dividers_raw
+    """
+    dividers_inp_cols = def_sections_dict['DIVIDERS']
+    dividers_df = dividers_raw[dividers_inp_cols]
+    dividers_df['Name'] = [str(x) for x in dividers_df['Name']]
+    dividers_df['CutoffFlow'] = dividers_df['CutoffFlow'].fillna('')
+    dividers_df['Curve'] = dividers_df['Curve'].fillna('')
+    dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
+    dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
+    dividers_df['WeirCoeff'] = dividers_df['WeirCoeff'].fillna('')
+    return dividers_df
+
 # Outfalls
 def get_outfalls_from_shapefile(outfalls_raw):
     """
@@ -80,7 +108,7 @@ def get_outfalls_from_shapefile(outfalls_raw):
     return outfalls_raw
 
 # Storages
-def get_storages_from_geodata(storages_raw):
+def get_storages_from_layer(storages_raw):
     """
     creates a df for storages from raw storage data
     :param pd.DataFrame storages_raw
@@ -113,7 +141,6 @@ def get_storages_from_geodata(storages_raw):
         storage_df.keys()
     )
     storage_df['Name'] = [str(x) for x in storage_df['Name']]
-    storage_df['X_Coord'], storage_df['Y_Coord'] = get_coords_from_geometry(storage_df)
 
     def st_type_adjustment(st_row):
         st_type_i = st_row['Type']
@@ -131,7 +158,14 @@ def get_storages_from_geodata(storages_raw):
     storage_df['InitDepth'] = storage_df['InitDepth'].fillna(0)
     storage_df['SurDepth'] = storage_df['SurDepth'].fillna(0)
     storage_df['Fevap'] = storage_df['Fevap'].fillna(0)
+    # drop and keep columns
     storage_df = storage_df.drop(columns=st_types_needed)
+    storage_inp_cols = [
+                'Name', 'Elevation', 'MaxDepth','InitDepth','Type',
+                'Shape1','Shape2','Shape3','SurDepth','Fevap','Psi',
+                'Ksat','IMD'
+            ]
+    storage_df[storage_inp_cols]
     return storage_df
 
 # inflows
@@ -279,7 +313,6 @@ def get_inflows_from_table(inflows_raw, all_nodes, feedback):
                 else:  # rdii
                     rdii_df = inflow_df
                     rdii_df = rdii_df[['Node', 'UnitHydrograph', 'SewerArea']]
-                                   
     return dwf_dict, inflow_dict, hydrogr_df, rdii_df
 
 
@@ -412,3 +445,16 @@ def create_points_df(data, feedback):
     else:
         df_out = pd.DataFrame(columns = ['Name', 'geometry']).set_index('Name')
     return df_out
+
+
+def add_z_to_points(sr):
+    """
+    adds the elevation to a point geometry
+    :param PandasSeries sr: one line of the DataFrame already with geometry
+    :return: QgsGeometry
+    """
+    f_geometry = sr['geometry']
+    z_coord = sr['Elevation']
+    f_geometry_string_z = f_geometry.asWkt()[:-1]+' '+str(z_coord)+')'
+    f_geometry_z = QgsGeometry.fromWkt(f_geometry_string_z)
+    return f_geometry_z
