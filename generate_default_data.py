@@ -34,10 +34,12 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingException,
+    QgsProcessingParameterBoolean,
     QgsProcessingParameterCrs,
     QgsProcessingParameterEnum,
-    QgsCoordinateReferenceSystem,
-    QgsProcessingParameterFolderDestination
+    QgsProcessingParameterDefinition,
+    QgsProcessingParameterFolderDestination,
+    QgsCoordinateReferenceSystem
 )
 import os
 import shutil
@@ -51,6 +53,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
     """
 
     # Constants
+    ADD_Z = 'ADD_Z'
     SWMM_FOLDER = 'SWMM_FOLDER'
     SWMM_VERSION = 'SWMM_VERSION'
     TRANSFORM_CRS = 'TRANSFORM_CRS'
@@ -84,10 +87,20 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             )
         )
 
+        add_z_coord_param = QgsProcessingParameterBoolean(
+            self.ADD_Z,
+            self.tr('Add z-coordinates to conduits and nodes'),
+            defaultValue=False,
+            optional=True
+        )
+        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(add_z_coord_param)
+
     def processAlgorithm(self, parameters, context, feedback):
         data_save_folder = self.parameterAsString(parameters, self.SWMM_FOLDER, context)
         swmm_version_num = self.parameterAsEnum(parameters, self.SWMM_VERSION, context)
         transform_crs = self.parameterAsCrs(parameters, self.TRANSFORM_CRS, context)
+        add_z_bool = self.parameterAsBoolean(parameters, self.ADD_Z, context)
         transform_crs_string = str(transform_crs.authid())
         if transform_crs_string == '':
             transform_crs_string = 'NA'
@@ -100,7 +113,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
 
         # add documentation
         try:
-            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_36.pdf')
+            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_38.pdf')
             shutil.copy(doc_file, data_save_folder)
             feedback.setProgressText(self.tr('documentation file saved to folder '+data_save_folder))
             feedback.setProgress(1)
@@ -131,7 +144,8 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             'PREFIX': version_prefix,
             'SAVE_FOLDER': data_save_folder,
             'CREATE_EMPTY': create_empty,
-            'TRANSFORM_CRS': transform_crs_string
+            'TRANSFORM_CRS': transform_crs_string,
+            'ADD_Z': add_z_bool
         }
         subalg_outputs = processing.run('GenSwmmInp:ImportInpFile', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 

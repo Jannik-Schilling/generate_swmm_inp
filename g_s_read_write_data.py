@@ -44,7 +44,11 @@ from qgis.core import (
     QgsVectorFileWriter,
     QgsVectorLayer
 )
-from qgis.PyQt.QtCore import QVariant
+from qgis.PyQt.QtCore import (
+    QVariant,
+    QMetaType
+)
+
 from .g_s_defaults import (
     def_ogr_driver_names,
     def_ogr_driver_dict,
@@ -75,7 +79,11 @@ def del_none_bool(df):
     :return: pd.DataFrame
     """
     df[df.columns[:-1]] = df[df.columns[:-1]].fillna(value=np.nan)
-    df = df.applymap(replace_null_nan)
+    try:
+        df = df.map(replace_null_nan)
+    except BaseException:
+        # for pandas prior to 2.1.0:
+        df = df.applymap(replace_null_nan)
     df[df.columns[:-1]] = df[df.columns[:-1]].replace('True', 'YES').replace('False', 'NO')
     return df
 
@@ -106,7 +114,7 @@ def load_layer_to_df(
                 + ': ' + ', '.join(missing_cols)
             )
 
-    # check for missing and duplcat names and null or missing geometries
+    # check for missing and duplicat names and null or missing geometries
     check_list = [[f['Name'], f.id(), f.hasGeometry()] for f in vlayer.getFeatures()]
     seen = set()
     duplicat_names_list = []
@@ -160,25 +168,45 @@ def load_layer_to_df(
         df = pd.DataFrame.from_records(data=datagen, columns=cols+['geometry'])
     return df
 
-# layers with geometry
-def read_layers_direct(
-    raw_layers_dict,
+
+def read_data_direct(
+    export_data,
     select_cols=[],
     with_id=False,
     feedback = QgsProcessingFeedback
 ):
     """
-    reads layers from swmm model
-    :param dict raw_layers_dict
+    reads layers from swmm model (main read function)
+    :param dict export_data
     :param list select_cols
     :param bool with_id
     :param QgsProcessingFeedback feedback
-    :return: dict
     """
-    data_dict = {n: load_layer_to_df(d, select_cols, with_id, feedback) for n, d in raw_layers_dict.items() if d is not None}
-    data_dict_out = {n: d for n, d in data_dict.items() if len(d) > 0}
-    data_dict_out = {n: del_none_bool(data_dict_out[n]) for n in data_dict_out.keys()}
-    return data_dict_out
+    for k in list(export_data.keys()):
+        if export_data[k]['d_type'] == 'layer':  # layers with geometry
+            data_df = load_layer_to_df(
+                export_data[k]['file'],
+                select_cols,
+                with_id,
+                feedback
+            )
+            if len(data_df) > 0:
+                data_df = del_none_bool(data_df)
+                export_data[k]['data'] = data_df
+            else:
+                del export_data[k]
+        else:  # table
+            table_file = export_data[k]['file']
+            sheets_list = list(def_tables_dict[k]['tables'].keys())
+            export_data[k]['data'] = {}
+            for sheet_name in sheets_list:
+                export_data[k]['data'][sheet_name] = read_data_from_table_direct(
+                    table_file,
+                    sheet=sheet_name,
+                    feedback=feedback
+                )
+            
+
 
 
 # tables
@@ -188,7 +216,7 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
     :param str file
     :param str/int sheet
     """
-    feedback.setProgressText('    Table: '+sheet)
+    feedback.setProgressText('    table: '+sheet)
     table_layers = QgsVectorLayer(tab_file, 'NoGeometry', 'ogr')
     table_provider = table_layers.dataProvider()
     sublayers = table_provider.subLayers()
@@ -213,7 +241,11 @@ def read_data_from_table_direct(tab_file, sheet=0, feedback=QgsProcessingFeedbac
         cols = [f.name() for f in vlayer.fields()]
         datagen = ([f[col] for col in cols] for f in vlayer.getFeatures())
         data_df = pd.DataFrame.from_records(data=datagen, columns=cols)
-        data_df = data_df.applymap(replace_null_nan)
+        try:
+            data_df = data_df.map(replace_null_nan)
+        except BaseException:
+            # for pandas prior to 2.1.0:
+            data_df = data_df.applymap(replace_null_nan)
         if all([x.startswith('Field') for x in data_df.columns]):
             rename_cols = {i:j for i, j in zip(cols, data_df.loc[0,:].tolist())}
             data_df = data_df.drop(index=0)
@@ -234,17 +266,17 @@ def create_feature_from_attrlist(attrlist, geom_type, f_geometry=NULL):
     creates a QgsFeature from data in df
     :param list attrlist
     :param str geom_type
-    :param QgsGeometry geometry
+    :param QgsGeometry f_geometry
     """
     f = QgsFeature()
     if geom_type != 'NoGeometry':
         # handle missing geometry: replace with default
         if f_geometry is NULL:
-            if geom_type == 'Polygon':
+            if geom_type.startswith('Polygon'):
                 f.setGeometry(def_ploygon_geom)
-            if geom_type == 'LineString':
+            if geom_type.startswith('LineString'):
                 f.setGeometry(def_line_geom)
-            if geom_type == 'Point':
+            if geom_type.startswith('Point'):
                 f.setGeometry(def_point_geom)
         else:
             f.setGeometry(f_geometry)
@@ -256,14 +288,16 @@ def create_feature_from_row(df, geom_type):
     creates a QgsFeature from data in df
     :param pd.DataFrame df
     :param str geom_type
+    :return: QgsFeature
     """
     if 'geometry' in df.keys():
         f_geometry = df['geometry']
         attrlist = df.drop('geometry').tolist()
-        return create_feature_from_attrlist(attrlist, geom_type, f_geometry)
+        f_created = create_feature_from_attrlist(attrlist, geom_type, f_geometry)
     else:
         attrlist = df.tolist()
-        return create_feature_from_attrlist(attrlist, geom_type)
+        f_created = create_feature_from_attrlist(attrlist, geom_type)
+    return f_created
 
 def transform_crs_function(
     vector_layer,
@@ -304,6 +338,7 @@ def create_layer_from_df(
     custom_fields=None,
     create_empty=False,
     transform_crs_string='NA',
+    add_z_bool=False,
     **kwargs
 ):
     """
@@ -323,14 +358,23 @@ def create_layer_from_df(
     if section_name in def_sections_geoms_dict.keys():
         feedback.setProgressText('Writing layer for section \"'+section_name+'\"')
         geom_type = def_sections_geoms_dict[section_name]
+        if add_z_bool:
+            if section_name in [
+                'JUNCTIONS',
+                'OUTFALLS',
+                'DIVIDERS',
+                'STORAGE',
+                'CONDUITS'
+            ]:
+                geom_type = geom_type+'Z'
         geom_type = geom_type+'?crs='+crs_result
     else:
         geom_type = 'NoGeometry'  # for simple tables
     vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
 
-
     # set fields
-    field_types_dict = {
+    # before QGIS Version 3.38
+    field_types_dict_old = {
         'Double': QVariant.Double,
         'String': QVariant.String,
         'Int': QVariant.Int,
@@ -338,6 +382,16 @@ def create_layer_from_df(
         'Date': QVariant.Date,
         'Time': QVariant.Time
     }
+    # starting with QGIS Version 3.38
+    field_types_dict = {
+        'Double': QMetaType.Type.Double,
+        'String': QMetaType.Type.QString,
+        'Int': QMetaType.Type.Int,
+        'Bool': QMetaType.Type.Bool,
+        'Date': QMetaType.Type.QDate,
+        'Time': QMetaType.Type.QTime
+    }
+    
     if geom_type != 'NoGeometry':
         layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
     else:
@@ -346,9 +400,13 @@ def create_layer_from_df(
         layer_fields.update(custom_fields)
     vector_layer.startEditing()
     for col, field_type_string in layer_fields.items():
-        field_type = field_types_dict[field_type_string]
-        # QgsField is deprecated since QGIS 3.38 -> QMetaType
-        vector_layer.addAttribute(QgsField(col, field_type))
+        try:
+            # QgsField with QVariant is deprecated since QGIS 3.38 -> QMetaType
+            field_type = field_types_dict[field_type_string]
+            vector_layer.addAttribute(QgsField(col, field_type))
+        except:
+            field_type = field_types_dict_old[field_type_string]
+            vector_layer.addAttribute(QgsField(col, field_type))
     vector_layer.updateFields()
 
     # get data_df columns in the correct order
@@ -367,7 +425,11 @@ def create_layer_from_df(
                 )
         else:
             # replace nan with NULL in tables
-            data_df = data_df.applymap(replace_nan_null)
+            try:
+                data_df = data_df.map(replace_nan_null)
+            except BaseException:
+                # for pandas prior to 2.1.0:
+                data_df = data_df.applymap(replace_nan_null)
         data_df = data_df[data_df_column_order]
     if len(data_df) != 0:
         # add features if data_df is not empty (which can be the case for tables)

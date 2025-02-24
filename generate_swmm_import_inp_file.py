@@ -48,6 +48,7 @@ from .g_s_defaults import (
     def_ogr_driver_names,
     def_sections_dict,
     def_sections_geoms_dict,
+    def_sections_geoms_list,
     def_stylefile_dict,
     def_tables_dict,
     ImportDataStatus,
@@ -75,12 +76,13 @@ class ImportInpFile (QgsProcessingAlgorithm):
     """
     generates geodata and tables from a swmm input file
     """
-    INP_FILE = 'INP_FILE'
-    GEODATA_DRIVER = 'GEODATA_DRIVER'
-    SAVE_FOLDER = 'SAVE_FOLDER'
-    PREFIX = 'PREFIX'
-    DATA_CRS = 'DATA_CRS'
+    ADD_Z = 'ADD_Z'
     CREATE_EMPTY = 'CREATE_EMPTY'
+    DATA_CRS = 'DATA_CRS'
+    GEODATA_DRIVER = 'GEODATA_DRIVER'
+    INP_FILE = 'INP_FILE'
+    PREFIX = 'PREFIX'
+    SAVE_FOLDER = 'SAVE_FOLDER'
     TRANSFORM_CRS = 'TRANSFORM_CRS'
 
     def initAlgorithm(self, config):
@@ -126,13 +128,22 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 defaultValue='epsg:25833'
             )
         )
+        
+        add_z_coord_param = QgsProcessingParameterBoolean(
+                self.ADD_Z,
+                self.tr('Add z-coordinates to conduits and nodes'),
+                defaultValue=False,
+                optional=True
+            )
+        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        self.addParameter(add_z_coord_param)
 
         empt_param = QgsProcessingParameterBoolean(
             self.CREATE_EMPTY,
             self.tr('Create Empty?'),
             defaultValue=False,
         )
-        # Hide the parameter CREATE_EMPTY , because it´s only for the default data to
+        # Hide the parameter CREATE_EMPTY , because it´s only for the default data tool
         self.addParameter(empt_param)
         empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
 
@@ -182,19 +193,21 @@ class ImportInpFile (QgsProcessingAlgorithm):
         geodata_driver_name = def_ogr_driver_names[geodata_driver_num]
         geodata_driver_extension = def_ogr_driver_dict[geodata_driver_name]
         create_empty = self.parameterAsBoolean(parameters, self.CREATE_EMPTY, context)
+        add_z_bool = self.parameterAsBoolean(parameters, self.ADD_Z, context)
         transform_crs_string = self.parameterAsString(parameters, self.TRANSFORM_CRS, context)
 
         # parameters shared by many functions
         import_parameters_dict = {
-            'folder_save': folder_save,
-            'result_prefix': result_prefix,
+            'add_z_bool': add_z_bool,
+            'create_empty': create_empty,
+            'context': context,
             'crs_result': crs_result,
             'geodata_driver_num': geodata_driver_num,
             'geodata_driver_name': geodata_driver_name,
             'geodata_driver_extension': geodata_driver_extension,
-            'create_empty': create_empty,
+            'folder_save': folder_save,
+            'result_prefix': result_prefix,
             'pluginPath': pluginPath,
-            'context': context,
             'transform_crs_string': transform_crs_string
         }
         
@@ -306,6 +319,28 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 import_parameters_dict,
                 feedback
             )
+            if import_parameters_dict['add_z_bool']:
+                if not 'LINK_OFFSETS' in df_options_converted['Option'].tolist():
+                    import_parameters_dict['link_offsets'] = 'elevation'  # assume absolute elevation if no info
+                    feedback.pushWarning(
+                        'OPTIONS: no value for LINK_OFFSETS in inp file. LINK_OFFSETS = ELEVATION is assumed for z-coordinates'
+                    )
+                else:
+                    link_offset_value = df_options_converted.loc[
+                        df_options_converted['Option'] == 'LINK_OFFSETS',
+                        'Value'
+                    ].tolist()[0]
+                    if link_offset_value == 'DEPTH':
+                        import_parameters_dict['link_offsets'] = 'depth'  # relative
+                    elif link_offset_value == 'ELEVATION':
+                        import_parameters_dict['link_offsets'] = 'elevation'  # absolute
+                    else:
+                        import_parameters_dict['link_offsets'] = 'elevation'  # absolute
+                        feedback.pushWarning(
+                            'OPTIONS: value \"'
+                            + link_offset_value
+                            + '\" for LINK_OFFSETS in inp file is not valid. LINK_OFFSETS = ELEVATION is assumed for z-coordinates'
+                        )
             dict_res_table['OPTIONS'] = {
                 'OPTIONS': df_options_converted
             }
@@ -640,7 +675,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         #------------------------------
         # prepare
         feedback.setProgress(0)
-        for section_name in def_sections_geoms_dict.keys():
+        for section_name in def_sections_geoms_list:  # the list is used to keep the order
             if feedback.isCanceled():
                 break
             if section_name in dict_all_vals.keys():

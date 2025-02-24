@@ -35,9 +35,10 @@ from .g_s_defaults import (
     def_qgis_fields_dict,
     def_sections_dict
 )
-from .g_s_various_functions import (
+from .g_s_export_helpers import (
     check_columns
 )
+
 
 # Definitions
 # Inlets
@@ -66,16 +67,11 @@ def get_conduits_from_shapefile(conduits_raw):
     removes columns which are not needed, replaces empty values with '' or '*'
     :param pd.DataFrame conduits_raw
     """
-    # check if all columns exist
-    qgis_conduits_cols = list(def_qgis_fields_dict['CONDUITS'].keys())
     conduits_cols = def_sections_dict['CONDUITS']
     xsections_cols = def_sections_dict['XSECTIONS']
     losses_cols = def_sections_dict['LOSSES']
-    cond_layer_name = 'Conduits Layer'
-    check_columns(cond_layer_name,
-                  qgis_conduits_cols,
-                  conduits_raw.keys())
     conduits_df = conduits_raw[conduits_cols].copy()
+    conduits_df = conduits_df.apply(lambda x: x.astype("string"), axis = 0)
     conduits_df['Name'] = [str(x) for x in conduits_df['Name']]
     # Asteriscs indicate that InOffset or OutOffset is the same as node elevation:
     conduits_df['InOffset'] = conduits_df['InOffset'].fillna('*')
@@ -83,6 +79,7 @@ def get_conduits_from_shapefile(conduits_raw):
     conduits_df['InitFlow'] = conduits_df['InitFlow'].fillna('0')
     conduits_df['MaxFlow'] = conduits_df['MaxFlow'].fillna('0')
     xsections_df = conduits_raw[xsections_cols].copy()
+    xsections_df = xsections_df.apply(lambda x: x.astype("string"), axis = 0)
     xsections_df['Culvert'] = xsections_df['Culvert'].fillna('')
     if any(xsections_df['XsectShape'] == 'IRREGULAR') or any(xsections_df['XsectShape'] == 'CUSTOM') or any(xsections_df['XsectShape'] == 'STREET'):
         if 'Shp_Trnsct' not in conduits_raw.columns:
@@ -93,6 +90,11 @@ def get_conduits_from_shapefile(conduits_raw):
             xsections_df.loc[xsections_df['XsectShape'] == 'CUSTOM', 'Geom2'] = conduits_raw.loc[xsections_df['XsectShape'] == 'CUSTOM', 'Shp_Trnsct']
 
     def fill_empty_xsects(xs_row, col):
+        """
+        fills cress section columns if empty
+        :param pd.series xs_row
+        :param str col
+        """
         if col == 'Barrels':
             if xs_row['XsectShape'] in ['IRREGULAR', 'STREET']:
                 return ''
@@ -100,7 +102,7 @@ def get_conduits_from_shapefile(conduits_raw):
                 if pd.isna(xs_row[col]):
                     return '1'
                 else:
-                    return int(xs_row[col])
+                    return str(round(float(xs_row[col])))
         else:
             if xs_row['XsectShape'] in ['IRREGULAR', 'STREET']:
                 return ''
@@ -114,6 +116,7 @@ def get_conduits_from_shapefile(conduits_raw):
     xsections_df['Geom4'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Geom4'), axis=1)
     xsections_df['Barrels'] = xsections_df.apply(lambda x: fill_empty_xsects(x, 'Barrels'), axis=1)
     losses_df = conduits_raw[losses_cols].copy()
+    losses_df = losses_df.apply(lambda x: x.astype("string"), axis = 0)
     losses_df['FlapGate'] = losses_df['FlapGate'].fillna('NO')
     losses_df['Seepage'] = losses_df['Seepage'].fillna('0')
     losses_df['Kentry'] = losses_df['Kentry'].fillna('0')
@@ -161,14 +164,7 @@ def del_first_last_vt(link):
 # pumps
 def get_pumps_from_shapefile(pumps_raw):
     """prepares pumps data for writing an input file"""
-    # check if all columns exist
     pumps_cols = list(def_qgis_fields_dict['PUMPS'].keys())
-    pumps_layer_name = 'Pumps Layer'
-    check_columns(
-        pumps_layer_name,
-        pumps_cols,
-        pumps_raw.keys()
-    )
     pumps_df = pumps_raw[pumps_cols].copy()
     pumps_df['Name'] = [str(x) for x in pumps_df['Name']]
     pumps_df['PumpCurve'] = pumps_df['PumpCurve'].fillna('*')
@@ -191,14 +187,7 @@ weirs_shape_dict = {
 
 def get_weirs_from_shapefile(weirs_raw):
     """prepares weirs data for writing an input file"""
-    weirs_qgis_cols = list(def_qgis_fields_dict['WEIRS'].keys())
     weirs_inp_cols = def_sections_dict['WEIRS']
-    weirs_layer_name = 'Weirs Layer'
-    check_columns(
-        weirs_layer_name,
-        weirs_qgis_cols,
-        weirs_raw.columns
-    )
     weirs_df = weirs_raw.copy()
     weirs_df['Name'] = [str(x) for x in weirs_df['Name']]
     weirs_df['CrestHeigh'] = weirs_df['CrestHeigh'].fillna('*')
@@ -239,14 +228,6 @@ def get_orifices_from_shapefile(orifices_raw):
     prepares orifices data for writing an input file
     param: pd.DataFrame orifices_raw
     """
-    # check if columns exist
-    all_orifices_cols = list(def_qgis_fields_dict['ORIFICES'].keys())
-    orifices_layer_name = 'Orifices Layer'
-    check_columns(
-        orifices_layer_name,
-        all_orifices_cols,
-        orifices_raw.columns
-    )
     orifices_inp_cols = def_sections_dict['ORIFICES']
     orifices_df = orifices_raw.copy()
     orifices_df['Name'] = [str(x) for x in orifices_df['Name']]
@@ -273,20 +254,15 @@ def get_orifices_from_shapefile(orifices_raw):
 
 
 # outlets
+def get_outl_curve(outl_row):
+    """selects curve data according to rating curve type"""
+    if outl_row['RateCurve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
+        return outl_row['Qcoeff']
+    else:
+        return outl_row['CurveName']
+
 def get_outlets_from_shapefile(outlets_raw):
     """prepares outlets data for writing an input file"""
-    def get_outl_curve(outl_row):
-        """selects curve data according to rating curve type"""
-        if outl_row['RateCurve'] in ['FUNCTIONAL/DEPTH', 'FUNCTIONAL/HEAD']:
-            return outl_row['Qcoeff']
-        else:
-            return outl_row['CurveName']
-    # check columns
-    outlets_cols = list(def_qgis_fields_dict['OUTLETS'].keys())
-    outlets_layer_name = 'Outlets Layer'
-    check_columns(outlets_layer_name,
-                  outlets_cols,
-                  outlets_raw.keys())
     outlets_raw['Name'] = [str(x) for x in outlets_raw['Name']]
     outlets_raw['Qcoeff'] = outlets_raw['Qcoeff'].fillna(1)
     outlets_raw['CurveName'] = outlets_raw['CurveName'].fillna('*')
@@ -368,7 +344,7 @@ def adjust_xsection_df(all_xsections):  # no feedback!
     :param pd.DataFrame all_xsections
     :return: pd.DataFrame
     """
-    all_xsections['Shp_Trnsct'] = np.nan
+    all_xsections['Shp_Trnsct'] = pd.NA
     all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1']
     all_xsections.loc[all_xsections['XsectShape'] == 'STREET', 'Geom1'] = np.nan
     all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Shp_Trnsct'] = all_xsections.loc[all_xsections['XsectShape'] == 'IRREGULAR', 'Geom1']
@@ -413,7 +389,7 @@ def get_line_from_points(
     if (
         (from_node not in all_geoms.index)
         or (to_node not in all_geoms.index)
-    ):
+    ):  # skip if not connected
         line_geom = NULL
     else:
         verts = all_vertices[all_vertices.index == line_name]
@@ -451,3 +427,54 @@ def create_lines_for_section(df_processed, dict_all_vals, feedback):
         columns=['Name', 'geometry']
     ).set_index('Name')
     return lines_created
+
+
+
+# z coordinates
+def get_elevation_from_node(node_name, dict_all_vals):
+    for section_i in ['JUNCTIONS', 'OUTFALLS', 'DIVIDERS', 'STORAGE']:
+        if section_i in dict_all_vals.keys():
+            if node_name in dict_all_vals[section_i]['data']['Name'].values:
+                matching_df = dict_all_vals[section_i]['data']
+                z_coord = matching_df.loc[matching_df['Name']==node_name, 'Elevation'].tolist()[0]
+                z_coord = float(z_coord)
+                break
+    return z_coord
+
+def add_z_to_lines(sr, import_parameters_dict, dict_all_vals):
+    """
+    Adds a z coordindate to the line geometry in a pandas series
+    :param PandasSeries sr
+    """
+    f_geometry = sr['geometry']
+    in_offset = sr['InOffset']
+    out_offset = sr['OutOffset']
+    vtc = [v for v in f_geometry.vertices()]
+    # get the elevation
+    from_node = sr['FromNode']
+    z_coord_first = get_elevation_from_node(from_node, dict_all_vals)
+    to_node = sr['ToNode']
+    z_coord_last = get_elevation_from_node(to_node, dict_all_vals)
+    if import_parameters_dict['link_offsets'] == 'elevation':
+        # absolute elevations -> replace with in_offset if available
+        if in_offset != NULL:
+            z_coord_first = float(in_offset)
+        if out_offset != NULL:
+            z_coord_last = float(out_offset)
+    else:
+        # depth / relative heights -> add offset to z_coord
+        if in_offset != NULL:
+            z_coord_first = z_coord_first + float(in_offset)
+        if out_offset != NULL:
+            z_coord_last = z_coord_last + float(out_offset)
+    z_diff = z_coord_last-z_coord_first
+    len_line = f_geometry.length()
+    slope = z_diff/len_line
+    vtx_list = []
+    for i, vert in enumerate(f_geometry.vertices()):
+        dist = f_geometry.distanceToVertex(i)
+        z_interpol = z_coord_first + dist*slope
+        vert.addZValue(z_interpol)
+        vtx_list.append(vert)
+    f_geometry_with_z = QgsGeometry.fromPolyline(vtx_list)
+    return f_geometry_with_z

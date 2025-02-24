@@ -38,6 +38,42 @@ from .g_s_defaults import (
 
 # Export
 # geometry functions
+def check_nan(replace_lst):
+    pass
+
+
+def use_z_if_available(
+    df,
+    coords,
+    use_z_bool,
+    feedback,
+    geom_type='Points',
+    layer_name=None
+):
+    """
+    replaces Elevation or InOffset/OutOffset by Z_Coords+
+    :param pd.DataFrame df
+    :param pd.DataFrame / dict coords
+    :param bool use_z_bool
+    :param QgsProcessingFeedback feedback
+    """
+    if geom_type == 'lines':
+        if use_z_bool:
+            # if not na
+            df['InOffset'] = [coords[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
+            df['OutOffset'] = [coords[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
+        coords = {
+            l_name: df_coord[
+                ['X_Coord', 'Y_Coord']
+            ] for l_name, df_coord in coords.items()
+        }  # remove z
+    else:
+        if use_z_bool:
+            # if not na
+            df['Elevation'] = coords['Z_Coord']
+        coords.drop("Z_Coord", axis=1, inplace=True)
+    return df, coords
+
 def get_coords_from_geometry(df):
     """
     extracts coords from any gpd.geodataframe
@@ -73,39 +109,93 @@ def get_coords_from_geometry(df):
     line_t_names = list(geom_line_types.keys())
     polygon_t_names = list(geom_polygon_types.keys())
 
-    def extract_xy_from_simple_line(line_simple):
-        """extracts x and y coordinates from a LineString"""
-        xy_list = [[str(p.x()), str(p.y())] for p in line_simple]
-        xy_df = pd.DataFrame(xy_list, columns=['x', 'y'])
-        return xy_df
+    # case: points
+    if all(
+        QgsWkbTypes.displayString(
+            g_type.wkbType()
+        ) in point_t_names for g_type in df.geometry
+    ):
+        extr_coords = [
+            extract_xyz_from_simple_point(
+                p_name,
+                point_simple
+            ) for p_name, point_simple in zip(
+                df['Name'],
+                df['geometry']
+            )
+        ]
+        extr_coords_df = pd.DataFrame(
+            extr_coords,
+            columns=(
+                ['Name', 'X_Coord', 'Y_Coord', 'Z_Coord']
+            )
+        )
+        return extr_coords_df
 
-    def extract_xy_from_line(line_row):
-        """extraxts xy from LineString or MultiLineString"""
-        act_line_type = QgsWkbTypes.displayString(line_row.wkbType())
-        simple_or_multi = geom_line_types[act_line_type]
-        if simple_or_multi == 'simple':
-            return extract_xy_from_simple_line(line_row.asPolyline())
-        if simple_or_multi == 'multi':
-            xy_list = [extract_xy_from_simple_line(line_simple) for line_simple in line_row.asMultiPolyline()]
-            return pd.concat(xy_list, ignore_index=True)
+    # case lines
+    elif all(
+        QgsWkbTypes.displayString(
+            g_type.wkbType()
+        ) in line_t_names for g_type in df.geometry
+    ):
+        return {na: extract_xy_from_line(line_geom) for line_geom, na in zip(df.geometry, df.Name)}
 
-    if all(QgsWkbTypes.displayString(g_type.wkbType()) in point_t_names for g_type in df.geometry):
-        df['X_Coord'] = [str(df_row.asPoint().x()) for df_row in df['geometry']]
-        df['Y_Coord'] = [str(df_row.asPoint().y()) for df_row in df['geometry']]
-        return df['X_Coord'], df['Y_Coord']
-    elif all(QgsWkbTypes.displayString(g_type.wkbType()) in line_t_names for g_type in df.geometry):
-        return {na: extract_xy_from_line(geom) for geom, na in zip(df.geometry, df.Name)}
-    elif all(QgsWkbTypes.displayString(g_type.wkbType()) in polygon_t_names for g_type in df.geometry):
-        def extract_xy_from_area(geom_row):
-            """extraxts xy from polygon geometries"""
-            xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
-            xy_df = pd.DataFrame(xy_list, columns=['x', 'y'])
-            return xy_df
-        return {na: extract_xy_from_area(ge) for ge, na in zip(df.geometry, df.Name)}
+    # case polygons
+    elif all(
+        QgsWkbTypes.displayString(
+            g_type.wkbType()
+        ) in polygon_t_names for g_type in df.geometry
+    ):
+        return {na: extract_xy_from_area(polyg_geom) for polyg_geom, na in zip(df.geometry, df.Name)}
     else:
         raise QgsProcessingException(
             'Geometry type of one or more features could not be handled'
         )
+
+def extract_xyz_from_simple_point(p_name, point_simple):
+    """
+    extracts x and y coordinates from a LineString
+    :param str p_name
+    :param QgsGeometry point_simple
+    :return: tuple
+    """
+    qgs_point = [p for p in point_simple.parts()][0]
+    x_coord = str(qgs_point.x())
+    y_coord = str(qgs_point.y())
+    z_coord = qgs_point.z()
+    return p_name, x_coord, y_coord, z_coord
+
+
+def extract_xy_from_line(line_geom):
+    """
+    extraxts xy from LineString or MultiLineString
+    :return: pd.DataFrame
+    """
+    vertices_list = [p for p in line_geom.vertices()]
+    extr_coords = [
+            extract_xyz_from_simple_point(
+                'nan',
+                point_simple
+            ) for point_simple in 
+                vertices_list
+        ]
+    extr_coords_df = pd.DataFrame(
+        extr_coords,
+        columns=(
+            ['Name', 'X_Coord', 'Y_Coord', 'Z_Coord']
+        )
+    )
+    extr_coords_df.drop('Name', axis=1, inplace=True)
+    return extr_coords_df
+
+def extract_xy_from_area(geom_row):
+    """
+    extraxts xy from polygon geometries
+    :return: pd.DataFrame
+    """
+    xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
+    xy_df = pd.DataFrame(xy_list, columns=['X_Coord', 'Y_Coord'])
+    return xy_df
 
 # functions for data in tables
 def get_curves_from_table(curves_raw, name_col):

@@ -46,7 +46,7 @@ from qgis.core import (
     QgsVectorFileWriter
 )
 from .g_s_read_write_data import (
-    read_layers_direct,
+    load_layer_to_df,
     create_layer_from_df,
     save_layer_to_file
 )
@@ -332,13 +332,13 @@ class CreateSubModel(QgsProcessingAlgorithm):
         crs_dict.update({k: v.dataProvider().crs() for k, v in subcatch_layers_dict.items()})
         if len(subcatch_layers_dict) != 0:
             needed_subc_attrs = ['Name', 'Outlet', 'RainGage']
-            subc_df_dict = read_layers_direct(
-                subcatch_layers_dict,
+            subc_df_dict = load_layer_to_df(
+                subcatch_layers_dict['SUBCATCHMENTS'],
                 needed_subc_attrs,
                 with_id=True,
                 feedback = feedback
             )
-            subc_df = subc_df_dict['SUBCATCHMENTS'][needed_subc_attrs+['id']]
+            subc_df = subc_df_dict[needed_subc_attrs+['id']]
 
         # raingages
         raingages_layer_dict = {'RAINGAGES': file_raingages}
@@ -348,13 +348,13 @@ class CreateSubModel(QgsProcessingAlgorithm):
         if len(raingages_layer_dict) != 0:
             # load raingages layer as pd df
             needed_rg_attrs = ['Name']
-            rg_df_dict = read_layers_direct(
-                raingages_layer_dict,
+            rg_df_dict = load_layer_to_df(
+                raingages_layer_dict['RAINGAGES'],
                 needed_rg_attrs,
                 with_id=True,
                 feedback = feedback
             )
-            rg_df = rg_df_dict['RAINGAGES'][needed_rg_attrs+['id']]
+            rg_df = rg_df_dict[needed_rg_attrs+['id']]
 
         feedback.setProgressText(self.tr('Identifying start node...'))
         feedback.setProgress(6)
@@ -363,12 +363,12 @@ class CreateSubModel(QgsProcessingAlgorithm):
         else:
             # load node layers (also checks if required fields exist)
             needed_nodes_attrs = ['Name', 'Elevation']
-            nodes_df_dict = read_layers_direct(
-                nodes_layers_dict,
+            nodes_df_dict = {layer_name: load_layer_to_df(
+                vlayer,
                 needed_nodes_attrs,
                 with_id=True,
                 feedback = feedback
-            )
+            ) for layer_name, vlayer in nodes_layers_dict.items()}
             # get startpoint...
             start_point = ''
             for k, p_f in nodes_layers_dict.items():
@@ -407,12 +407,12 @@ class CreateSubModel(QgsProcessingAlgorithm):
             feedback.setProgressText(self.tr('Routing along links...'))
             # load and merge link layers as pd.df
             needed_link_attrs = ['Name', 'FromNode', 'ToNode']
-            links_df_dict = read_layers_direct(
-                link_layers_dict,
+            links_df_dict = {layer_name: load_layer_to_df(
+                vlayer,
                 needed_link_attrs,
                 with_id=True,
                 feedback = feedback
-            )
+            ) for layer_name, vlayer in link_layers_dict.items()}
             all_links_df = pd.concat([i for i in links_df_dict.values()])
             all_links_df = all_links_df[needed_link_attrs+['id']]
             all_links_df = all_links_df.reset_index()

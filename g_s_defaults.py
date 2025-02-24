@@ -22,13 +22,14 @@
 """
 
 __author__ = 'Jannik Schilling'
-__date__ = '2024-03-03'
+__date__ = '2025-02-17'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 import os
 from qgis.core import QgsGeometry
 from datetime import datetime, time
 
+#  definition for ofoptns parameters
 def_options_dtypes_dict = {
     'START_DATE': {
         'dtype': [datetime],
@@ -844,6 +845,20 @@ def_sections_geoms_dict = {
     'WEIRS': 'LineString',
     'OUTLETS': 'LineString'
 }
+def_sections_geoms_list = [  # the same as a list to keep the order (needed for python < 3.6)
+    'RAINGAGES',
+    'SUBCATCHMENTS',
+    'JUNCTIONS',
+    'OUTFALLS',
+    'DIVIDERS',
+    'STORAGE',
+    'CONDUITS',
+    'PUMPS',
+    'ORIFICES',
+    'WEIRS',
+    'OUTLETS'
+]
+
 
 # style_file
 def_stylefile_dict = {

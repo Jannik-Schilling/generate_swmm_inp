@@ -214,19 +214,15 @@ def write_inp(
             file1.write('\n')
         file1.write('\n')
 
+
     # quality
-    if 'QUALITY' in inp_dict.keys():
-        feedback.setProgressText('writing [Quality Parameters]...')
-        quality_dict = inp_dict['QUALITY']['data']
-        for q_k in quality_dict.keys():
-            q_df = quality_dict[q_k]
-            file1.write('['+str(q_k)+']\n')
-            if q_df.empty:
-                pass
-            else:
-                file1.write(q_df.to_string(header=False, index=False))
-                file1.write('\n')
-            file1.write('\n')
+    df_to_inp_section('POLLUTANTS')
+    df_to_inp_section('LANDUSES')
+    df_to_inp_section('BUILDUP')
+    df_to_inp_section('WASHOFF')
+    df_to_inp_section('COVERAGES')
+    df_to_inp_section('LOADINGS')
+
 
     def compose_dict_text(dict_i, section, inflow_keys_dict):
         """writes text lines from inflows dictionaries"""
@@ -348,7 +344,7 @@ def write_inp(
         for vert_key in vertices_dict.keys():
             vert_df = vertices_dict[vert_key].copy()
             vert_df['vertice'] = vert_key
-            vert_df = vert_df[['vertice', 'x', 'y']]
+            vert_df = vert_df[['vertice', 'X_Coord', 'Y_Coord']]
             file1.write(vert_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')
@@ -361,7 +357,7 @@ def write_inp(
         for pol_key in polygons_dict.keys():
             pol_df = polygons_dict[pol_key].copy()
             pol_df['subcatch']=pol_key
-            pol_df = pol_df[['subcatch', 'x', 'y']]
+            pol_df = pol_df[['subcatch', 'X_Coord', 'Y_Coord']]
             file1.write(pol_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')
