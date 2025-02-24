@@ -285,16 +285,16 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         inp_file_path = self.parameterAsString(parameters, self.QGIS_OUT_INP_FILE, context)
         inp_file_name = os.path.basename(inp_file_path)
         project_dir = os.path.dirname(inp_file_path)
-        # advanced parameter for z_values
-        use_z_bool = self.parameterAsBoolean(parameters, self.USE_Z_VALS, context)  # del
+
+
         
         export_params = {
             'all_nodes': list(),
             'all_subcatchments': list(),
             'feedback': feedback,
-            'link_offsets': 'elevation',
+            'link_offsets': 'ELEVATION',  # assumes absolute elevation data, if parameter not in options file
             'main_infiltration_method': None,
-            'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),
+            'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),  # advanced parameter for z_values
         }
 
         # initializing the input dictionary
@@ -422,7 +422,14 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             # geometry
             if data_type == 'layer':
                 sections_coords = get_coords_from_geometry(data_entry)
-                if data_name in ['RAINGAGES', 'SUBCATCHMENTS']:
+                if data_name in [
+                    'RAINGAGES',
+                    'SUBCATCHMENTS',
+                    'PUMPS',
+                    'WEIRS',
+                    'OUTLETS',
+                    'ORIFICES'
+                ]:  # skip for these
                     if data_name == 'RAINGAGES':
                         # rename coordinates
                         sections_coords['SYMBOLS'] = sections_coords.pop('COORDINATES')
@@ -431,14 +438,24 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     inp_dict.update(sections_coords)  # write to inp dict
                         
                 else:
+                    link_offsets = export_params['link_offsets']
+                    if (
+                        link_offsets == 'depth' and
+                        list(sections_coords.keys())[0] == 'VERTICES' and
+                        'COORDINATES' in inp_dict.keys()
+                    ):
+                        coords_nodes = inp_dict['COORDINATES']['data']
+                    else:
+                        coords_nodes = None
                     # use z coordinate if desired
-                    processed_data_dict[data_name]['data'], sections_coords =  use_z_if_available(
+                    processed_data_dict[data_name]['data'] =  use_z_if_available(
                         processed_data_dict[data_name]['data'],
                         sections_coords,
                         export_params['use_z_bool'],
                         feedback,
                         export_params['link_offsets'],
-                        layer_name = f_name
+                        layer_name=f_name,
+                        coords_nodes=coords_nodes,
                     )
                 
                 # write geometry info to inp dict
@@ -515,20 +532,19 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
         # run export handler
         for data_name in [
-            'OPTIONS',
+            'OPTIONS',  #  first, needed for link_offsets
             'SUBCATCHMENTS',
-            'JUNCTIONS',
+            'JUNCTIONS',  # second: nodes for coordinates section
             'OUTFALLS',
             'STORAGE',
             'DIVIDERS',
             'RAINGAGES',
-            'CONDUITS',
+            'CONDUITS',  # third: links
             'PUMPS',
             'WEIRS',
             'OUTLETS',
             'ORIFICES',
-            'OPTIONS',
-            'INFLOWS',
+            'INFLOWS',  # fourth: tables for additional parameters / information
             'PATTERNS',
             'CURVES',
             'QUALITY',
@@ -549,6 +565,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                     inp_dict,
                     export_params
                 )
+
         # delete sections with empty data
         inp_dict = {k: v for k, v in inp_dict.items() if len(v['data'])>0}
 

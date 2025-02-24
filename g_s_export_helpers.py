@@ -39,8 +39,6 @@ from .g_s_defaults import (
 )
 
 
-
-
 def get_annotations_from_raw_df(df_raw):
     """
     extracts annotations / descriptions from the dataframe
@@ -56,7 +54,6 @@ def get_annotations_from_raw_df(df_raw):
     return annot_dict
 
 
-
 def data_preparation(data_name, data_entry, export_params):
     """
     prepares data for each data entry in the export_data dictionary
@@ -66,10 +63,15 @@ def data_preparation(data_name, data_entry, export_params):
     """
     if data_name == 'OPTIONS':
         from .g_s_options import get_options_from_table
-        options_df, main_infiltration_method = get_options_from_table(
+        (
+            options_df,
+            main_infiltration_method,
+            link_offsets
+        ) = get_options_from_table(
                 data_entry['OPTIONS'].copy()
             )
         export_params['main_infiltration_method'] = main_infiltration_method
+        export_params['link_offsets'] = link_offsets
         return {'OPTIONS': {'data': options_df}}
     
     elif data_name == 'SUBCATCHMENTS':
@@ -143,9 +145,9 @@ def data_preparation(data_name, data_entry, export_params):
 
     elif data_name == 'INFLOWS':
         from .g_s_nodes import get_inflows_from_table
-        dwf_dict, inflow_dict, hydrogr_df, rdii_df = get_inflows_from_table(
-            data_entry['INFLOWS'],
-            all_nodes,
+        dwf_dict, inflows_dict, hydrogr_df, rdii_df = get_inflows_from_table(
+            data_entry.copy(),
+            export_params['all_nodes'],
             feedback=export_params['feedback']
         )
         res_dict = {
@@ -262,38 +264,105 @@ def use_z_if_available(
     coords,
     use_z_bool,
     feedback,
-    link_offsets='elevation',
-    layer_name=None
+    link_offsets='ELEVATION',
+    layer_name=None,
+    coords_nodes=None,
 ):
     """
-    replaces Elevation or InOffset/OutOffset by Z_Coords and removes Z_Coords from coords dict
+    replaces Elevation or InOffset/OutOffset by Z_Coords; Z_Coords are not removed for reuse in 
     :param pd.DataFrame df
     :param dict coords
     :param bool use_z_bool
     :param QgsProcessingFeedback feedback
-    :param str link_offsets
+    :param str link_offsets: 'ELEVATION' or 'DEPTH
     :param str layer_name
+    :param pd.DataFrame coords_nodes: for first and last vertex in case of relative link offsets
     """
     if list(coords.keys())[0] == 'VERTICES':  # lines
         coords_dict = coords['VERTICES']['data']
         if use_z_bool:
-            # if not na
-            df['InOffset'] = [coords_dict[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
-            df['OutOffset'] = [coords_dict[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
-        coords_dict_without_z = {
-            l_name: df_i[
-                ['X_Coord', 'Y_Coord']
-            ] for l_name, df_i in coords_dict.items()
-        }  # remove z
-        coords['VERTICES']['data'] = coords_dict_without_z
+            vertices_z_in = [coords_dict[l_name]['Z_Coord'].tolist()[0] for l_name in df['Name']]
+            vertices_z_out =  [coords_dict[l_name]['Z_Coord'].tolist()[-1] for l_name in df['Name']]
+            if link_offsets == 'ELEVATION':
+                InOffset_with_z = vertices_z_in
+                OutOffset_with_z = vertices_z_out
+            elif link_offsets == 'DEPTH':
+                nodes_z_in = [
+                    coords_nodes.loc(
+                        coords_nodes['Name']==n_name,
+                        'Z_Coord'
+                    ).tolist()[0] for n_name in df['FromNode']
+                ]
+                nodes_z_out = [
+                    coords_nodes.loc(
+                        coords_nodes['Name']==n_name,
+                        'Z_Coord'
+                    ).tolist()[0] for n_name in df['ToNode']
+                ]
+                InOffset_with_z = vertices_z_in-nodes_z_in
+                OutOffset_with_z= vertices_z_out.nodes_z_out
+            else:
+                raise QgsProcessingException('Unknown link offests type: '+ str(link_offsets))
+            # check if any z-coordniate was missing; if so: raise Exception 
+            if any([pd.isna(z_val) for z_val in InOffset_with_z]):
+                missing_z_in = [
+                    str(l_name) for z_val, l_name in zip(
+                        InOffset_with_z,
+                        df['Name']
+                    ) if pd.isna(z_val)
+                ]
+                raise QgsProcessingException(
+                    'Missing z-Coordinates for the following links '
+                    +'(first vertices or connected nodes) in layer '
+                    +str(layer_name)
+                    +': '
+                    + missing_z_in.join(', ')
+                    +'\n Please check all required nodes and links or '
+                    +'run the tool without z-coordinates'
+                )
+            else:
+                df['InOffset']  = InOffset_with_z
+            if any([pd.isna(z_val) for z_val in OutOffset_with_z]):
+                missing_z_out = [
+                    str(l_name) for z_val, l_name in zip(
+                        OutOffset_with_z,
+                        df['Name']
+                    ) if pd.isna(z_val)
+                ]
+                raise QgsProcessingException(
+                    'Missing z-Coordinates for the following links '
+                    +'(last vertices or connected nodes) in layer '
+                    +str(layer_name)
+                    +': '
+                    + missing_z_out.join(', ')
+                    +'\n Please check all required nodes and links '
+                    +'or run the tool without z-coordinates'
+                )
+            else:
+                df['OutOffset']  = OutOffset_with_z
+            
     else:  # points -> pd.DataFrame
         coords_df = coords['COORDINATES']['data']
         if use_z_bool:
+            elevation_with_z = list(coords_df['Z_Coord'])
             # if not na
-            df['Elevation'] = coords_df['Z_Coord']
-        coords_df_without_z = coords_df.drop("Z_Coord", axis=1, inplace=False)
-        coords['COORDINATES']['data'] = coords_df_without_z
-    return df, coords
+            if any([pd.isna(z_val) for z_val in elevation_with_z]):
+                missing_z_elevation = [
+                    str(l_name) for z_val, l_name in zip(
+                        elevation_with_z,
+                        df['Name']
+                    ) if pd.isna(z_val)
+                ]
+                raise QgsProcessingException(
+                    'Missing z-Coordinates for the following nodes in layer '
+                    + str(layer_name)
+                    + ': '
+                    + missing_z_out.join(', ')
+                    +'\n Please check all required nodes or run the tool without z-coordinates'
+                )
+            else:
+                df['Elevation'] = elevation_with_z
+    return df
 
 
 def get_coords_from_geometry(df):
