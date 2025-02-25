@@ -265,21 +265,6 @@ def data_preparation(data_name, data_entry, export_params):
         raise QgsProcessingException(f'Unknown data name: {data_name}')
 
 # geometry functions
-def get_z_coords(coords_dict, vertex_index, all_names):
-    """
-    Extract the Z_coord from coord_list according to the 
-    
-    :param coords_dict: Dictionary with coordinates of vertices.
-    :type coords_dict: dict
-    :param vertex_index: Index of the vertex (0 for the first one or -1 for the last one).
-    :type vertex_index: int  
-    :param all_names: list-like with all occuring names of the objects.
-    :type all_names: list/pd.Series
-    :return: z-Coordinate.
-    :rtype: float
-    """
-    return [coords_dict[name]['Z_Coord'].tolist()[vertex_index] for name in all_names]
-
 def check_missing_z(z_vals, coord_type, all_names):
     """
     Check if there is a missing (=nan) value in the z-coordinates.
@@ -310,7 +295,7 @@ def use_z_if_available(
     """
     Replaces Elevation or InOffset/OutOffset by Z_Coords if available.
 
-    :param df: Dataframe containing the data.
+    :param df: Dataframe with links or nodes to be adjusted.
     :type df: pd.DataFrame
     :param coords: Dictionary containing coordinates.
     :type coords: dict
@@ -330,17 +315,28 @@ def use_z_if_available(
     if list(coords.keys())[0] == 'VERTICES':  # lines
         coords_dict = coords['VERTICES']['data']
         if use_z_bool:
-            vertices_z_in = get_z_coords(coords_dict, 0, df['Name'])
-            vertices_z_out = get_z_coords(coords_dict, -1, df['Name'])
-
+            vertices_z_in = [coords_dict[link_name]['Z_Coord'].tolist()[0] for link_name in df['Name']]
+            vertices_z_out = [coords_dict[link_name]['Z_Coord'].tolist()[-1] for link_name in df['Name']]
+            nodes_z_in = [
+                coords_nodes.loc[
+                    coords_nodes['Name']==node_name,
+                    'Z_Coord'
+                ].tolist()[0] for node_name in df['FromNode']
+            ]
+            nodes_z_out = [
+                coords_nodes.loc[
+                    coords_nodes['Name']==node_name,
+                    'Z_Coord'
+                ].tolist()[0] for node_name in df['ToNode']
+            ]
             if link_offsets == 'ELEVATION':
-                df['InOffset'] = vertices_z_in
-                df['OutOffset'] = vertices_z_out
+                #df['InOffset'] = vertices_z_in
+                #df['OutOffset'] = vertices_z_out
+                df['InOffset'] = [str(v_in) if (v_in - n_in != 0) else '*' for v_in, n_in in zip(vertices_z_in, nodes_z_in)]
+                df['OutOffset'] = [str(v_out) if (v_out - n_out != 0) else '*' for v_out, n_out in zip(vertices_z_out, nodes_z_out)]
             elif link_offsets == 'DEPTH':
-                nodes_z_in = get_z_coords(coords_nodes.to_dict(), 0)
-                nodes_z_out = get_z_coords(coords_nodes.to_dict(), -1)
-                df['InOffset'] = [v_in - n_in for v_in, n_in in zip(vertices_z_in, nodes_z_in)]
-                df['OutOffset'] = [v_out - n_out for v_out, n_out in zip(vertices_z_out, nodes_z_out)]
+                df['InOffset'] = [str(v_in - n_in) for v_in, n_in in zip(vertices_z_in, nodes_z_in)]
+                df['OutOffset'] = [str(v_out - n_out) for v_out, n_out in zip(vertices_z_out, nodes_z_out)]
             else:
                 raise QgsProcessingException(f'Unknown link offsets type: {link_offsets}')
 
