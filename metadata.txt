@@ -26,7 +26,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog= 0.38
-	- fix QgsGeometry issue
+	- new feature: import and export of Z-coordinates
+	- fix QgsGeometry deprecation warning
 	- Since version 0.34: replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers because of issues with ESRI-Shapefiles. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.
 
 
@@ -38,7 +39,7 @@ homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
 icon=icons/icon.png
 # experimental flag
-experimental=False
+experimental=True
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
