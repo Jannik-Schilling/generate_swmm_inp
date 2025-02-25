@@ -422,28 +422,25 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             # geometry
             if data_type == 'layer':
                 sections_coords = get_coords_from_geometry(data_entry)
-                if data_name in [
-                    'RAINGAGES',
+                if data_name == 'RAINGAGES':
+                    # rename coordinates
+                    sections_coords['SYMBOLS'] = sections_coords.pop('COORDINATES')
+                    if 'Z_Coord' in sections_coords['SYMBOLS']['data'].keys():
+                        sections_coords['SYMBOLS']['data'].drop("Z_Coord", axis=1, inplace=True)
+                elif data_name in [
                     'SUBCATCHMENTS',
                     'PUMPS',
                     'WEIRS',
                     'OUTLETS',
                     'ORIFICES'
-                ]:  # skip for these
-                    if data_name == 'RAINGAGES':
-                        # rename coordinates
-                        sections_coords['SYMBOLS'] = sections_coords.pop('COORDINATES')
-                        if 'Z_Coord' in sections_coords['SYMBOLS']['data'].keys():
-                            sections_coords['SYMBOLS']['data'].drop("Z_Coord", axis=1, inplace=True)
-                    inp_dict.update(sections_coords)  # write to inp dict
-                        
+                ]:
+                    pass  # skip adjustment with z
                 else:
                     link_offsets = export_params['link_offsets']
                     if (
-                        link_offsets == 'depth' and
                         list(sections_coords.keys())[0] == 'VERTICES' and
                         'COORDINATES' in inp_dict.keys()
-                    ):
+                    ):  # only required for links
                         coords_nodes = inp_dict['COORDINATES']['data']
                     else:
                         coords_nodes = None
@@ -457,10 +454,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                         layer_name=f_name,
                         coords_nodes=coords_nodes,
                     )
-                
+
                 # write geometry info to inp dict
                 if def_sections_geoms_dict[data_name] == 'LineString':
-                    vertices_before = sections_coords['VERTICES']['data']
+                    vertices_before = sections_coords['VERTICES']['data'].copy()
                     vertices_adjusted = {k: del_first_last_vt(v) for k, v in vertices_before.items() if len(v) > 2}
                     inp_dict['VERTICES']['data'].update(vertices_adjusted)
                 elif (
@@ -479,8 +476,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                         ignore_index = True
                     )
                     inp_dict['COORDINATES']['data'] = inp_dict['COORDINATES']['data'].reset_index(drop=True)
+                elif data_name in ['RAINGAGES', 'SUBCATCHMENTS']:
+                    inp_dict.update(sections_coords)  # write to inp dict
                 else:
-                    pass  # subcatchments and raingages are already written
+                    raise QgsProcessingException(f'Unknown section: {data_name}')
 
             # annotations
             if data_name in [
