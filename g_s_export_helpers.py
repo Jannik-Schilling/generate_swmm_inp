@@ -265,16 +265,18 @@ def data_preparation(data_name, data_entry, export_params):
         raise QgsProcessingException(f'Unknown data name: {data_name}')
 
 # geometry functions
-def check_missing_z(z_vals, coord_type, all_names):
+def check_missing_z(z_vals, coord_type, all_names, layer_name):
     """
     Check if there is a missing (=nan) value in the z-coordinates.
     
-    :param z_vals: list / series of z-coordinates
+    :param z_vals: List / series of z-coordinates.
     :type z_vals: pd.Series
-    :param coord_type: description of the coordinate type
+    :param coord_type: Description of the coordinate type.
     :type coord_type: string
-    :param all_names: list-like with all occuring names of the objects
+    :param all_names: List-like with all occuring names of the objects.
     :type all_names: list/pd.Series
+    :param layer_name: Name of the current layer.
+    :type layer_name: str
     """
     missing_z = [str(name) for z, name in zip(z_vals, all_names) if pd.isna(z)]
     if missing_z:
@@ -343,12 +345,14 @@ def use_z_if_available(
             check_missing_z(
                 df['InOffset'],
                 'links (first vertices or connected nodes)',
-                df['Name']
+                df['Name'],
+                layer_name
             )
             check_missing_z(
                 df['OutOffset'],
                 'links (last vertices or connected nodes)',
-                df['Name']
+                df['Name'],
+                layer_name
             )
 
     else:  # points
@@ -358,7 +362,8 @@ def use_z_if_available(
             check_missing_z(
                 elevation_with_z,
                 'nodes',
-                df['Name']
+                df['Name'],
+                layer_name
             )
             df['Elevation'] = elevation_with_z
 
