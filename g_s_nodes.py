@@ -165,7 +165,7 @@ def get_storages_from_layer(storages_raw):
                 'Shape1','Shape2','Shape3','SurDepth','Fevap','Psi',
                 'Ksat','IMD'
             ]
-    storage_df[storage_inp_cols]
+    storage_df = storage_df[storage_inp_cols]
     return storage_df
 
 # inflows
