@@ -354,6 +354,9 @@ def use_z_if_available(
                 df['Name'],
                 layer_name
             )
+        elif coords_nodes is not None:
+            if 'Z_Coord' in coords_nodes.columns:
+                coords_nodes.drop("Z_Coord", axis=1, inplace=True)
 
     else:  # points
         coords_df = coords['COORDINATES']['data']
@@ -366,6 +369,8 @@ def use_z_if_available(
                 layer_name
             )
             df['Elevation'] = elevation_with_z
+        else:
+            coords_df.drop("Z_Coord", axis=1, inplace=True)
 
     return df
 
