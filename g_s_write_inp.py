@@ -91,7 +91,13 @@ def write_inp(
             if only_cols is not None:
                 print_df = print_df[only_cols]
             file1.write('['+section_name+']\n')
-            file1.write(print_df.to_string(header=False, index=False))
+            # Write column headers in SWMM style
+            if len(print_df.columns) > 0:
+                header_line = ';;' + ''.join(str(col).ljust(15) for col in print_df.columns)
+                file1.write(header_line + '\n')
+                file1.write(';;' + '-' * len(header_line) + '\n')
+            # Write data with left justification
+            file1.write(print_df.to_string(header=False, index=False, col_space=15, formatters={col: lambda x: str(x).ljust(15) for col in print_df.columns}))
             file1.write('\n')
             file1.write('\n')   
 
