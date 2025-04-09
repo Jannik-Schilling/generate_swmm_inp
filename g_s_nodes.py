@@ -87,6 +87,15 @@ def get_dividers_from_layer(dividers_raw):
     dividers_df['WeirMinFlo'] = dividers_df['WeirMinFlo'].fillna('')
     dividers_df['WeirMaxDep'] = dividers_df['WeirMaxDep'].fillna('')
     dividers_df['WeirCoeff'] = dividers_df['WeirCoeff'].fillna('')
+    dividers_df.loc[dividers_df['Type'] != 'CUTOFF', 'CutoffFlow'] = ''  # Qmin
+    dividers_df.loc[dividers_df['Type'] != 'TABULAR', 'Curve'] = ''  # Dcurve
+    dividers_df.loc[dividers_df['Type'] != 'WEIR', 'WeirMinFlo'] = ''  # Qmin
+    dividers_df.loc[dividers_df['Type'] != 'WEIR', 'WeirMaxDep'] = ''  # Ht
+    dividers_df.loc[dividers_df['Type'] != 'WEIR', 'WeirCoeff'] = ''  # Cd
+    dividers_df['MaxDepth'] = dividers_df['MaxDepth'].fillna(0)
+    dividers_df['InitDepth'] = dividers_df['InitDepth'].fillna(0)
+    dividers_df['SurDepth'] = dividers_df['SurDepth'].fillna(0)
+    dividers_df['Aponded'] = dividers_df['Aponded'].fillna(0)
     return dividers_df
 
 # Outfalls
@@ -105,6 +114,14 @@ def get_outfalls_from_shapefile(outfalls_raw):
     outfalls_raw['RouteTo'] = outfalls_raw['RouteTo'].fillna('')
     outfalls_raw['FlapGate'] = outfalls_raw['FlapGate'].fillna('NO')
     outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
+    outfalls_raw = outfalls_raw[[
+        'Name',
+        'Elevation',
+        'Type',
+        'Data',
+        'FlapGate',
+        'RouteTo'
+    ]]
     return outfalls_raw
 
 # Storages
