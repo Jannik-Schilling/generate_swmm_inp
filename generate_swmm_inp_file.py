@@ -509,7 +509,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 inp_dict['XSECTIONS']['data'] = inp_dict['XSECTIONS']['data'].reset_index(drop=True)
             inp_dict.update(processed_data_dict)
             if annotations_df is not None:
-                # das ggf. für jede subgruppe
                 inp_dict[data_name]['annotations'] = annotations_df
 
 
