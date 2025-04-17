@@ -617,7 +617,7 @@ class CreateSubModel(QgsProcessingAlgorithm):
 
         # add layers to canvas
         #print(crs_dict)
-        feedback.setProgressText(self.tr('Adding layerst to canvas...'))
+        feedback.setProgressText(self.tr('Adding layers to canvas...'))
         for k, v in dict_all_layers.items():
             if v.selectedFeatureCount() > 0:
                 vector_layer = v
