@@ -41,27 +41,7 @@ inflow_keys_dict = {
         'Pattern'
     ]
 }
-def row_to_inp_line(lst_i, max_lengths):
-    """
-    Writes a line for the inp file for every row of a pd.DataFrame
-    :param pd.Series row
-    """
-    if lst_i[0].startswith(';'):
-        return row_i['Name']
-    else:
-        max_lengths_i = max_lengths[:len(lst_i)]
-        return ' '.join([str(val).ljust(k) for val, k in zip(row_i.values, max_lengths_i.values)])
-        
 
-def df_to_line(df, key_lengths=None):
-    #df_lst[[str(elem) for elem in row if elem] for row in df.rows()]
-    #for i in range cols:
-    #max_lengths_elem = max([lst[i] if len(lst)>i-1 for lst in df_lst])
-    if key_lengths:
-        max_lengths = [max(e, k) for e, k in zip(max_lengths_elem, key_lengths)]
-    else:
-        max_lengths = max_lengths_elem
-    return [row_to_inp_line(lst_i, max_lengths) for lst_i in df_to_line]
 
 def write_inp(
     inp_file_name,
@@ -93,7 +73,6 @@ def write_inp(
         if section_name in inp_dict.keys():
             feedback.setProgressText('writing ['+section_name+']...')
             print_df = inp_dict[section_name]['data']
-            #key_lengths = [len(k) for k in print_df.keys()]
 
             if 'annotations' in inp_dict[section_name].keys():
                 # join annotations to df
