@@ -565,14 +565,18 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
                 )
 
         # delete sections with empty data
-        inp_dict = {k: v for k, v in inp_dict.items() if len(v['data'])>0}
-
+        inp_dict = {k: v for k, v in inp_dict.items() if len(v['data']) > 0}  # remove empty sections
         feedback.setProgressText(self.tr('done \n'))
+        
+        #delete z-coords from 'COORDINATES' 
+        if 'COORDINATES' in inp_dict.keys():
+            if 'Z_Coord' in inp_dict['COORDINATES']['data'].keys():
+                inp_dict['COORDINATES']['data'].drop("Z_Coord", axis=1, inplace=True)
+            print(inp_dict['COORDINATES']['data'].keys())
 
 
         # writing inp file
         feedback.setProgressText(self.tr('Creating inp file:'))
-        inp_dict = {k: v for k, v in inp_dict.items() if len(v['data']) > 0}  # remove empty sections
         from .g_s_write_inp import write_inp
         write_inp(inp_file_name,
                   project_dir,

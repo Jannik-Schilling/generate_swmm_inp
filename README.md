@@ -3,7 +3,7 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 ## Documentation
 
-[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_38.pdf) to the documentation file
+[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_39.pdf) to the documentation file
 
 
 If you use the plugin in scientific work or other studies, please cite as:
