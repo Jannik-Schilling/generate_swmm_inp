@@ -106,7 +106,7 @@ files have to be organised. Such a table will look like this:
 | some |  random |  data | ... | ...| 
 | ... |  ... |  ... | ... | ...| 
 
-## Latest changes {#sect_changes}
+## Latest changes
 
 Version 0.39:
 
@@ -155,9 +155,9 @@ Notable changes in former versions:
     can still generate suitable input files as long as you don´t choose
     the new features and keywords.\
 
-# The tools {#tools}
+# The tools 
 
-## 1_GenerateDefaultData {#sect_tool1}
+## 1_GenerateDefaultData 
 
 The first tool will give you a default data set to see the data
 structure needed for the export and conversion into a input file later
@@ -208,9 +208,9 @@ Further data is provided in tables and can be edited there:
 
 -   transects (gisswmm_transects.xlsx)
 
--   streets (gisswmm_streets.xlsx){style="color: blue"}
+-   streets (gisswmm_streets.xlsx)
 
-## 2_GenerateSwmmInpFile {#sect_tool2}
+## 2_GenerateSwmmInpFile 
 
 With the second tool, you can directly convert layers from QGIS into
 input files. You can add further data (e.g. curves, inflows patterns) from tables to the input file. The default
@@ -686,7 +686,7 @@ external data file:
 |TS_1 | 2021-01-02 | 03:00:00 | 0.3 | |
 |; | | | | | This line will be ignored|
 |TS_2 | | | | external_file.dat | This is the second time series which is using an external data file|
-:::
+
 
 ### Patterns
 
@@ -722,7 +722,6 @@ like this:
 |p2 | Sun | 2.8|
 |p2 | Mon | 2.7|
 |... |... |...|
-:::
 
 ### Quality
 
@@ -932,7 +931,7 @@ Sides | int | One Sided / Two Sided | 1 or 2|
 BackWidth | float | Backing Width |
 BackSlope | float | Backing Slope |
 BackRoughn | float | Backing Roughness |
-:::
+
 
 #### INLETS
 
