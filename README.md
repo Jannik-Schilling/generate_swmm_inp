@@ -3,8 +3,8 @@ A QGIS plugin which provides tools to create a SWMM input file from layers in QG
 
 ## Documentation
 
-[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_39.pdf) to the documentation file
-
+[Link](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_39.pdf) to the documentation pdf file or 
+[markdown file](/documentation/g_s_i_documentation.md).
 
 If you use the plugin in scientific work or other studies, please cite as:
 > *Schilling, J.; Tränckner, J. Generate_SWMM_inp: An Open-Source QGIS Plugin to Import and Export Model Input Files for SWMM. Water 2022, 14, 2262. https://doi.org/10.3390/w14142262*
@@ -42,7 +42,7 @@ Further data is provided in tables (which will be saved in the chosen directory)
 
 You can now **modify the layers** in QGIS with any processing tool. If you want to have different variants of SWMM features (e.g. planning scenarios with various combinations of conduits and junctions), creating new sets of layers (each in one .gpkg file) is recommended. 
 
-When editing the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_29.pdf) and the [SWMM user manual](https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf) will help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later. 
+When editing the attribute tables, the [documentation file](https://github.com/Jannik-Schilling/generate_swmm_inp/blob/main/documentation/g_s_i_documentation_v_0_39.pdf) and the [SWMM user manual](https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf) will help you to find the right columns and suitable values. SWMM sections/infrastructures which are not implemented in the plugin yet (see [issue 2](https://github.com/Jannik-Schilling/generate_swmm_inp/issues/2)) can be added directly in SWMM later. 
 
 Now you can write a swmm input file (.inp) and run the simulation with the second tool **(2_GenerateSwmmInpFile)**. You select the layers and tables which you want to use for your new models. The column names of the attribute tables are used by the tool in order to identify the correct information for the inp file. So be careful if you renamed or deleted any columns.
 You can run the simulation directly in SWMM or with the help of scripts in R or python (see below).
