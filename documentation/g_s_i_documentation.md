@@ -1,7 +1,6 @@
 ---
-author:
-  Jannik Schilling
-  email: <jannik.schilling@posteo.de>
+author: Jannik Schilling
+email: <jannik.schilling@posteo.de>
 title: generate_swmm_inp
 subtitle: Manual for the QGIS plugin, version 0.39
 title: generate_swmm_inp
@@ -24,13 +23,13 @@ Funding:
     Conservation, Nuclear Safety and Consumer Protection), grant number
     67DAS263.
 
-# Introduction {#sect_introduction}
+# Introduction
 
 SWMM is an open-source model and software by the US EPA for the
 simulation of rainfall-runoff and routing in water bodies, sewer systems
 and wastewater infrastructures. An intruduction to the model itself and
 details about attributes used in SWMM can be found in the official
-manual [@rossmann2015].\
+manual ([see US EPA website](https://www.epa.gov/water-research/storm-water-management-model-swmm)).\
 For a new SWMM model, objects such as nodes, links and catchments can
 either be drawn via the graphical user interface (GUI) of SWMM or
 specified in a plain text file in \".inp\" format (*input file*). The
@@ -46,18 +45,15 @@ This documentation explains how to install the plugin and how to prepare
 the geodata in QGIS. It is (and will remain) a \"work in progress\". If
 you find any mistakes or you miss explanations for certain tools,
 layers, \... please write an issue on GitHub or an email to the author.\
-An article to with the description of the plugin was published in 2022
-[@schilling2022]. If you´re using the tool (e.g. for scientific or
-educational purposes, for urban planning etc.), please take this
-reference for your reports.
 
-## Installation {#sect_installation}
+
+## Installation
 
 **The plugin:** \"generate_swmm_inp\" can be installed within QGIS from
 the official QGIS plugin repository. The latest experimental version of
 the plugin will always be available on GitHub and can be installed from
-a zip file after downloading it from the GitHub repository of the plugin
-[@schilling2021]. As this is a processing plugin, the tools will be
+a zip file after downloading it from the [GitHub repository](https://github.com/Jannik-Schilling/generate_swmm_inp) of the plugin. 
+As this is a processing plugin, the tools will be
 added to the processing toolbox.\
 \
 **In some cases: missing Python packages.** The plugin needs the Python
@@ -73,22 +69,22 @@ can be found online. Here are some examples\...
         search for the packages and select the checkbox to install them.
 
     -   until QGIS version 3.18: Open the OSGeo4W shell and run
-        [`py3_env`]{style="background-color: mygray"}.\
+        `py3_env`.\
         Then run
-        [`python -m pip install pandas`]{style="background-color: mygray"}
+        `python -m pip install pandas`
 
     -   for QGIS version 3.20 and later: Open the OSGeo4W shell and
         directly run\
-        [`python -m pip install pandas`]{style="background-color: mygray"}.
+        `python -m pip install pandas`.
 
 -   Linux: open the terminal and install via pip:
-    [`python -m pip install pandas`]{style="background-color: mygray"}.
+    `python -m pip install pandas`.
 
 **SWMM:** To run the models, SWMM has to be installed. Alternatively you
-can use the \"swmmr\" package [@leutnant2019] for R or packages such as
-\"pyswmm\" [@mcdonell2020] for Python.\
+can use the \"swmmr\" package ([see github page here](https://github.com/dleutnant/swmmr)) for R or packages such as
+\"pyswmm\" for Python.\
 
-## Hints for this documentation {#sect_hints}
+## Hints for this documentation 
 
 Two different types of tables will appear in the documentation. The
 first type shows the column names and attributes which are used in
@@ -112,8 +108,7 @@ files have to be organised. Such a table will look like this:
 
 ## Latest changes {#sect_changes}
 
-[Version 0.39:]{.smallcaps} (highlighted in
-[**red**]{style="color: red"} in the following sections)
+Version 0.39:
 
 -	new feature: import and Z-Coordinates for conduits and nodes (advanced option) in tools 1,2 and 3
 
@@ -122,7 +117,7 @@ files have to be organised. Such a table will look like this:
 -	headers in inp file
 
 
-[Notable changes in former versions:]{.smallcaps}
+Notable changes in former versions:
 
 -   Version 0.34: replacement of column **\"Shape\"** by
     **\"XsectShape\"** in **conduits** layers and **orifices** layers
@@ -138,11 +133,9 @@ files have to be organised. Such a table will look like this:
 
 -   Version 0.30: new feature: import of SWMM report files (QgsAction)
 
--   Version 0.28: new feature: hydrographs und rdii tables (inflows),
-    see subsection [4.2.6](#sect_inflows){reference-type="ref"
-    reference="sect_inflows"}
+-   Version 0.28: new feature: hydrographs und rdii tables (inflows)
 
--   Version 0.25: new tool '4SelectSubModel' ; added import and export
+-   Version 0.25: new tool '4_SelectSubModel' ; added import and export
     of descriptions / annotations
 
 -   Version 0.23: added option 'empty layers' to tool 1
@@ -155,14 +148,10 @@ files have to be organised. Such a table will look like this:
 -   Version 0.22: new feature forms
 
 -   Version 0.20: \"RoadWidth\" was renamed in version 0.20, before:
-    (unfortunately) \"CurbWidth\" (see subsection
-    [4.2.8.1](#sect_streets){reference-type="ref"
-    reference="sect_streets"})
+    (unfortunately) \"CurbWidth\"
 
 -   Version 0.19: New features of SWMM 5.2 are integrated in the plugin.
-    Therefore new columns, tables and keywords had to be added. These
-    features are highlighted in [**blue**]{style="color: blue"} in every
-    section. If you want to continue working with SWMM 5.1 the plugin
+    Therefore new columns, tables and keywords had to be added. If you want to continue working with SWMM 5.1 the plugin
     can still generate suitable input files as long as you don´t choose
     the new features and keywords.\
 
@@ -224,27 +213,23 @@ Further data is provided in tables and can be edited there:
 ## 2_GenerateSwmmInpFile {#sect_tool2}
 
 With the second tool, you can directly convert layers from QGIS into
-input files. You can add further data (e.g. curves, inflows patterns,
-see chapter [4.2](#sect_tables){reference-type="ref"
-reference="sect_tables"}) from tables to the input file. The default
+input files. You can add further data (e.g. curves, inflows patterns) from tables to the input file. The default
 data serve as a template for your own model, because column names have
 to be matching in order to identify the correct information for the
-input file (see section [4.1](#geodata){reference-type="ref"
-reference="geodata"} for column names). Actions in the user interface:
+input file. Actions in the user interface:
 
 1.  Select the layers and files you want to have in your SWMM model
 
 2.  Choose a location and name for the resulting input file (\".inp\")
 
-3. <span style="color:red">Use z-coordinates of nodes to replace the attribute "Elevation" in a nodes layer (see section 4.1.2), and
-z-coordinates of conduits (and nodes in case of INLET_OFFSET = DEPTH in the OPTIONS table, see
-section 4.2.1) to replace "InOffset" and "OutOffset" (see section 4.1.3)</span>
+3. <span style="color:red">Use z-coordinates of nodes to replace the attribute "Elevation" in a nodes layer, and
+z-coordinates of conduits (and nodes in case of INLET_OFFSET = DEPTH in the OPTIONS table) to replace "InOffset" and "OutOffset" </span>
 
 The tool will not check if the layers are in the same CRS. This can lead
 to unexpected results. So make sure, that all selected layers have the
 same CRS (or save a copy of the layer in the desired CRS).
 
-## 3_ImportInpFile {#sect_tool3}
+## 3_ImportInpFile
 
 The third tool allows you to import input files into QGIS. All sections
 (if already implemented) of the input file will be connverted into QGIS
@@ -274,7 +259,7 @@ run a simulation in SWMM. QGIS, by contrast, needs geometries. If a
 geometry is not available in the input file, the tool will set a default
 geometry for this feature.
 
-## 4_SelectSubModel {#sect_tool4}
+## 4_SelectSubModel
 
 This tool allows you to create a new set of layers as a \"submodel\" of
 already existing SWMM layers in QGIS. You start by selecting exactly one
@@ -288,13 +273,12 @@ to
 
 for the new SWMM layers. You can define a prefix, which will be added to
 the layer names. If you do not define a prefix, then \"Subset\" will be
-taken by default, here. As in tool 2 (section
-[2.2](#sect_tool2){reference-type="ref" reference="sect_tool2"}) you
+taken by default, here. As in tool 2 you
 choose the layers to be included in the model and a folder to save the
 resulting layers in. The new layers will automatically added to the QGIS
 project in a new group (named with the chosen prefix).
 
-# Feature forms {#feature_forms}
+# Feature forms
 
 Style files (.qml) with custom feature forms for every SWMM layer are
 added to the layers with the first tool by default. Alternatively you
@@ -306,9 +290,7 @@ or edit a feature:\
 
 After you ran a simulation in SWMM (or with a python package) you can
 add the results from a report file. You´ll find the button for the
-QgisAction[^1] in the feature form of a SWMM layer (Figure
-[3.2](#fig_action_report){reference-type="ref"
-reference="fig_action_report"}). You select the report file, the SWMM
+QgisAction in the feature form of a SWMM layer. You select the report file, the SWMM
 feature type and the desired report section. The report table will be
 opened as a new window. You can now save the the table as a csv file. By
 default, the resulting file will be added to the QGIS project (if you
@@ -316,7 +298,7 @@ don´t want this, uncheck the checkbox).
 
 <img src="/figures/action_report.png" alt= “action_report” width="50%">
 
-# Field names and column names in geodata and tables {#sect_fieldnames}
+# Field names and column names in geodata and tables 
 
 ## Geodata
 
@@ -326,22 +308,21 @@ to 10 characters. Hence, in some cases, the field names required for the
 tools differ from those used in the graphical user interface (GUI) in
 SWMM. For example, the rate of seepage loss into the surrounding soil of
 a conduit can be defined with the field \"Seepage\" in the conduits
-layer (see section [4.1.3.1](#sect_conduits){reference-type="ref"
-reference="sect_conduits"}), which refers to \"Seepage Loss Rate\" in
+layer, which refers to \"Seepage Loss Rate\" in
 the SWMM GUI.
 
-### Rain gages {#sect_raingages}
+### Rain gages
 
-[layer type]{.smallcaps}: point\
-[description]{.smallcaps}: Rain gages are used in SWMM to set
+layer type: point\
+description: Rain gages are used in SWMM to set
 precipitation data for subcatchments. The rain gages layer was added in
 version 0.22 of the plugin.\
 
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
-|---------|----------|------------|
+|---------|----------|------------|------|
 |Name | string | Name | |
-|Format | string | Rain Format |
+|Format | string | Rain Format ||
 |Interval | string | Time Interval | format: HH:mm|
 |SCF | float | Snow Catch Factor| |
 |DataSource | string | Data Source | 'FILE' or 'TIMESERIES'|
@@ -353,16 +334,15 @@ version 0.22 of the plugin.\
 
 
 
-### Nodes {#sect_nodes}
+### Nodes
 
-[layer type]{.smallcaps}: point\
+layer type: point\
 Four types of nodes can be added to a SWMM-file: junctions, storage
 units, dividers or outfalls. Inflows into any kind of nodes can be are
-defined in the 'Inflows' table (see chapter
-[4.2.6](#sect_inflows){reference-type="ref" reference="sect_inflows"}).
+defined in the 'Inflows' table.
 Treatment of pollutatants is not implemented yet.
 
-#### Junctions {#sect_juntions}
+#### Junctions
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -375,15 +355,15 @@ Treatment of pollutatants is not implemented yet.
 |Annotation | string | Description | optional column|
 
 
-#### Storage units {#sect_storages}
+#### Storage units
 
 [description]{.smallcaps}: Storage units are represented in a point
-layer [^2] in QGIS. Until SWMM version 5.1 the shape of a storage could
+layer in QGIS. Until SWMM version 5.1 the shape of a storage could
 be described either by a function ('FUNCTIONAL') or in a table
 ('TABULAR') as a storage curve. [With SWMM version 5.2 storage units can
 have a variety of shape types (see \"Type\")].
 Different columns in the attribute table are required for different
-shape types[^3]. Of course you can also have shape types for different
+shape types. Of course you can also have shape types for different
 storages within one storage layer.
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
@@ -410,13 +390,13 @@ storages within one storage layer.
 
 
 
-#### Dividers {#sect_dividers}
+#### Dividers
 
-[Description]{.smallcaps}: If the routing option (see options section)
+Description] If the routing option (see options section)
 is set to 'Steady Flow' or 'Kinematic Wave', flow dividers divert
 inflows in a certain way, prescribed by the user with the attribute
 \"Type\". With the 'Dynamic wave' routing model, dividers are treatet as
-junctions.\
+junctions.
 
 
 
@@ -438,9 +418,9 @@ junctions.\
 |Annotation | string | Description | optional column|
 
 
-#### Outfalls {#sect_outfalls}
+#### Outfalls
 
-[Description]{.smallcaps}: Outfalls are the terminal nodes of the model.
+Description: Outfalls are the terminal nodes of the model.
 Only one link can be connected to an outfall.
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
@@ -456,11 +436,11 @@ Only one link can be connected to an outfall.
 
 ### Links
 
-[layer type]{.smallcaps}: line\
+layer type: line\
 Links are represented as line layers in QGIS. These can be conduits,
 pumps, weirs, orifices or outlets.
 
-#### Conduits {#sect_conduits}
+#### Conduits
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -499,7 +479,7 @@ pumps, weirs, orifices or outlets.
 |Annotation | string | Description | optional column|
 
 
-#### Pumps {#sect_pumps}
+#### Pumps 
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -513,7 +493,7 @@ pumps, weirs, orifices or outlets.
 |Annotation | string | Description | optional column|
 
 
-#### Weirs {#sect_weirs}
+#### Weirs
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -534,9 +514,8 @@ pumps, weirs, orifices or outlets.
 |RoadWidth |float | Road Width | |
 |RoadSurf | float | Road Surface | |
 |Annotation | string | Description | optional column|
-:::
 
-#### Orifices {#sect_orifices}
+#### Orifices
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -553,7 +532,7 @@ pumps, weirs, orifices or outlets.
 |CloseTime| float | Time to Open/Close | in hours|
 |Annotation | string | Description | optional column|
 
-#### Outlets {#sect_outlets}
+#### Outlets
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -567,14 +546,14 @@ Qcoeff | float | Coefficient | for FUNCTIONAL curves|
 Qexpon | float | Exponent | for FUNCTIONAL curves|
 CurveName | float | Curve Name | for TABULAR curves; has to be matching with the name in the oulet curves table|
 |Annotation | string | Description | optional column|
-:::
 
-### Subcatchments {#sect_subsections}
 
-[layer type]{.smallcaps}: point / polygon\
-[description]{.smallcaps}: Subcatchments can either be points or
+### Subcatchments 
+
+layer type: point / polygon\
+description: Subcatchments can either be points or
 polygons. Each subcatchment has to have a unique name (attribute
-*Name*). The required fields in the attribute table are:\
+*Name*). The required fields in the attribute table are:
 
 
 |**Name in attribute table** | **Data type** |**Name in SWMM GUI** | **annotations**|
@@ -618,22 +597,22 @@ polygons. Each subcatchment has to have a unique name (attribute
 |Annotation | string | Description | optional column|
 
 
-## Tables {#sect_tables}
+## Tables 
 
-### Options {#sect_options}
+### Options 
 
-[File in default data]{.smallcaps}: gisswmmoptions.xlsx\
-[Description]{.smallcaps}: You may want to set the options already in
+File in default data: gisswmmoptions.xlsx\
+Description: You may want to set the options already in
 your input file. To do so, you simply write them in a table with two
 columns: \"Option\" and \"Value\". So far, **time steps longer than one
 day cannot be chosen here**, as the date format in python is in conflict
 with the notation in SWMM (e.g. in SWMM a time step of two days will be
 written as '48:00:00'. However, Python only accepts 0-23 hours)
 
-### Curves {#sect_curves}
+### Curves
 
-[File in default data]{.smallcaps}: gisswmmcurves.xlsx\
-[Description]{.smallcaps}: Any type of curves can be imported as a table
+File in default data: gisswmmcurves.xlsx\
+Description: Any type of curves can be imported as a table
 in an xlsx file. Each curve type has to be in a seperate sheet/table
 named with the curve type. Different curves oft the same type are stored
 in the same table by using different names. Just like in the SWMM GUI,
@@ -671,10 +650,10 @@ x-value and \"Area\" is the y-value) :
 |second_StC | 3 | 11 ||
 |second_StC | 4 | 12 ||
 
-### Timeseries {#sect_timeseries}
+### Timeseries 
 
-[File in default data]{.smallcaps}: gisswmmtimeseries.xlsx\
-[Description]{.smallcaps}: All time series for one SWMM model are saved
+File in default data: gisswmmtimeseries.xlsx\
+Description: All time series for one SWMM model are saved
 in a .xlsx file (any sheet name). For a standard time series you only
 fill the columns \"Name\", \"Date\" (optional), \"Time\" and \"Value\"
 (See example \"TS_1\" below). Alternatively you can define a time series
@@ -696,7 +675,7 @@ Value | float | Value | |
 File_Name | string | - | file name for external data file; if used, keep \"Date\", \"Time\" and \"Value\" empty (see example TS_2 below)|
 
 Exemplary table for a normal time series and a time series with an
-external data file:\
+external data file:
 
 |**Name** |**Date** | **Time** | **Value** |**File_Name** |**Annotation**|
 | -------------|-----|-----|------|---|---|
@@ -709,10 +688,10 @@ external data file:\
 |TS_2 | | | | external_file.dat | This is the second time series which is using an external data file|
 :::
 
-### Patterns {#sect_patterns}
+### Patterns
 
-[File in default data]{.smallcaps}: gisswmmpatterns.xlsx\
-[Description]{.smallcaps}: Patterns can be imported in an .xlsx file,
+File in default data: gisswmmpatterns.xlsx\
+Description: Patterns can be imported in an .xlsx file,
 where each pattern type is stored in a separate sheet named after the
 pattern type. Patterns of the same type are written in the same table.
 Each table consist of three columns: \"Name\", a Time_Stamp column and
@@ -773,7 +752,7 @@ like this:
 This sheet sets up buildup and washoff functions for different landuses.
 Since one landuse can have more than one pollutant with individual
 functions for buildup and washoff, the have defined in different rows of
-this sheet (see exemplary table).\
+this sheet (see exemplary table).
 
 |**Column in table** | **Data type** |**Name in SWMM GUI** | **annotations**|
 | -------------|-----|-----|------|
@@ -807,7 +786,7 @@ two land use types:
 |SC1 | LU_2 | 75.5|
 
 
-#### LOADINGS {#sect_loadings}
+#### LOADINGS
 
 This sheet refers to *Initial Buildup* in the GUI of subcatchments. As
 one subcatchment can have morge than one pollutants the initial buildup
@@ -824,10 +803,10 @@ with two pollutants:
 |SC2 | TN | 0.4|
 
 
-### Inflows {#sect_inflows}
+### Inflows
 
-[File in default data]{.smallcaps}: gisswmminflows.xlsx\
-[Description]{.smallcaps}: The .xlsx file for inflows contains four
+File in default data: gisswmminflows.xlsx\
+Description: The .xlsx file for inflows contains four
 tables/sheets (older files with two tables will still work).
 
 -   for direct inflow (sheet name: \"Direct\")
@@ -932,8 +911,8 @@ ModifierMeander | float | Meander ||
 
 ### Streets and Inlets
 
-[File in default data]{.smallcaps}: gisswmmstreets.xlsx\
-[Description]{.smallcaps}: [Streets and Inlets are completely new
+File in default data: gisswmmstreets.xlsx\
+Description: [Streets and Inlets are completely new
 features in SWMM version 5.2]{style="color: blue"}. The .xlsx file for
 streets (for STREET cross-sections) contains three tables/sheets
 (\"STREETS\", \"INLETS\" and \"INLETUSAGE\"):
