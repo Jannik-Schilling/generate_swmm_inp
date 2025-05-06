@@ -44,10 +44,15 @@ from qgis.core import (
     QgsVectorFileWriter,
     QgsVectorLayer
 )
-from qgis.PyQt.QtCore import (
-    QVariant,
-    QMetaType
-)
+
+
+try:
+    # QgsField with QVariant is deprecated since QGIS 3.38 -> QMetaType
+    from qgis.PyQt.QtCore import QMetaType
+    qgis_version_newer_3_38 = True
+except BaseException:
+    from qgis.PyQt.QtCore import QVariant
+    qgis_version_newer_3_38 = False
 
 from .g_s_defaults import (
     def_ogr_driver_names,
@@ -373,24 +378,26 @@ def create_layer_from_df(
     vector_layer = QgsVectorLayer(geom_type, layer_name, 'memory')
 
     # set fields
-    # before QGIS Version 3.38
-    field_types_dict_old = {
-        'Double': QVariant.Double,
-        'String': QVariant.String,
-        'Int': QVariant.Int,
-        'Bool': QVariant.Bool,
-        'Date': QVariant.Date,
-        'Time': QVariant.Time
-    }
-    # starting with QGIS Version 3.38
-    field_types_dict = {
-        'Double': QMetaType.Type.Double,
-        'String': QMetaType.Type.QString,
-        'Int': QMetaType.Type.Int,
-        'Bool': QMetaType.Type.Bool,
-        'Date': QMetaType.Type.QDate,
-        'Time': QMetaType.Type.QTime
-    }
+    if qgis_version_newer_3_38:
+        # starting with QGIS Version 3.38
+        field_types_dict = {
+            'Double': QMetaType.Type.Double,
+            'String': QMetaType.Type.QString,
+            'Int': QMetaType.Type.Int,
+            'Bool': QMetaType.Type.Bool,
+            'Date': QMetaType.Type.QDate,
+            'Time': QMetaType.Type.QTime
+        }
+    else:
+        # before QGIS Version 3.38
+        field_types_dict = {
+            'Double': QVariant.Double,
+            'String': QVariant.String,
+            'Int': QVariant.Int,
+            'Bool': QVariant.Bool,
+            'Date': QVariant.Date,
+            'Time': QVariant.Time
+        }
     
     if geom_type != 'NoGeometry':
         layer_fields = copy.deepcopy(def_qgis_fields_dict[section_name])
@@ -400,13 +407,8 @@ def create_layer_from_df(
         layer_fields.update(custom_fields)
     vector_layer.startEditing()
     for col, field_type_string in layer_fields.items():
-        try:
-            # QgsField with QVariant is deprecated since QGIS 3.38 -> QMetaType
-            field_type = field_types_dict[field_type_string]
-            vector_layer.addAttribute(QgsField(col, field_type))
-        except:
-            field_type = field_types_dict_old[field_type_string]
-            vector_layer.addAttribute(QgsField(col, field_type))
+        field_type = field_types_dict[field_type_string]
+        vector_layer.addAttribute(QgsField(col, field_type))
     vector_layer.updateFields()
 
     # get data_df columns in the correct order
