@@ -2,7 +2,7 @@
 author: Jannik Schilling
 email: <jannik.schilling@posteo.de>
 title: generate_swmm_inp
-subtitle: Manual for the QGIS plugin, version 0.39
+subtitle: Manual for the QGIS plugin, version 0.39.2
 title: generate_swmm_inp
 ---
 
