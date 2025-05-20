@@ -45,15 +45,6 @@ from qgis.core import (
     QgsVectorLayer
 )
 
-
-try:
-    # QgsField with QVariant is deprecated since QGIS 3.38 -> QMetaType
-    from qgis.PyQt.QtCore import QMetaType
-    qgis_version_newer_3_38 = True
-except BaseException:
-    from qgis.PyQt.QtCore import QVariant
-    qgis_version_newer_3_38 = False
-
 from .g_s_defaults import (
     def_ogr_driver_names,
     def_ogr_driver_dict,
@@ -62,8 +53,19 @@ from .g_s_defaults import (
     def_qgis_fields_dict,
     def_point_geom,
     def_line_geom,
-    def_ploygon_geom
+    def_ploygon_geom,
+    qgis_version_number_list
 )
+
+if qgis_version_number_list[0] > 3 or (qgis_version_number_list[0] == 3 and qgis_version_number_list[1] >= 38):
+    qgis_version_newer_3_38 = True
+    from qgis.PyQt.QtCore import QMetaType
+else:
+    from qgis.PyQt.QtCore import QVariant
+    qgis_version_newer_3_38 = False
+
+
+
 from .g_s_import_helpers import replace_nan_null
 
 # export functions

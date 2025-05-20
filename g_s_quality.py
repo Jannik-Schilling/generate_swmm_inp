@@ -37,6 +37,11 @@ def fill_landuse_params(
     ):
     '''
     fills buildup or washoff data frames if missing
+    :param pd.DataFrame df
+    :param list pollutant_names
+    :param list landuses_names
+    :param str b_w: "b" or "w"
+    :return: pd.DataFrame
     '''
     missing = []
     for l_n in landuses_names:

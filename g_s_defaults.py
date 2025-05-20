@@ -26,10 +26,15 @@ __date__ = '2025-02-17'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
 import os
-from qgis.core import QgsGeometry
+from qgis.core import QgsGeometry, Qgis
 from datetime import datetime, time
 
-#  definition for ofoptns parameters
+# current QGIS version
+qgis_version_txt = Qgis.version()
+qgis_version_number_txt = qgis_version_txt.split('-')[0]
+qgis_version_number_list = [int(n) for n in qgis_version_number_txt.split('.')]
+
+# definition for ofoptns parameters
 def_options_dtypes_dict = {
     'START_DATE': {
         'dtype': [datetime],
