@@ -2,7 +2,7 @@
 author: Jannik Schilling
 email: <jannik.schilling@posteo.de>
 title: generate_swmm_inp
-subtitle: Manual for the QGIS plugin, version 0.39.2
+subtitle: Manual for the QGIS plugin, version 0.39.3
 title: generate_swmm_inp
 ---
 
@@ -109,6 +109,8 @@ files have to be organised. Such a table will look like this:
 ## Latest changes
 
 Version 0.39:
+
+-	fix for outlets FlapGate error
 
 -	new feature: import and Z-Coordinates for conduits and nodes (advanced option) in tools 1,2 and 3
 

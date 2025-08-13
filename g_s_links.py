@@ -268,6 +268,12 @@ def get_outlets_from_shapefile(outlets_raw):
     outlets_raw['CurveName'] = outlets_raw['CurveName'].fillna('*')
     outlets_raw['FlapGate'] = outlets_raw['FlapGate'].fillna('NO')
     outlets_raw['QCurve'] = [get_outl_curve(outlets_raw.loc[i]) for i in outlets_raw.index]
+    outlets_raw['Qexpon'] = [
+        qe if rc.startswith('FUNCTIONAL') else '' for rc, qe in zip(
+            outlets_raw['RateCurve'],
+            outlets_raw['Qexpon']
+        )
+    ]
     outlets_df = outlets_raw[[
         'Name',
         'FromNode',

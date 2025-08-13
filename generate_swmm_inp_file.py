@@ -573,7 +573,6 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
         if 'COORDINATES' in inp_dict.keys():
             if 'Z_Coord' in inp_dict['COORDINATES']['data'].keys():
                 inp_dict['COORDINATES']['data'].drop("Z_Coord", axis=1, inplace=True)
-            print(inp_dict['COORDINATES']['data'].keys())
 
 
         # writing inp file
