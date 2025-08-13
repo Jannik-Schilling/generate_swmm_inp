@@ -25,10 +25,8 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.39.2
-	- fix for Qgsfield constructor in qgis 3.34+
-	- new feature: import and export of Z-coordinates
-	- bugfix for unused z-coordinates, thanks to smaspons 
+changelog= 0.39.3
+        - fix for outlets FlapGate error
 	- Since version 0.34: replacement of column "Shape" by "XsectShape" in conduits layers and orifices layers because of issues with ESRI-Shapefiles. Currently, a deprecation warning will appear and the tools will still work with old SWMM layers. However it is recommended to apply these changes from now on.
 
 
