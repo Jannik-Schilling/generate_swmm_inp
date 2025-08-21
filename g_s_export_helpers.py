@@ -516,9 +516,50 @@ def extract_xy_from_line(line_geom):
 def extract_xy_from_area(geom_row):
     """
     extraxts xy from polygon geometries
+
+    if the polygon contains inner rings, the coordinate of the closest 
+    outer ring vertex is used as connecting vertex between outer and
+    inner ring
+    
     :return: pd.DataFrame
     """
-    xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
+    if geom_row.isMultipart():
+        polys = geom_row.asMultiPolygon()[0]
+        if len(polys) > 1:
+            xy_list = []
+            # if there are more than one polygon then its usually
+            # [outer_ring, inner_ring1, inner_ring2, …]
+            outer_ring = polys[0]
+            inner_rings = polys[1:]
+            outer_coords = [(pt.x(), pt.y()) for pt in outer_ring]
+            closest_outer_coords = []
+            inner_ring_coords = []
+            # findind the closest coordinate on the outer ring to 
+            # the ring_start allows us to later draw the shortest
+            # line between inner and outer ring
+            for ring in inner_rings:
+                ring_coords = [(pt.x(), pt.y()) for pt in ring]
+                inner_ring_coords.append(ring_coords)
+                ring_start = ring_coords[0]
+                closest_outer = min(
+                                outer_coords,
+                                key=lambda v: (v[0] - ring_start[0])**2 + (v[1] - ring_start[1])**2
+                            )
+                closest_outer_coords.append(closest_outer)
+            # when building the xy-list make sure to check if the current
+            # coord is a coord, that a inner ring should start from
+            for coord in outer_coords:
+                xy_list.append(coord)
+                if coord in closest_outer_coords:
+                    ring_idx = closest_outer_coords.index(coord)
+                    xy_list.extend(inner_ring_coords[ring_idx])
+                    xy_list.append(coord)     
+        else:
+            # if no inner rings exist, can just use the same logic as for
+            # singlepart polygons
+            xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
+    else:
+        xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
     xy_df = pd.DataFrame(xy_list, columns=['X_Coord', 'Y_Coord'])
     return xy_df
 
