@@ -108,13 +108,12 @@ def write_inp(
                 file1.write(
                     print_df.to_string(
                         header=False,
-                        index=False,
-                        float_format='%.6f'
+                        index=False
                     )
                 )
 
             else:
-                file1.write(print_df.to_string(header=False, index=False, float_format='%.6f'))
+                file1.write(print_df.to_string(header=False, index=False))
             file1.write('\n')
             file1.write('\n')
 
@@ -276,7 +275,7 @@ def write_inp(
             ts_dict_i = timeseries_dict[ts_key].copy()
             ts_df = ts_dict_i['TimeSeries']
             file1.write(';'+ts_dict_i['Annotations']+'\n')
-            file1.write(ts_df.to_string(header=False, index=False, float_format='%.6f'))
+            file1.write(ts_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')
 
@@ -336,7 +335,7 @@ def write_inp(
             vert_df = vertices_dict[vert_key].copy()
             vert_df['vertice'] = vert_key
             vert_df = vert_df[['vertice', 'X_Coord', 'Y_Coord']]
-            file1.write(vert_df.to_string(header=False, index=False, float_format='%.6f'))
+            file1.write(vert_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')
 
@@ -352,7 +351,7 @@ def write_inp(
             pol_df = polygons_dict[pol_key].copy()
             pol_df['subcatch']=pol_key
             pol_df = pol_df[['subcatch', 'X_Coord', 'Y_Coord']]
-            file1.write(pol_df.to_string(header=False, index=False, float_format='%.6f'))
+            file1.write(pol_df.to_string(header=False, index=False))
             file1.write('\n')
         file1.write('\n')
 
