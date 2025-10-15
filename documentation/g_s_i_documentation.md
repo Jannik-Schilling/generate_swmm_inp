@@ -2,7 +2,7 @@
 author: Jannik Schilling
 email: <jannik.schilling@posteo.de>
 title: generate_swmm_inp
-subtitle: Manual for the QGIS plugin, version 0.39.3
+subtitle: Manual for the QGIS plugin, version 0.40
 title: generate_swmm_inp
 ---
 
@@ -17,7 +17,7 @@ Funding:
     within the project PROSPER-RO, funded by BMBF (German Federal
     Ministry of Education and Research), grant number 033L212.
 
--   New features and bugfixes (since version 0.32) have been added
+-   Additional features and bugfixes (versions 0.32 to 0.39) have been added
     within the project OSWeGe (<https://oswege.auf.uni-rostock.de/>),
     funded by BMUV (German Federal Ministry for the Environment, Nature
     Conservation, Nuclear Safety and Consumer Protection), grant number
@@ -108,15 +108,9 @@ files have to be organised. Such a table will look like this:
 
 ## Latest changes
 
-Version 0.39:
+Version 0.40:
 
--	fix for outlets FlapGate error
-
--	new feature: import and Z-Coordinates for conduits and nodes (advanced option) in tools 1,2 and 3
-
--	fix for QgsGeometry deprecation warning
-
--	headers in inp file
+-	improved handling of multipolygons and polygons with inner rings (thanks to MatthiasWebering)
 
 
 Notable changes in former versions:
