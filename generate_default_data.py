@@ -113,7 +113,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
 
         # add documentation
         try:
-            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_39.pdf')
+            doc_file = os.path.join(pluginPath,'documentation','g_s_i_documentation_v_0_40.pdf')
             shutil.copy(doc_file, data_save_folder)
             feedback.setProgressText(self.tr('documentation file saved to folder '+data_save_folder))
             feedback.setProgress(1)
@@ -175,3 +175,4 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return GenerateDefaultFolder()
+
