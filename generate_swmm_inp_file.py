@@ -296,6 +296,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             'link_offsets': 'ELEVATION',  # assumes absolute elevation data, if parameter not in options file
             'main_infiltration_method': None,
             'use_z_bool': self.parameterAsBoolean(parameters, self.USE_Z_VALS, context),  # advanced parameter for z_values
+            'polygons_altered': {
+                'multipart': False,
+                'inner_rings': False
+            }
         }
 
         # initializing the input dictionary
@@ -422,7 +426,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
 
             # geometry
             if data_type == 'layer':
-                sections_coords = get_coords_from_geometry(data_entry)
+                sections_coords = get_coords_from_geometry(data_entry, export_params)
                 if data_name == 'RAINGAGES':
                     # rename coordinates
                     sections_coords['SYMBOLS'] = sections_coords.pop('COORDINATES')
