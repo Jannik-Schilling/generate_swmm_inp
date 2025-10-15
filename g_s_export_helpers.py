@@ -277,6 +277,7 @@ def check_missing_z(z_vals, coord_type, all_names, layer_name):
     :type all_names: list/pd.Series
     :param layer_name: Name of the current layer.
     :type layer_name: str
+    :raises QgsProcessingException: In case of missing z-coordinates.
     """
     missing_z = [str(name) for z, name in zip(z_vals, all_names) if pd.isna(z)]
     if missing_z:
@@ -375,12 +376,14 @@ def use_z_if_available(
     return df
 
 
-def get_coords_from_geometry(df):
+def get_coords_from_geometry(df, export_params):
     """
     Extract coordinates from any geodataframe.
 
     :param df: Dataframe containing geometry data.
     :type df: pd.DataFrame
+    :param export_params General export parameters required for feedback regarding changed polygons
+    :type export_params dict
     :return: Dictionary of extracted coordinates.
     :rtype: dict
     """
@@ -458,7 +461,7 @@ def get_coords_from_geometry(df):
         ) in polygon_t_names for g_type in df.geometry
     ):
         extracted_vertices = {
-            na: extract_xy_from_area(polyg_geom) for polyg_geom, na in zip(
+            na: extract_xy_from_area(polyg_geom, export_params) for polyg_geom, na in zip(
                 df.geometry,
                 df.Name
             )
@@ -468,6 +471,7 @@ def get_coords_from_geometry(df):
         raise QgsProcessingException(
             'Geometry type of one or more features could not be handled'
         )
+
 
 def extract_xyz_from_simple_point(p_name, point_simple):
     """
@@ -483,8 +487,9 @@ def extract_xyz_from_simple_point(p_name, point_simple):
     qgs_point = [p for p in point_simple.parts()][0]
     x_coord = str(qgs_point.x())
     y_coord = str(qgs_point.y())
-    z_coord = qgs_point.z()
+    z_coord = qgs_point.z()  # remains numeric for calculation in function use_z_if_available
     return p_name, x_coord, y_coord, z_coord
+
 
 
 def extract_xy_from_line(line_geom):
@@ -513,55 +518,132 @@ def extract_xy_from_line(line_geom):
     extr_coords_df.drop('Name', axis=1, inplace=True)
     return extr_coords_df
 
-def extract_xy_from_area(geom_row):
+def extract_xy_from_area(geom_row, export_params):
     """
-    extraxts xy from polygon geometries
+    Extract xy from polygon geometries
 
     if the polygon contains inner rings, the coordinate of the closest 
     outer ring vertex is used as connecting vertex between outer and
     inner ring
-    
-    :return: pd.DataFrame
+    :param geom_row
+    :type geom_row QgsGeometry 
+    :param export_params General export parameters required for feedback regarding changed polygons
+    :type export_params dict
+    :return: Dataframe with x and y coordinates
+    :rtype: pd.DataFrame
     """
     if geom_row.isMultipart():
-        polys = geom_row.asMultiPolygon()[0]
-        if len(polys) > 1:
-            xy_list = []
-            # if there are more than one polygon then its usually
-            # [outer_ring, inner_ring1, inner_ring2, …]
-            outer_ring = polys[0]
-            inner_rings = polys[1:]
-            outer_coords = [(pt.x(), pt.y()) for pt in outer_ring]
-            closest_outer_coords = []
-            inner_ring_coords = []
-            # findind the closest coordinate on the outer ring to 
-            # the ring_start allows us to later draw the shortest
-            # line between inner and outer ring
-            for ring in inner_rings:
-                ring_coords = [(pt.x(), pt.y()) for pt in ring]
-                inner_ring_coords.append(ring_coords)
-                ring_start = ring_coords[0]
-                closest_outer = min(
-                                outer_coords,
-                                key=lambda v: (v[0] - ring_start[0])**2 + (v[1] - ring_start[1])**2
-                            )
-                closest_outer_coords.append(closest_outer)
-            # when building the xy-list make sure to check if the current
-            # coord is a coord, that a inner ring should start from
-            for coord in outer_coords:
-                xy_list.append(coord)
-                if coord in closest_outer_coords:
-                    ring_idx = closest_outer_coords.index(coord)
-                    xy_list.extend(inner_ring_coords[ring_idx])
-                    xy_list.append(coord)     
-        else:
-            # if no inner rings exist, can just use the same logic as for
-            # singlepart polygons
-            xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
+        geom_multipolyg = geom_row.asMultiPolygon()
+        if len(geom_multipolyg) > 1:
+            if not export_params['polygons_altered']['multipart']:
+                feedback = export_params['feedback']
+                feedback.pushWarning(
+                    'Multipart polygon geometries are not supported by SWMM and will '
+                    + 'be converted to a simple geometry type in the SWMM input file. '
+                    + 'Be careful when you re-import the input file into QGIS'
+                )
+                export_params['polygons_altered']['multipart'] = True
+        nested_list = [
+            get_coords_with_rings(
+                current_geom_polyg,
+                export_params
+            ) for current_geom_polyg in geom_multipolyg
+        ]
+        xy_list = [coords for coord_list_i in nested_list for coords in coord_list_i]
     else:
-        xy_list = [[str(v.x()), str(v.y())] for v in geom_row.vertices()]
+        current_geom_polyg = geom_row.asPolygon()
+        xy_list = get_coords_with_rings(current_geom_polyg, export_params)
     xy_df = pd.DataFrame(xy_list, columns=['X_Coord', 'Y_Coord'])
     return xy_df
+    
+ 
+def get_coords_with_rings(current_geom_polyg, export_params):
+    """
+    sorts outer and inner coords to create ring-like objects if requierd
+    
+    :param current_geom_polyg
+    :type current_geom_polyg QgsGeometry
+    :param export_params General export parameters required for feedback regarding changed polygons
+    :type export_params dict
+    :return: List of x and y coordinates (tuples)
+    :rtype: list
+    """
+    # current_geom_polyg = [outer_ring, inner_ring1, inner_ring2, …]
+    outer_ring = current_geom_polyg[0]
+    outer_coords = [(str(pt.x()), str(pt.y())) for pt in outer_ring]
+    inner_rings = current_geom_polyg[1:]
+    if len(inner_rings) > 0:
+        if not export_params['polygons_altered']['inner_rings']:
+            feedback = export_params['feedback']
+            feedback.pushWarning(
+                'Polygon geometries with inner rings are not supported by SWMM and will '
+                + 'be altered in the SWMM input file. '
+                + 'Be careful when you re-import the input file into QGIS'
+            )
+            export_params['polygons_altered']['inner_rings'] = True
+    # closest_outer_vtc_dict is the dict of closest coords:
+    # {
+    #    outer_vertex_index1: [ring_1],
+    #    outer_vertex_index2: [ring_2, ring_3],
+    # }
+    #
+    closest_outer_vtc_dict = {}
+    inner_ring_coords = [] # list of lists of inner coords
+    for ring_number, ring in enumerate(inner_rings):
+        ring_coords = [(str(pt.x()), str(pt.y())) for pt in ring]
+        inner_ring_coords.append(ring_coords)
+        ring_start = ring[0]
+        closest_outer = min(
+            outer_ring,
+            key=lambda outer_point: ring_start.distance(outer_point)
+        )
+        outer_vertex_index = outer_ring.index(closest_outer)
+        if outer_vertex_index in closest_outer_vtc_dict.keys():
+            closest_outer_vtc_dict[outer_vertex_index].extend([ring_number])
+        else:
+            closest_outer_vtc_dict[outer_vertex_index] = [ring_number]
+    # create the list with inserted rings
+    resulting_list_obj = [
+        insert_ring_if_matching_coord(
+            out_vtx_i,
+            out_coord,
+            closest_outer_vtc_dict,
+            inner_ring_coords
+        ) for out_vtx_i, out_coord in enumerate(outer_coords)
+    ]
+    flattened_list = [coords for coord_list_i in resulting_list_obj for coords in coord_list_i]
+    return flattened_list
+    
+         
+        
+def insert_ring_if_matching_coord(
+    out_vtx_i,
+    out_coord,
+    closest_outer_vtc_dict,
+    inner_ring_coords
+):
+    """
+    inserts a ring of the list inner_ring_coords if the vertex index out_vtx_i is in closest_outer_vtc_dict
+    :param int out_vtx_i
+    :param tuple out_coord
+    :param dict closest_outer_vtc_dict
+    :param list inner_ring_coords
+    :return: list
+    """
+    if out_vtx_i in closest_outer_vtc_dict.keys():
+        ring_indices = closest_outer_vtc_dict[out_vtx_i]
+        resulting_list_part = [out_coord]
+        for i in ring_indices:  # needed if multiple inner rings are close to one outer vertex
+            resulting_list_part.extend(inner_ring_coords[i])
+            resulting_list_part.append(out_coord)
+        return resulting_list_part
+    else:
+        return [out_coord]
+                
+        
+       
+       
+       
 
 # functions for data in tables
 def get_curves_from_table(curves_raw, name_col):
