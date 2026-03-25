@@ -135,7 +135,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 defaultValue=False,
                 optional=True
             )
-        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced)
         self.addParameter(add_z_coord_param)
 
         empt_param = QgsProcessingParameterBoolean(
@@ -145,7 +145,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         )
         # Hide the parameter CREATE_EMPTY , because it´s only for the default data tool
         self.addParameter(empt_param)
-        empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
+        empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.Flag.FlagHidden)
 
         transform_crs = QgsProcessingParameterString(
         self.TRANSFORM_CRS,
@@ -154,7 +154,7 @@ class ImportInpFile (QgsProcessingAlgorithm):
         )
         # Hide the parameter CREATE_EMPTY , because it´s only for the default data to
         self.addParameter(transform_crs)
-        transform_crs.setFlags(transform_crs.flags() | QgsProcessingParameterDefinition.FlagHidden)
+        transform_crs.setFlags(transform_crs.flags() | QgsProcessingParameterDefinition.Flag.FlagHidden)
 
     def name(self):
         return 'ImportInpFile'

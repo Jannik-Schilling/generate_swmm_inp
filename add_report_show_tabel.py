@@ -25,7 +25,7 @@ __author__ = 'Jannik Schilling'
 __date__ = '2024-03-03'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
-from PyQt5.QtWidgets import (
+from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
@@ -36,8 +36,8 @@ from PyQt5.QtWidgets import (
     QLabel,
     QComboBox
 )
-from PyQt5.QtGui import QColor
-from PyQt5.QtCore import Qt
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtCore import Qt
 from qgis.core import (
     QgsProject,
     QgsVectorLayer,
@@ -457,7 +457,7 @@ class saveCsvDialog(QDialog):
         self.addcheckbox.setChecked(True)
 
         # OK/Cancel-Buttons
-        btn2 = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        btn2 = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         self.buttonBox = QDialogButtonBox(btn2)
         self.buttonBox.accepted.connect(self.save_csv_action)
         self.buttonBox.rejected.connect(self.close)
@@ -522,7 +522,7 @@ class showTableDialog(QDialog):
             for j, col in enumerate(self.df.columns):
                 val = self.df[col][i]
                 item1 = QTableWidgetItem(str(val))
-                item1.setFlags(Qt.ItemIsEditable)
+                item1.setFlags(Qt.ItemFlag.ItemIsEditable)
                 if val0 in feat_names:
                     item1.setBackground(QColor('yellow'))
                 self.tableWidget.setItem(i, j, item1)
@@ -595,7 +595,7 @@ class joinSwmmReportDialog(QDialog):
             self.close()
 
         # OK/Cancel-Buttons
-        btn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        btn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         self.buttonBox = QDialogButtonBox(btn)
         self.buttonBox.accepted.connect(self.join_report_vals)
         self.buttonBox.rejected.connect(self.close)
@@ -642,9 +642,9 @@ if layer_geom in swmm_geom_types.keys():
     swmm_type = swmm_geom_types[layer_geom]
     w = joinSwmmReportDialog()
     w.show()
-else:
-    QtWidgets.QMessageBox.information(
-        None,
-        Info",
-        'Cannot show results for this data type'
-    )
+#else:
+#    QtWidgets.QMessageBox.information(
+#        None,
+#        Info",
+#        'Cannot show results for this data type'
+#    )

@@ -93,7 +93,7 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             defaultValue=False,
             optional=True
         )
-        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced)
         self.addParameter(add_z_coord_param)
 
     def processAlgorithm(self, parameters, context, feedback):
