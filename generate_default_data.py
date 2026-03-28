@@ -32,6 +32,7 @@ __revision__ = '$Format:%H$'
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
+    Qgis,
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
@@ -45,6 +46,12 @@ import os
 import shutil
 import processing
 pluginPath = os.path.dirname(__file__)
+
+qgis_version_info = Qgis.version().split('.')
+if qgis_version_info[0] == 4:
+    qgis_4_x = True
+else:
+    qgis_4_x = False
 
 
 class GenerateDefaultFolder(QgsProcessingAlgorithm):
@@ -93,7 +100,10 @@ class GenerateDefaultFolder(QgsProcessingAlgorithm):
             defaultValue=False,
             optional=True
         )
-        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced)
+        if qgis_4_x:
+            add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced)
+        else:
+            add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(add_z_coord_param)
 
     def processAlgorithm(self, parameters, context, feedback):
