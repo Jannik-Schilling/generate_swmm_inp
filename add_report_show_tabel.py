@@ -25,7 +25,22 @@ __author__ = 'Jannik Schilling'
 __date__ = '2024-03-03'
 __copyright__ = '(C) 2021 by Jannik Schilling'
 
-from PyQt5.QtWidgets import (
+
+from qgis.core import (
+    Qgis,
+    QgsProject,
+    QgsVectorLayer,
+    NULL
+)
+
+qgis_version_info = Qgis.version().split('.')
+if qgis_version_info[0] == 4:
+    qgis_4_x = True
+else:
+    qgis_4_x = False
+
+
+from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
@@ -36,23 +51,15 @@ from PyQt5.QtWidgets import (
     QLabel,
     QComboBox
 )
-from PyQt5.QtGui import QColor
-from PyQt5.QtCore import Qt
-from qgis.core import (
-    QgsProject,
-    QgsVectorLayer,
-    NULL
-)
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtCore import Qt
+
 from qgis.PyQt import QtWidgets
 from qgis.gui import QgsFileWidget
 import pandas as pd
 import numpy as np
 import os
 
-swmm_layer = QgsProject.instance().mapLayer('[% @layer_id %]')
-# swmm_layer = iface.activeLayer()
-feat_names = [f['Name'] for f in swmm_layer.getFeatures()]
-layer_geom = swmm_layer.geometryType()
 swmm_geom_types = {
     0: 'NODES',
     1: 'LINKS',
@@ -457,7 +464,10 @@ class saveCsvDialog(QDialog):
         self.addcheckbox.setChecked(True)
 
         # OK/Cancel-Buttons
-        btn2 = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        if qgis_4_x:
+            btn2 = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        else:
+            btn2 = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(btn2)
         self.buttonBox.accepted.connect(self.save_csv_action)
         self.buttonBox.rejected.connect(self.close)
@@ -494,12 +504,13 @@ class saveCsvDialog(QDialog):
 
 # second dialog
 class showTableDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, swmm_layer):
         QDialog.__init__(self, parent)
         self.topic = parent.topic
         self.setWindowTitle(self.topic)
         self.df = parent.df
         self.layout = QVBoxLayout()
+        self.swmm_layer = swmm_layer
         self.tableWidget = QTableWidget()
         self.tableWidget.setColumnCount(
             len(self.df.columns)
@@ -508,6 +519,7 @@ class showTableDialog(QDialog):
             len(self.df.index)
         )
         self.tableWidget.setSortingEnabled(True)
+        feat_names = [f['Name'] for f in self.swmm_layer.getFeatures()]
         if any([x in feat_names for x in self.df['Name']]):
             self.infotext = QLabel(
                 'Features of the current layer are highlighted in yellow'
@@ -522,7 +534,10 @@ class showTableDialog(QDialog):
             for j, col in enumerate(self.df.columns):
                 val = self.df[col][i]
                 item1 = QTableWidgetItem(str(val))
-                item1.setFlags(Qt.ItemIsEditable)
+                if qgis_4_x:
+                    item1.setFlags(Qt.ItemFlag.ItemIsEditable)
+                else:
+                    item1.setFlags(Qt.ItemIsEditable)
                 if val0 in feat_names:
                     item1.setBackground(QColor('yellow'))
                 self.tableWidget.setItem(i, j, item1)
@@ -545,13 +560,15 @@ class showTableDialog(QDialog):
 
 # main dialog
 class joinSwmmReportDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, swmm_layer, swmm_type, parent=None):
         """Constructor."""
         super(joinSwmmReportDialog, self).__init__(parent)
         # Drop-down-Listen und Labels
         QDialog.__init__(self, parent)
         self.layout = QVBoxLayout()
         self.setWindowTitle('Get results from SWMM report file')
+        self.swmm_layer = swmm_layer
+        self.swmm_type = swmm_type
 
         # swmm rpt file
         self.label_SwmmRptFile = QLabel('SWMM report File')
@@ -595,18 +612,20 @@ class joinSwmmReportDialog(QDialog):
             self.close()
 
         # OK/Cancel-Buttons
-        btn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        if qgis_4_x:
+            btn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        else:
+            btn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(btn)
         self.buttonBox.accepted.connect(self.join_report_vals)
         self.buttonBox.rejected.connect(self.close)
-        self.buttonBox.clicked.connect(self.close)
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
 
     def update_topic_box(self):
         self.topic_selBox.clear()
         self.swmm_obj = self.swmmobj_selBox.currentText()
-        self.topic_list_neu = list(select_dict[swmm_type][self.swmm_obj])
+        self.topic_list_neu = list(select_dict[self.swmm_type][self.swmm_obj])
         self.topic_selBox.addItems(self.topic_list_neu)
         self.topic_selBox.setCurrentIndex(0)
 
@@ -619,7 +638,6 @@ class joinSwmmReportDialog(QDialog):
                 "Warning",
                 'SWMM report file can`t be empty. Please select a file'
             )
-            w.show()
         else:
             self.df = get_rpt_df(self.topic, readfile)
             if len(self.df) == 0:
@@ -632,19 +650,8 @@ class joinSwmmReportDialog(QDialog):
                         + 'select another report file or topic'
                     )
                 )
-                w.show()
             else:
-                w2 = showTableDialog(self)
+                w2 = showTableDialog(self, self.swmm_layer)
                 w2.show()
+                self.close()
 
-
-if layer_geom in swmm_geom_types.keys():
-    swmm_type = swmm_geom_types[layer_geom]
-    w = joinSwmmReportDialog()
-    w.show()
-else:
-    QtWidgets.QMessageBox.information(
-        None,
-        Info",
-        'Cannot show results for this data type'
-    )

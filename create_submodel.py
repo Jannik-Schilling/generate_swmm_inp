@@ -35,6 +35,7 @@ import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
+    Qgis,
     QgsProject,
     QgsProcessing,
     QgsProcessingAlgorithm,
@@ -55,6 +56,16 @@ from .g_s_defaults import (
     def_stylefile_dict,
     ImportDataStatus
 )
+
+
+qgis_version_info = Qgis.version().split('.')
+if qgis_version_info[0] == 4:
+    qgis_4_x = True
+else:
+    qgis_4_x = False
+
+
+
 from .g_s_import_helpers import add_layer_on_completion
 
 

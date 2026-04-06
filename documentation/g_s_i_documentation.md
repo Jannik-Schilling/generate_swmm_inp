@@ -1,6 +1,6 @@
 ---
 author: Jannik Schilling
-email: <jannik.schilling@posteo.de>
+email: <contact.jschilling@posteo.de>
 title: generate_swmm_inp
 subtitle: Manual for the QGIS plugin, version 0.40
 title: generate_swmm_inp
@@ -108,12 +108,14 @@ files have to be organised. Such a table will look like this:
 
 ## Latest changes
 
-Version 0.40:
+Version 0.45.0:
 
--	improved handling of multipolygons and polygons with inner rings (thanks to MatthiasWebering)
+-	Compatibility to QGIS 4.0 with Qt6
 
 
 Notable changes in former versions:
+
+-   Version 0.40: improved handling of multipolygons and polygons with inner rings (thanks to MatthiasWebering)
 
 -   Version 0.34: replacement of column **\"Shape\"** by
     **\"XsectShape\"** in **conduits** layers and **orifices** layers

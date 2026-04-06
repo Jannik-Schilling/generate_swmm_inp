@@ -29,6 +29,7 @@ import numpy as np
 import os
 import pandas as pd
 from qgis.core import (
+    Qgis,
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
@@ -70,6 +71,12 @@ from .g_s_import_helpers import (
     insert_nan_after_kw,
     sect_list_import_handler
 )
+
+qgis_version_info = Qgis.version().split('.')
+if qgis_version_info[0] == 4:
+    qgis_4_x = True
+else:
+    qgis_4_x = False
 
 
 class ImportInpFile (QgsProcessingAlgorithm):
@@ -135,7 +142,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
                 defaultValue=False,
                 optional=True
             )
-        add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        if qgis_4_x:
+            add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced)
+        else:
+            add_z_coord_param.setFlags(add_z_coord_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(add_z_coord_param)
 
         empt_param = QgsProcessingParameterBoolean(
@@ -145,8 +155,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         )
         # Hide the parameter CREATE_EMPTY , because it´s only for the default data tool
         self.addParameter(empt_param)
-        empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
-
+        if qgis_4_x:
+            empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.Flag.FlagHidden)
+        else:
+            empt_param.setFlags(empt_param.flags() | QgsProcessingParameterDefinition.FlagHidden)
         transform_crs = QgsProcessingParameterString(
         self.TRANSFORM_CRS,
         self.tr('Transform to Crs'),
@@ -154,8 +166,10 @@ class ImportInpFile (QgsProcessingAlgorithm):
         )
         # Hide the parameter CREATE_EMPTY , because it´s only for the default data to
         self.addParameter(transform_crs)
-        transform_crs.setFlags(transform_crs.flags() | QgsProcessingParameterDefinition.FlagHidden)
-
+        if qgis_4_x:
+            transform_crs.setFlags(transform_crs.flags() | QgsProcessingParameterDefinition.Flag.FlagHidden)
+        else:
+            transform_crs.setFlags(transform_crs.flags() | QgsProcessingParameterDefinition.FlagHidden)
     def name(self):
         return 'ImportInpFile'
 

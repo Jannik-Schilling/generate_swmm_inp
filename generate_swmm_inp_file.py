@@ -35,6 +35,7 @@ import pandas as pd
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
+    Qgis,
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingParameterBoolean,
@@ -65,6 +66,11 @@ from .g_s_read_write_data import (
     read_data_direct
 )
 
+qgis_version_info = Qgis.version().split('.')
+if qgis_version_info[0] == 4:
+    qgis_4_x = True
+else:
+    qgis_4_x = False
 
 class GenerateSwmmInpFile(QgsProcessingAlgorithm):
     """
@@ -195,7 +201,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_OPTIONS,
                 self.tr('Options table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -204,7 +210,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_CURVES,
                 self.tr('Curves table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -213,7 +219,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_PATTERNS,
                 self.tr('Patterns table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -222,7 +228,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_TIMESERIES,
                 self.tr('Timeseries table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -231,7 +237,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_INFLOWS,
                 self.tr('Inflows table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -240,7 +246,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_QUALITY,
                 self.tr('Quality table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -249,7 +255,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_TRANSECTS,
                 self.tr('Transects table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -258,7 +264,7 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             QgsProcessingParameterFile(
                 self.FILE_STREETS,
                 self.tr('Streets and Inlets table file'),
-                QgsProcessingParameterFile.File,
+                QgsProcessingParameterFile.Behavior.File,
                 optional=True,
                 fileFilter='Tables (*.xlsx *.xls *.odf)'
             )
@@ -274,7 +280,10 @@ class GenerateSwmmInpFile(QgsProcessingAlgorithm):
             defaultValue=False,
             optional=True
         )
-        use_z_vals_param.setFlags(use_z_vals_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
+        if qgis_4_x:
+            use_z_vals_param.setFlags(use_z_vals_param.flags() | QgsProcessingParameterDefinition.Flag.FlagAdvanced)
+        else:
+            use_z_vals_param.setFlags(use_z_vals_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(use_z_vals_param)
 
     def processAlgorithm(self, parameters, context, feedback):
