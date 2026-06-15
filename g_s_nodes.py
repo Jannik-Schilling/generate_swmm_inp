@@ -454,7 +454,7 @@ def create_points_df(data, feedback):
     n = len(data)
     if n > 0:
         all_geoms = [create_point_from_x_y(
-            data.loc[i,],
+            data.loc[i, :],
             i,
             n,
             feedback) for i in data.index] # point geometries
