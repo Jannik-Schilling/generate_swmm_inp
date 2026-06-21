@@ -7,7 +7,7 @@ name=Generate SWMM inp
 qgisMinimumVersion=3.30
 qgisMaximumVersion=4.99
 description= Generate SWMM input files from layers, import input files from SWMM to QGIS and import SWMM report files to QGIS
-version=0.45.2
+version=0.45.3
 author=Jannik Schilling
 email=contact.jschilling@posteo.de
 
@@ -26,7 +26,7 @@ repository=https://github.com/Jannik-Schilling/generate_swmm_inp
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog= 0.45.2
+changelog= 0.45.3
     - compatibility to QGIS 4.0 / Qt6
     - fix for pandas loc error
     - fix for typecast error
