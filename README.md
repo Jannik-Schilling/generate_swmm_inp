@@ -77,7 +77,7 @@ You can save the table as a csv file and add it to the QGIS project (if you don�
 
 Now you can join the table to the SWMM layer: 
 
-<img src="/figures/action_report3.png" alt= “export” width="65%">
+<img src="/figures/action_report3.png" alt= “export” width="65%"> 
 
 There´s also a [video with a detailled instruction](https://docs.qgis.org/3.34/en/docs/training_manual/create_vector_data/actions.html) for table joins.
 
