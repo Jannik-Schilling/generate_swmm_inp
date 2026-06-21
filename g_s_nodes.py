@@ -99,6 +99,25 @@ def get_dividers_from_layer(dividers_raw):
     return dividers_df
 
 # Outfalls
+def outfalls_adjust_data(outf_series):
+    """
+    sets the correct value for 'Data' according to the type of the outfall
+    :param pd.series outf_series
+    :return: string
+    """
+    if outf_series['Type'] == 'TIDAL':
+        return str(outf_series['Curve_TS'])
+    elif outf_series['Type'] == 'TIMESERIES':
+        return outf_series['Curve_TS']
+    elif outf_series['Type'] == 'FIXED':
+        return str(outf_series['FixedStage'])
+    elif outf_series['Type'] == 'FREE':
+        return ''
+    elif outf_series['Type'] == 'NORMAL':
+        return ''
+    else:
+        return ''
+    
 def get_outfalls_from_shapefile(outfalls_raw):
     """
     prepares a pandas.DataFrame for the export of OUTFALLS
@@ -106,11 +125,7 @@ def get_outfalls_from_shapefile(outfalls_raw):
     :return: pd.DataFrame
     """
     outfalls_raw['Name'] = [str(x) for x in outfalls_raw['Name']]
-    outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIDAL', 'Curve_TS']
-    outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'TIMESERIES', 'Curve_TS']
-    outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'Data'] = outfalls_raw.loc[outfalls_raw['Type'] == 'FIXED', 'FixedStage']
-    outfalls_raw.loc[outfalls_raw['Type'] == 'FREE', 'Data'] = ''
-    outfalls_raw.loc[outfalls_raw['Type'] == 'NORMAL', 'Data'] = ''
+    outfalls_raw['Data'] = outfalls_raw.apply(outfalls_adjust_data, axis=1)
     outfalls_raw['RouteTo'] = outfalls_raw['RouteTo'].fillna('')
     outfalls_raw['FlapGate'] = outfalls_raw['FlapGate'].fillna('NO')
     outfalls_raw['Data'] = outfalls_raw['Data'].fillna('')
@@ -454,7 +469,7 @@ def create_points_df(data, feedback):
     n = len(data)
     if n > 0:
         all_geoms = [create_point_from_x_y(
-            data.loc[i,],
+            data.loc[i, :],
             i,
             n,
             feedback) for i in data.index] # point geometries
