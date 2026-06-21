@@ -40,7 +40,7 @@ homepage=https://github.com/Jannik-Schilling/generate_swmm_inp
 category=Analysis
 icon=icons/icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
